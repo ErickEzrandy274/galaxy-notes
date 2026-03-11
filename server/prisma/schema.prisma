@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── User ────────────────────────────────────────────────────────────────────
+
+enum UserType {
+  general_user
+  google_user
+  github_user
+  facebook_user
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  password      String?
+  name          String?
+  firstName     String?   @map("first_name")
+  lastName      String?   @map("last_name")
+  bio           String?
+  image         String?
+  photo         String?
+  userType      UserType  @default(general_user) @map("user_type")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  notes         Note[]
+  sharedNotes   NoteShare[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+// ─── Auth (NextAuth compatible) ──────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email, expiresAt])
+  @@map("password_reset_tokens")
+}
+
+// ─── Note ────────────────────────────────────────────────────────────────────
+
+enum NoteStatus {
+  draft
+  published
+  archived
+  shared
+}
+
+model Note {
+  id       String     @id @default(cuid())
+  title    String     @db.VarChar(255)
+  content  String?    @db.Text
+  status   NoteStatus @default(draft)
+  photo    String?
+  videoUrl String?    @map("video_url")
+  tags     String[]   @default([])
+  version  Int        @default(1)
+
+  // Soft delete
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Owner
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  shares   NoteShare[]
+  versions NoteVersion[]
+
+  @@index([userId, isDeleted])
+  @@index([status])
+  @@map("notes")
+}
+
+// ─── Note Sharing ────────────────────────────────────────────────────────────
+
+enum Permission {
+  READ
+  WRITE
+}
+
+model NoteShare {
+  id         String     @id @default(cuid())
+  noteId     String     @map("note_id")
+  userId     String     @map("user_id")
+  permission Permission @default(READ)
+
+  lastNotifiedAt DateTime? @map("last_notified_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([noteId, userId])
+  @@map("note_shares")
+}
+
+// ─── Note Version History ────────────────────────────────────────────────────
+
+model NoteVersion {
+  id        String @id @default(cuid())
+  noteId    String @map("note_id")
+  version   Int
+  title     String @db.VarChar(255)
+  content   String @db.Text
+  changedBy String @map("changed_by")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  note Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  @@index([noteId, version])
+  @@map("note_versions")
+}
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+model Notification {
+  id      String  @id @default(cuid())
+  userId  String  @map("user_id")
+  title   String
+  message String  @db.Text
+  isRead  Boolean @default(false) @map("is_read")
+  type    String  @default("general")
+  noteId  String? @map("note_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}

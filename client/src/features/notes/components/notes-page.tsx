@@ -1,0 +1,88 @@
+'use client';
+
+import { useCallback } from 'react';
+import Link from 'next/link';
+import { Loader2, Plus } from 'lucide-react';
+import { useNotes } from '../hooks/use-notes';
+import { useNotesFilters } from '../hooks/use-notes-filters';
+import { useColumnVisibility } from '../hooks/use-column-visibility';
+import { NotesFilters } from './notes-filters';
+import { NotesSearch } from './notes-search';
+import { NotesColumnsDropdown } from './notes-columns-dropdown';
+import { NotesTable } from './notes-table';
+import { NotesPagination } from './notes-pagination';
+import { NotesEmptyState } from './notes-empty-state';
+
+export function NotesPage() {
+  const { filters, setStatus, setSearch, setTags, setPage } =
+    useNotesFilters();
+  const { columns, toggleColumn } = useColumnVisibility();
+  const { data, isLoading } = useNotes(filters);
+
+  const handleSearchChange = useCallback(
+    (search: string) => setSearch(search),
+    [setSearch],
+  );
+  const handleTagsChange = useCallback(
+    (tags: string) => setTags(tags),
+    [setTags],
+  );
+
+  const hasFilters = !!(filters.status || filters.search || filters.tags);
+  const isEmpty = data?.total === 0 && !hasFilters;
+  const isFilteredEmpty = data?.notes.length === 0 && hasFilters;
+
+  return (
+    <section className="flex h-full flex-col p-6">
+      <header className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-foreground">My Notes</h1>
+        <Link
+          href="/notes/new"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+        >
+          <Plus size={18} />
+          New Note
+        </Link>
+      </header>
+
+      <nav className="mb-4" aria-label="Note status filters">
+        <NotesFilters
+          activeStatus={filters.status}
+          onStatusChange={setStatus}
+        />
+      </nav>
+
+      <search className="mb-4 flex items-end gap-4">
+        <span className="flex-1">
+          <NotesSearch
+            onSearchChange={handleSearchChange}
+            onTagsChange={handleTagsChange}
+          />
+        </span>
+        <NotesColumnsDropdown columns={columns} onToggle={toggleColumn} />
+      </search>
+
+      {isLoading ? (
+        <output className="flex flex-1 items-center justify-center" aria-busy="true">
+          <Loader2 size={32} className="animate-spin text-muted-foreground" />
+        </output>
+      ) : isEmpty ? (
+        <NotesEmptyState />
+      ) : isFilteredEmpty ? (
+        <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+          No notes match your filters.
+        </p>
+      ) : (
+        <>
+          <NotesTable notes={data!.notes} columns={columns} />
+          <NotesPagination
+            page={data!.page}
+            limit={data!.limit}
+            total={data!.total}
+            onPageChange={setPage}
+          />
+        </>
+      )}
+    </section>
+  );
+}
