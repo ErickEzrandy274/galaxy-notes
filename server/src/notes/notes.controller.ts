@@ -12,6 +12,9 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { NotesService } from './notes.service';
+import { CreateSignedUploadUrlDto } from './dto/create-signed-upload-url.dto';
+import { CreateNoteDto } from './dto/create-note.dto';
+import { UpdateNoteDto } from './dto/update-note.dto';
 
 @Controller('notes')
 @UseGuards(AuthGuard('jwt'))
@@ -34,6 +37,11 @@ export class NotesController {
     });
   }
 
+  @Get('stats')
+  getStats(@Request() req: { user: { id: string } }) {
+    return this.notesService.getStats(req.user.id);
+  }
+
   @Get('tags')
   getUserTags(@Request() req: { user: { id: string } }) {
     return this.notesService.getUserTags(req.user.id);
@@ -42,13 +50,15 @@ export class NotesController {
   @Post('upload-url')
   createSignedUploadUrl(
     @Request() req: { user: { id: string } },
-    @Body() dto: { fileName: string; mimeType: string; fileSize: number },
+    @Body() dto: CreateSignedUploadUrlDto,
   ) {
     return this.notesService.createSignedUploadUrl(
       req.user.id,
+      dto.noteId,
       dto.fileName,
       dto.mimeType,
       dto.fileSize,
+      dto.source,
     );
   }
 
@@ -63,7 +73,7 @@ export class NotesController {
   @Post()
   create(
     @Request() req: { user: { id: string } },
-    @Body() dto: { title: string; content?: string; status?: string; tags?: string[]; videoUrl?: string; photo?: string },
+    @Body() dto: CreateNoteDto,
   ) {
     return this.notesService.create(req.user.id, dto);
   }
@@ -72,7 +82,7 @@ export class NotesController {
   update(
     @Param('id') id: string,
     @Request() req: { user: { id: string } },
-    @Body() dto: { title?: string; content?: string; status?: string; tags?: string[]; videoUrl?: string; photo?: string; version: number },
+    @Body() dto: UpdateNoteDto,
   ) {
     return this.notesService.update(id, req.user.id, dto);
   }
