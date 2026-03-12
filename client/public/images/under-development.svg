@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <!-- Stars -->
+  <circle cx="45" cy="25" r="1.5" fill="#7C3AED" opacity="0.5"/>
+  <circle cx="130" cy="50" r="2" fill="#7C3AED" opacity="0.4"/>
+  <circle cx="210" cy="15" r="1.5" fill="#7C3AED" opacity="0.6"/>
+  <circle cx="310" cy="35" r="2" fill="#7C3AED" opacity="0.3"/>
+  <circle cx="360" cy="70" r="1.5" fill="#7C3AED" opacity="0.5"/>
+  <circle cx="70" cy="90" r="1" fill="#7C3AED" opacity="0.4"/>
+  <circle cx="350" cy="160" r="1.5" fill="#7C3AED" opacity="0.3"/>
+  <circle cx="40" cy="200" r="2" fill="#7C3AED" opacity="0.5"/>
+  <circle cx="280" cy="260" r="1.5" fill="#7C3AED" opacity="0.4"/>
+
+  <!-- Rocket body -->
+  <g transform="translate(200, 150)">
+    <!-- Flame -->
+    <path d="M-8,60 Q0,85 8,60" fill="#F59E0B" opacity="0.7"/>
+    <path d="M-5,60 Q0,78 5,60" fill="#EF4444" opacity="0.6"/>
+
+    <!-- Main body -->
+    <path d="M-18,55 L-18,10 Q-18,-30 0,-50 Q18,-30 18,10 L18,55 Z" fill="#a3a3a3" stroke="#737373" stroke-width="1.5"/>
+
+    <!-- Window -->
+    <circle cx="0" cy="0" r="10" fill="#262626" stroke="#525252" stroke-width="1.5"/>
+    <circle cx="0" cy="0" r="7" fill="#7C3AED" opacity="0.2"/>
+    <!-- Window reflection -->
+    <path d="M-4,-5 Q0,-8 4,-5" stroke="#7C3AED" stroke-width="1" fill="none" opacity="0.5"/>
+
+    <!-- Nose cone accent -->
+    <path d="M-8,-30 Q0,-48 8,-30" fill="#7C3AED" opacity="0.3"/>
+
+    <!-- Left fin -->
+    <path d="M-18,40 L-30,58 L-18,55 Z" fill="#7C3AED" opacity="0.5" stroke="#6D28D9" stroke-width="1"/>
+
+    <!-- Right fin -->
+    <path d="M18,40 L30,58 L18,55 Z" fill="#7C3AED" opacity="0.5" stroke="#6D28D9" stroke-width="1"/>
+
+    <!-- Body stripes -->
+    <rect x="-14" y="20" width="28" height="3" rx="1.5" fill="#7C3AED" opacity="0.2"/>
+    <rect x="-14" y="28" width="28" height="3" rx="1.5" fill="#7C3AED" opacity="0.15"/>
+  </g>
+
+  <!-- Wrench floating left -->
+  <g transform="translate(110, 120) rotate(-30)">
+    <rect x="-3" y="-20" width="6" height="28" rx="3" fill="#a3a3a3" stroke="#737373" stroke-width="1"/>
+    <circle cx="0" cy="-20" r="8" fill="none" stroke="#a3a3a3" stroke-width="4"/>
+    <circle cx="0" cy="-20" r="8" fill="none" stroke="#737373" stroke-width="1.5"/>
+  </g>
+
+  <!-- Gear floating right -->
+  <g transform="translate(290, 110)">
+    <circle cx="0" cy="0" r="12" fill="#a3a3a3" stroke="#737373" stroke-width="1.5"/>
+    <circle cx="0" cy="0" r="6" fill="#525252"/>
+    <!-- Gear teeth -->
+    <rect x="-3" y="-16" width="6" height="6" rx="1" fill="#a3a3a3" stroke="#737373" stroke-width="1"/>
+    <rect x="-3" y="10" width="6" height="6" rx="1" fill="#a3a3a3" stroke="#737373" stroke-width="1"/>
+    <rect x="-16" y="-3" width="6" height="6" rx="1" fill="#a3a3a3" stroke="#737373" stroke-width="1"/>
+    <rect x="10" y="-3" width="6" height="6" rx="1" fill="#a3a3a3" stroke="#737373" stroke-width="1"/>
+  </g>
+
+  <!-- Small orbiting dots -->
+  <circle cx="160" cy="100" r="3" fill="#7C3AED" opacity="0.2"/>
+  <circle cx="245" cy="95" r="2" fill="#7C3AED" opacity="0.15"/>
+  <circle cx="155" cy="210" r="2.5" fill="#7C3AED" opacity="0.2"/>
+  <circle cx="250" cy="215" r="2" fill="#7C3AED" opacity="0.15"/>
+</svg>
