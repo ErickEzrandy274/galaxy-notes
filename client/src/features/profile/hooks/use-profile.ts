@@ -68,9 +68,11 @@ export function usePhotoUpload() {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success('Photo updated successfully');
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Photo upload failed';
-      toast.error(message);
+      // Only show toast for non-API errors (e.g. direct fetch to Supabase)
+      // API errors are handled by the axios interceptor with request ID
+      if (err instanceof Error && !(err as { isAxiosError?: boolean }).isAxiosError) {
+        toast.error(err.message);
+      }
     } finally {
       setUploading(false);
     }
@@ -82,7 +84,7 @@ export function usePhotoUpload() {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success('Photo removed');
     } catch {
-      toast.error('Failed to remove photo');
+      // Axios interceptor shows error toast with request ID
     }
   };
 

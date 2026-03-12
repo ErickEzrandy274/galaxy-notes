@@ -48,11 +48,11 @@ export function ProfileFormOAuth({ profile }: ProfileFormOAuthProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <label>
-        <span className="block text-sm font-medium text-foreground">
+        <p className="block text-sm font-medium text-foreground">
           Full Name
-        </span>
+        </p>
         <input
           id="fullName"
           type="text"
@@ -66,9 +66,9 @@ export function ProfileFormOAuth({ profile }: ProfileFormOAuthProps) {
       </label>
 
       <label>
-        <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+        <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
           Email <Lock size={12} className="text-muted-foreground" />
-        </span>
+        </p>
         <input
           id="email"
           type="email"
@@ -82,9 +82,9 @@ export function ProfileFormOAuth({ profile }: ProfileFormOAuthProps) {
       </label>
 
       <label>
-        <span className="block text-sm font-medium text-foreground">
+        <p className="block text-sm font-medium text-foreground">
           Bio
-        </span>
+        </p>
         <textarea
           id="bio"
           rows={3}
@@ -94,7 +94,7 @@ export function ProfileFormOAuth({ profile }: ProfileFormOAuthProps) {
         />
       </label>
 
-      <span className="flex gap-3">
+      <section className="flex gap-3">
         <button
           type="submit"
           disabled={isPending || !isDirty}
@@ -110,7 +110,7 @@ export function ProfileFormOAuth({ profile }: ProfileFormOAuthProps) {
         >
           Cancel
         </button>
-      </span>
+      </section>
     </form>
   );
 }

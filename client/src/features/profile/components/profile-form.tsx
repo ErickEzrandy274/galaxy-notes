@@ -42,7 +42,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <fieldset className="grid grid-cols-2 gap-4">
         <label>
           <span className="block text-sm font-medium text-foreground">

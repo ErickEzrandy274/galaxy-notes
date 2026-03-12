@@ -163,11 +163,11 @@ export class UsersService {
       throw new BadRequestException('File size exceeds 1MB limit.');
     }
 
-    const ext = fileName.split('.').pop();
-    const path = `${userId}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+    const sanitized = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `${userId}/avatar/${Date.now()}_${sanitized}`;
 
     const { data, error } = await this.supabase.storage
-      .from('profile-photos')
+      .from('galaxy-notes-staging')
       .createSignedUploadUrl(path);
 
     if (error) {
@@ -176,12 +176,21 @@ export class UsersService {
 
     const {
       data: { publicUrl },
-    } = this.supabase.storage.from('profile-photos').getPublicUrl(path);
+    } = this.supabase.storage.from('galaxy-notes-staging').getPublicUrl(path);
 
     return { signedUrl: data.signedUrl, token: data.token, path, publicUrl };
   }
 
   async updatePhoto(userId: string, photoUrl: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { photo: true },
+    });
+
+    if (user?.photo) {
+      await this.deleteStorageFile(user.photo);
+    }
+
     return this.prisma.user.update({
       where: { id: userId },
       data: { photo: photoUrl },
@@ -190,10 +199,31 @@ export class UsersService {
   }
 
   async removePhoto(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { photo: true },
+    });
+
+    if (user?.photo) {
+      await this.deleteStorageFile(user.photo);
+    }
+
     return this.prisma.user.update({
       where: { id: userId },
       data: { photo: null },
       select: { photo: true },
     });
+  }
+
+  private extractStoragePath(publicUrl: string): string | null {
+    const match = publicUrl.match(/\/galaxy-notes-staging\/(.+)$/);
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+
+  private async deleteStorageFile(publicUrl: string) {
+    const path = this.extractStoragePath(publicUrl);
+    if (!path) return;
+
+    await this.supabase.storage.from('galaxy-notes-staging').remove([path]);
   }
 }

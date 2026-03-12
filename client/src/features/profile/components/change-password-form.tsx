@@ -19,7 +19,7 @@ export function ChangePasswordForm() {
     handleSubmit,
     setValue,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ChangePasswordInput>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: { currentPassword: '', newPassword: '', confirmNewPassword: '' },
@@ -42,12 +42,12 @@ export function ChangePasswordForm() {
       <h2 className="mb-4 text-lg font-semibold text-foreground">
         Change Password
       </h2>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <label>
-          <span className="block text-sm font-medium text-foreground">
+          <p className="block text-sm font-medium text-foreground">
             Current Password
-          </span>
-          <span className="relative mt-1.5 block">
+          </p>
+          <section className="relative mt-1.5 block">
             <input
               type={showCurrent ? 'text' : 'password'}
               className="w-full rounded-lg border border-border bg-card px-4 py-2.5 pr-10 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -62,17 +62,17 @@ export function ChangePasswordForm() {
             >
               {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
-          </span>
+          </section>
           {errors.currentPassword && (
             <p className="mt-1 text-sm text-destructive">{errors.currentPassword.message}</p>
           )}
         </label>
 
         <label>
-          <span className="block text-sm font-medium text-foreground">
+          <p className="block text-sm font-medium text-foreground">
             New Password
-          </span>
-          <span className="relative mt-1.5 block">
+          </p>
+          <section className="relative mt-1.5 block">
             <input
               type={showNew ? 'text' : 'password'}
               className="w-full rounded-lg border border-border bg-card px-4 py-2.5 pr-10 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -87,17 +87,17 @@ export function ChangePasswordForm() {
             >
               {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
-          </span>
+          </section>
           {errors.newPassword && (
             <p className="mt-1 text-sm text-destructive">{errors.newPassword.message}</p>
           )}
         </label>
 
         <label>
-          <span className="block text-sm font-medium text-foreground">
+          <p className="block text-sm font-medium text-foreground">
             Confirm New Password
-          </span>
-          <span className="relative mt-1.5 block">
+          </p>
+          <section className="relative mt-1.5 block">
             <input
               type={showConfirm ? 'text' : 'password'}
               className="w-full rounded-lg border border-border bg-card px-4 py-2.5 pr-10 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -112,13 +112,13 @@ export function ChangePasswordForm() {
             >
               {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
-          </span>
+          </section>
           {errors.confirmNewPassword && (
             <p className="mt-1 text-sm text-destructive">{errors.confirmNewPassword.message}</p>
           )}
         </label>
 
-        <span className="flex items-center justify-between">
+        <section className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
             Min 12 characters, mixed case, numbers &amp; special characters
           </p>
@@ -129,11 +129,11 @@ export function ChangePasswordForm() {
           >
             Generate password!
           </button>
-        </span>
+        </section>
 
         <button
           type="submit"
-          disabled={isPending}
+          disabled={!isDirty || isPending}
           className="cursor-pointer rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPending ? 'Updating...' : 'Update Password'}
