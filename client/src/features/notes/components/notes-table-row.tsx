@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { Link2 } from 'lucide-react';
 import type { ColumnKey, Note } from '../types';
 import { StatusBadge } from './status-badge';
@@ -14,13 +13,13 @@ interface NotesTableRowProps {
 export function NotesTableRow({ note, columns }: NotesTableRowProps) {
   return (
     <tr className="border-b border-border transition-colors hover:bg-muted/50">
-      <td className="px-4 py-3">
-        <Link
-          href={`/notes/${note.id}`}
-          className="cursor-pointer text-sm font-medium text-foreground hover:text-primary"
+      <td className="max-w-64 px-4 py-3">
+        <span
+          className="block truncate text-sm font-medium text-foreground"
+          title={note.title}
         >
           {note.title}
-        </Link>
+        </span>
       </td>
       {columns.status && (
         <td className="px-4 py-3">
@@ -44,13 +43,15 @@ export function NotesTableRow({ note, columns }: NotesTableRowProps) {
       )}
       {columns.shared && (
         <td className="px-4 py-3">
-          {note._count.shares > 0 && (
+          {note._count.shares > 0 ? (
             <Link2 size={16} className="text-muted-foreground" />
+          ) : (
+            <p className="text-sm text-muted-foreground">-</p>
           )}
         </td>
       )}
       <td className="px-4 py-3">
-        <NotesRowActions noteId={note.id} />
+        <NotesRowActions noteId={note.id} noteStatus={note.status} />
       </td>
     </tr>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { MoreHorizontal, Pencil, Share2, Trash2 } from 'lucide-react';
+import { Eye, MoreHorizontal, Pencil, Share2, Trash2 } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,9 +9,10 @@ import { deleteNote } from '../api/notes-api';
 
 interface NotesRowActionsProps {
   noteId: string;
+  noteStatus: string;
 }
 
-export function NotesRowActions({ noteId }: NotesRowActionsProps) {
+export function NotesRowActions({ noteId, noteStatus }: NotesRowActionsProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -20,9 +21,6 @@ export function NotesRowActions({ noteId }: NotesRowActionsProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notes'] });
       toast.success('Note moved to trash');
-    },
-    onError: () => {
-      toast.error('Failed to delete note');
     },
   });
 
@@ -39,6 +37,15 @@ export function NotesRowActions({ noteId }: NotesRowActionsProps) {
           align="end"
           className="z-50 min-w-[140px] rounded-lg border border-border bg-card p-1 shadow-lg"
         >
+          {noteStatus === 'published' && (
+            <DropdownMenu.Item
+              onClick={() => router.push(`/notes/${noteId}/view`)}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted"
+            >
+              <Eye size={14} />
+              View Note
+            </DropdownMenu.Item>
+          )}
           <DropdownMenu.Item
             onClick={() => router.push(`/notes/${noteId}`)}
             className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted"
