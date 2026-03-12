@@ -36,17 +36,17 @@ export function NoteInfoPanel({
           <dt className="text-muted-foreground">Characters</dt>
           <dd className="font-medium text-foreground">{characters}</dd>
         </span>
-        {createdAt && (
-          <span className="flex justify-between">
-            <dt className="text-muted-foreground">Created</dt>
-            <dd className="font-medium text-foreground">
-              {formatInfoDate(createdAt)}
-            </dd>
-          </span>
-        )}
+        <span className="flex justify-between">
+          <dt className="text-muted-foreground">Created</dt>
+          <dd className="font-medium text-foreground">
+            {createdAt ? formatInfoDate(createdAt) : 'Just now'}
+          </dd>
+        </span>
         <span className="flex justify-between">
           <dt className="text-muted-foreground">Version</dt>
-          <dd className="font-medium text-foreground">{version}</dd>
+          <dd className="font-medium text-foreground">
+            {version === 1 ? 'v1 (new)' : `v${version}`}
+          </dd>
         </span>
       </dl>
     </section>

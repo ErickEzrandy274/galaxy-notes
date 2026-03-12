@@ -7,7 +7,7 @@ import { createNote, updateNote } from '../api/notes-api';
 import type { AutosaveStatus, NoteEditorData } from '../types';
 
 const DEBOUNCE_MS = 2000;
-const INTERVAL_MS = 30_000;
+const INTERVAL_MS = 120_000;
 const STORAGE_PREFIX = 'note-draft-';
 
 interface UseNoteAutosaveOptions {
@@ -17,6 +17,7 @@ interface UseNoteAutosaveOptions {
   savedNoteId?: string;
   setSavedNoteId: (id: string) => void;
   markClean: (newVersion?: number) => void;
+  contentTransform?: (content: string) => string;
 }
 
 export function useNoteAutosave({
@@ -26,6 +27,7 @@ export function useNoteAutosave({
   savedNoteId,
   setSavedNoteId,
   markClean,
+  contentTransform,
 }: UseNoteAutosaveOptions) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -37,11 +39,14 @@ export function useNoteAutosave({
   const isDirtyRef = useRef(isDirty);
   const versionRef = useRef(version);
   const savedNoteIdRef = useRef(savedNoteId);
+  const skipGuardRef = useRef(false);
 
+  const contentTransformRef = useRef(contentTransform);
   dataRef.current = data;
   isDirtyRef.current = isDirty;
   versionRef.current = version;
   savedNoteIdRef.current = savedNoteId;
+  contentTransformRef.current = contentTransform;
 
   const save = useCallback(async () => {
     if (savingRef.current || !isDirtyRef.current) return;
@@ -50,13 +55,18 @@ export function useNoteAutosave({
     savingRef.current = true;
     setStatus('saving');
 
+    const transform = contentTransformRef.current;
+    const content = transform
+      ? transform(dataRef.current.content)
+      : dataRef.current.content;
+
     try {
       if (savedNoteIdRef.current) {
         const result = await updateNote(savedNoteIdRef.current, {
           title: dataRef.current.title,
-          content: dataRef.current.content,
+          content,
           tags: dataRef.current.tags,
-          photo: dataRef.current.photo ?? undefined,
+          photo: dataRef.current.photo,
           videoUrl: dataRef.current.videoUrl || undefined,
           status: dataRef.current.status,
           version: versionRef.current,
@@ -65,7 +75,7 @@ export function useNoteAutosave({
       } else {
         const result = await createNote({
           title: dataRef.current.title,
-          content: dataRef.current.content,
+          content,
           tags: dataRef.current.tags,
           photo: dataRef.current.photo ?? undefined,
           videoUrl: dataRef.current.videoUrl || undefined,
@@ -74,6 +84,7 @@ export function useNoteAutosave({
         setSavedNoteId(result.id);
         markClean(result.version);
         localStorage.removeItem(`${STORAGE_PREFIX}new`);
+        skipGuardRef.current = true;
         router.replace(`/notes/${result.id}`);
       }
 
@@ -95,7 +106,7 @@ export function useNoteAutosave({
     return () => clearTimeout(debounceRef.current);
   }, [isDirty, data, save]);
 
-  // 30s interval
+  // 2-minute interval
   useEffect(() => {
     const interval = setInterval(() => {
       if (isDirtyRef.current) save();
@@ -112,6 +123,57 @@ export function useNoteAutosave({
     return () => clearInterval(interval);
   }, []);
 
+  // Warn on browser close/refresh when dirty
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirtyRef.current) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  // Warn on in-app navigation (intercept link clicks at capture phase)
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const pendingNavUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (!isDirtyRef.current || skipGuardRef.current) return;
+
+      const anchor = (e.target as HTMLElement).closest('a');
+      if (!anchor) return;
+
+      const href = anchor.getAttribute('href');
+      if (!href || href.startsWith('http') || href.startsWith('//') || href.startsWith('#')) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      pendingNavUrlRef.current = href;
+      setShowLeaveDialog(true);
+    };
+
+    document.addEventListener('click', handleClick, true);
+    return () => document.removeEventListener('click', handleClick, true);
+  }, []);
+
+  const confirmLeave = useCallback(() => {
+    setShowLeaveDialog(false);
+    const url = pendingNavUrlRef.current;
+    pendingNavUrlRef.current = null;
+    if (url) {
+      isDirtyRef.current = false;
+      skipGuardRef.current = true;
+      router.push(url);
+    }
+  }, [router]);
+
+  const cancelLeave = useCallback(() => {
+    setShowLeaveDialog(false);
+    pendingNavUrlRef.current = null;
+  }, []);
+
   // Manual save (for Save as Draft / Publish buttons)
   const saveNow = useCallback(
     async (overrideStatus?: string) => {
@@ -119,10 +181,11 @@ export function useNoteAutosave({
         dataRef.current = { ...dataRef.current, status: overrideStatus as NoteEditorData['status'] };
       }
       isDirtyRef.current = true;
+      skipGuardRef.current = true;
       await save();
     },
     [save],
   );
 
-  return { status, lastSavedAt, saveNow };
+  return { status, lastSavedAt, saveNow, showLeaveDialog, confirmLeave, cancelLeave };
 }

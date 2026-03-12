@@ -37,7 +37,7 @@ export function NoteYouTubeEmbed({ videoUrl, onChange }: NoteYouTubeEmbedProps) 
               setError('');
             }}
             onBlur={handleBlur}
-            placeholder="Paste YouTube URL..."
+            placeholder="youtube.com/watch?v=..."
             className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
         </label>

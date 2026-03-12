@@ -3,6 +3,7 @@ import type {
   NotesResponse,
   NotesFilters,
   NoteDetail,
+  NoteStats,
   TagOption,
   SignedUploadUrlResponse,
 } from '../types';
@@ -50,11 +51,16 @@ export async function updateNote(
     status?: string;
     tags?: string[];
     videoUrl?: string;
-    photo?: string;
+    photo?: string | null;
     version: number;
   },
 ): Promise<NoteDetail> {
   const response = await api.patch<NoteDetail>(`/notes/${noteId}`, data);
+  return response.data;
+}
+
+export async function fetchNoteStats(): Promise<NoteStats> {
+  const response = await api.get<NoteStats>('/notes/stats');
   return response.data;
 }
 
@@ -64,13 +70,15 @@ export async function fetchUserTags(): Promise<{ tags: TagOption[] }> {
 }
 
 export async function createSignedUploadUrl(
+  noteId: string,
   fileName: string,
   mimeType: string,
   fileSize: number,
+  source: 'rich-text-editor' | 'attachment',
 ): Promise<SignedUploadUrlResponse> {
   const response = await api.post<SignedUploadUrlResponse>(
     '/notes/upload-url',
-    { fileName, mimeType, fileSize },
+    { noteId, fileName, mimeType, fileSize, source },
   );
   return response.data;
 }
