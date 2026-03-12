@@ -4,7 +4,6 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { AxiosError } from 'axios';
 import type { RegisterInput } from '@/schemas/auth';
 import { registerUser } from '../api/auth-api';
 
@@ -33,18 +32,8 @@ export function useRegister() {
       toast.success('Account created successfully!');
       router.push('/notes');
       router.refresh();
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        if (error.response?.status === 409) {
-          toast.error('This email is already registered');
-        } else {
-          toast.error(
-            error.response?.data?.message || 'Registration failed',
-          );
-        }
-      } else {
-        toast.error('Something went wrong. Please try again.');
-      }
+    } catch {
+      // Axios interceptor shows error toast with request ID
     } finally {
       setIsLoading(false);
     }

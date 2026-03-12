@@ -74,7 +74,7 @@ function OAuthLinkingContent() {
       toast.success(`${providerLabel} account linked successfully!`);
       router.push('/login');
     } catch {
-      toast.error('Invalid password. Please try again.');
+      // Axios interceptor shows error toast with request ID
     } finally {
       setIsLoading(false);
     }

@@ -14,6 +14,7 @@ export { CountdownTimer, useCountdown } from './components/countdown-timer';
 
 export { useLogin } from './hooks/use-login';
 export { useRegister } from './hooks/use-register';
+export { useTokenRefresh } from './hooks/use-token-refresh';
 
 export { generatePassword } from './utils/generate-password';
 
