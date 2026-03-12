@@ -60,9 +60,9 @@ export function Sidebar() {
 			{/* Collapse toggle — edge chevron */}
 			<button
 				onClick={() => setCollapsed(!collapsed)}
-				className="absolute -right-3 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:text-foreground"
+				className="absolute -right-4 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:text-foreground"
 			>
-				{collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+				{collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
 			</button>
 
 			{/* Zone 1: Identity */}
@@ -90,17 +90,20 @@ export function Sidebar() {
 						<Link
 							key={href}
 							href={href}
-							className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+							className={`relative flex cursor-pointer items-center gap-3 p-3 text-sm transition-colors ${
 								isActive
 									? "bg-primary/10 text-primary"
 									: "text-muted-foreground hover:bg-muted hover:text-foreground"
-							} ${collapsed ? "justify-center" : ""}`}
+							} ${collapsed ? "justify-center rounded-full aspect-square" : "rounded-lg"}`}
 							title={collapsed ? label : undefined}
 						>
+							{isActive && (
+								<span className="absolute -left-2 top-1/2 h-full w-0.5 -translate-y-1/2 rounded-full bg-primary" />
+							)}
 							<span className="relative">
 								<Icon size={20} />
 								{isNotifications && notificationCount > 0 && (
-									<span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+									<span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
 										{notificationCount > 9 ? "9+" : notificationCount}
 									</span>
 								)}
@@ -109,7 +112,7 @@ export function Sidebar() {
 								<>
 									<span className="flex-1">{label}</span>
 									{isNotifications && notificationCount > 0 && (
-										<span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
+										<span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
 											{notificationCount > 99 ? "99+" : notificationCount}
 										</span>
 									)}
@@ -133,7 +136,7 @@ export function Sidebar() {
 							<Sun size={18} className="text-amber-500" />
 						)
 					) : (
-						<span className="h-[18px] w-[18px]" />
+						<span className="h-4.5 w-4.5" />
 					)}
 					{!collapsed && (
 						<>
@@ -214,7 +217,7 @@ export function Sidebar() {
 									align="center"
 									side="top"
 									sideOffset={8}
-									className="z-50 min-w-[220px] overflow-hidden rounded-xl border border-border bg-card shadow-lg"
+									className="z-50 min-w-55 overflow-hidden rounded-xl border border-border bg-card shadow-lg"
 								>
 									{/* User info header */}
 									<header className="flex items-center gap-3 border-b border-border bg-muted/50 px-3 py-3">
