@@ -1,26 +1,35 @@
 'use client';
 
 import { useRef, useState, useCallback } from 'react';
-import { Paperclip, X, Loader2, ImageIcon } from 'lucide-react';
+import { Paperclip, Loader2, FileText, Eye, Trash2, AlertTriangle } from 'lucide-react';
 import { useNoteUpload } from '../hooks/use-note-upload';
 
 interface NoteAttachmentUploadProps {
   photo: string | null;
   onChange: (url: string | null) => void;
+  noteId?: string;
+  initialPhotoUrl?: string | null;
 }
 
 export function NoteAttachmentUpload({
   photo,
   onChange,
+  noteId,
+  initialPhotoUrl,
 }: NoteAttachmentUploadProps) {
-  const { upload, isUploading } = useNoteUpload();
+  const { upload, isUploading, progress } = useNoteUpload(noteId ?? '', 'attachment');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [uploadedDownloadUrl, setUploadedDownloadUrl] = useState<string | null>(null);
 
   const handleFile = useCallback(
     async (file: File) => {
-      const url = await upload(file);
-      if (url) onChange(url);
+      const result = await upload(file);
+      if (result) {
+        onChange(result.path);
+        setUploadedDownloadUrl(result.downloadUrl);
+      }
     },
     [upload, onChange],
   );
@@ -44,75 +53,143 @@ export function NoteAttachmentUpload({
     setIsDragOver(false);
   }, []);
 
+  const fileName = photo
+    ? decodeURIComponent(
+        photo.split('?')[0].split('/').pop()?.replace(/^\d+_/, '') ?? 'attachment',
+      )
+    : null;
+
+  const previewUrl = uploadedDownloadUrl ?? initialPhotoUrl;
+
   return (
     <section aria-label="Attachments">
       <h3 className="mb-3 text-sm font-semibold text-foreground">
         Attachments
       </h3>
 
-      {photo ? (
-        <figure className="group relative overflow-hidden rounded-lg border border-border">
-          <img
-            src={photo}
-            alt="Note attachment"
-            className="h-40 w-full object-cover"
-          />
-          <button
-            type="button"
-            onClick={() => onChange(null)}
-            className="absolute top-2 right-2 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity hover:bg-black/80 group-hover:opacity-100"
-            aria-label="Remove attachment"
-          >
-            <X className="h-4 w-4" />
-          </button>
+      <label
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/50 p-6 transition-colors ${
+          isDragOver
+            ? 'border-primary bg-primary/5'
+            : 'border-zinc-700/60 hover:border-muted-foreground'
+        }`}
+      >
+        {isUploading ? (
+          <output className="flex w-full flex-col items-center gap-3" aria-live="polite">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <figure className="w-full space-y-1">
+              <progress
+                value={progress}
+                max={100}
+                className="h-2 w-full appearance-none overflow-hidden rounded-full [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-primary [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-muted [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-primary [&::-webkit-progress-value]:transition-all [&::-webkit-progress-value]:duration-200"
+              >
+                {progress}%
+              </progress>
+              <figcaption className="text-center text-xs text-muted-foreground">
+                Uploading... {progress}%
+              </figcaption>
+            </figure>
+          </output>
+        ) : (
+          <>
+            <section className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+              {isDragOver ? (
+                <FileText className="h-5 w-5 text-primary" />
+              ) : (
+                <Paperclip className="h-5 w-5 text-muted-foreground" />
+              )}
+            </section>
+            <p className="text-sm text-muted-foreground">
+              {photo ? 'Replace attachment' : 'Drop files or click to upload'}
+            </p>
+            <p className="text-xs font-semibold text-muted-foreground">
+              Max 3MB &middot; PDF File only
+            </p>
+          </>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFile(file);
+            e.target.value = '';
+          }}
+          className="hidden"
+        />
+      </label>
+
+      {photo && fileName && (
+        <figure className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2.5">
+          <span className="flex items-center gap-2 min-w-0">
+            <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="truncate text-sm text-foreground" title={fileName}>
+              {fileName}
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1">
+            {previewUrl && (
+              <a
+                href={previewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                aria-label="Preview attachment"
+              >
+                <Eye className="h-4 w-4" />
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowConfirm(true)}
+              className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-destructive"
+              aria-label="Remove attachment"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </span>
         </figure>
-      ) : (
-        <label
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 transition-colors ${
-            isDragOver
-              ? 'border-primary bg-primary/5'
-              : 'border-border hover:border-muted-foreground'
-          }`}
-        >
-          {isUploading ? (
-            <>
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                Uploading...
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                {isDragOver ? (
-                  <ImageIcon className="h-5 w-5 text-primary" />
-                ) : (
-                  <Paperclip className="h-5 w-5 text-muted-foreground" />
-                )}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                Drop files or click to upload
-              </span>
-              <span className="text-xs text-muted-foreground">
-                Max 1MB &middot; .webp, .jpg, .png
-              </span>
-            </>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".webp,.jpg,.jpeg,.png"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) handleFile(file);
-              e.target.value = '';
-            }}
-            className="hidden"
-          />
-        </label>
+      )}
+
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true">
+          <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
+          <article className="relative z-10 w-full max-w-[420px] rounded-xl border border-border bg-card p-6 shadow-xl">
+            <header className="flex items-center gap-3">
+              <AlertTriangle className="h-6 w-6 shrink-0 text-foreground" />
+              <h4 className="text-lg font-semibold text-foreground">
+                Remove attachment?
+              </h4>
+            </header>
+            <p className="mt-3 text-sm text-muted-foreground">
+              This will remove the file from this note.
+            </p>
+            <footer className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 cursor-pointer rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onChange(null);
+                  setUploadedDownloadUrl(null);
+                  setShowConfirm(false);
+                }}
+                className="flex-1 cursor-pointer rounded-lg bg-destructive px-4 py-2.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
+              >
+                Remove
+              </button>
+            </footer>
+          </article>
+        </div>
       )}
     </section>
   );
