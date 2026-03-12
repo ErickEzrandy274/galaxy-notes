@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
-import { getSession } from 'next-auth/react';
+import { getSession, signOut } from 'next-auth/react';
 import toast from 'react-hot-toast';
 
 const api = axios.create({
@@ -16,6 +16,8 @@ const api = axios.create({
 let cachedToken: string | null = null;
 let tokenExpiry = 0;
 let refreshPromise: Promise<string | null> | null = null;
+let authFailed = false;
+let sessionPromise: Promise<void> | null = null;
 
 function decodeTokenExpiry(token: string): number {
   try {
@@ -29,6 +31,7 @@ function decodeTokenExpiry(token: string): number {
 export function setAccessToken(token: string) {
   cachedToken = token;
   tokenExpiry = decodeTokenExpiry(token);
+  authFailed = false;
 }
 
 export function clearAccessToken() {
@@ -36,9 +39,9 @@ export function clearAccessToken() {
   tokenExpiry = 0;
 }
 
-function isTokenExpiringSoon(): boolean {
+export function isTokenExpiringSoon(): boolean {
   if (!cachedToken || !tokenExpiry) return false;
-  return tokenExpiry - Date.now() < 5 * 60 * 1000;
+  return tokenExpiry - Date.now() < 10 * 60 * 1000;
 }
 
 async function refreshToken(): Promise<string | null> {
@@ -70,16 +73,29 @@ async function refreshToken(): Promise<string | null> {
 
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    // Hydrate from NextAuth session if no cached token
+    // Block all requests once auth has permanently failed
+    if (authFailed) {
+      return Promise.reject(
+        Object.assign(new Error('Auth session expired'), {
+          _authFailed: true,
+        }),
+      );
+    }
+
+    // Hydrate from NextAuth session once per page lifecycle (shared promise)
     if (!cachedToken && typeof window !== 'undefined') {
-      try {
-        const session = await getSession();
-        if (session?.accessToken) {
-          setAccessToken(session.accessToken);
-        }
-      } catch {
-        // Session not available
+      if (!sessionPromise) {
+        sessionPromise = getSession()
+          .then((session) => {
+            if (session?.accessToken) {
+              setAccessToken(session.accessToken);
+            }
+          })
+          .catch(() => {
+            // Session not available
+          });
       }
+      await sessionPromise;
     }
 
     // Proactive refresh if token is about to expire
@@ -106,6 +122,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Skip processing once auth has permanently failed
+    if (error._authFailed || authFailed) {
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config;
 
     // Retry once on 401 with a refreshed token
@@ -124,11 +145,13 @@ api.interceptors.response.use(
         return api(originalRequest);
       }
 
-      // Refresh failed — redirect to login
+      // Refresh failed — permanently stop all API calls and sign out
       clearAccessToken();
+      authFailed = true;
       if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+        signOut({ callbackUrl: '/login' });
       }
+      return Promise.reject(error);
     }
 
     // Attach request-id to the error for callers
@@ -138,7 +161,7 @@ api.interceptors.response.use(
     }
 
     // Show error toast with request-id (skip during 401 retry)
-    if (!originalRequest._retry && typeof window !== 'undefined') {
+    if (!originalRequest?._retry && typeof window !== 'undefined') {
       const message =
         error.response?.data?.message || 'Something went wrong';
       const refSuffix = requestId ? ` (Ref: ${requestId})` : '';
