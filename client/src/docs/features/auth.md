@@ -21,7 +21,8 @@ client/src/features/auth/
 │   └── auth-api.ts                 # registerUser() via axios
 ├── hooks/
 │   ├── use-login.ts                # signIn('credentials') + toast + redirect
-│   └── use-register.ts             # Register → auto-login → redirect
+│   ├── use-register.ts             # Register → auto-login → redirect
+│   └── use-token-refresh.ts        # Periodic background token refresh (10-min interval)
 └── components/
     ├── password-input.tsx           # Input with show/hide eye toggle
     ├── oauth-buttons.tsx            # Google/GitHub/Facebook sign-in buttons

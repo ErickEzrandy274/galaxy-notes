@@ -81,9 +81,10 @@ The endpoint is protected by `@UseGuards(AuthGuard('jwt'))`, which:
 
 ## Usage Pattern
 
-The frontend axios interceptor calls this endpoint:
-- **Proactively**: When the current token will expire within 5 minutes
-- **Reactively**: When a 401 response is received (one retry attempt)
+The frontend calls this endpoint through two mechanisms:
+- **Axios interceptor (proactive)**: Before each API request, if the token expires within 10 minutes, the interceptor calls `POST /auth/refresh`
+- **Periodic background check**: A `useTokenRefresh` hook runs every 10 minutes and triggers `getSession()` → NextAuth JWT callback → `POST /auth/refresh` server-side, ensuring tokens are refreshed even without API activity
+- **Reactively**: When a 401 response is received (one retry attempt via axios response interceptor)
 
 ## Security Considerations
 

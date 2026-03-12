@@ -62,7 +62,7 @@ client/src/
 │   ├── (dashboard)/    # Notes, Profile (authenticated)
 │   └── (password-reset)/ # Forgot, Reset Link Sent, Reset Password
 ├── features/           # Feature modules (api/, components/, hooks/, types/, utils/)
-│   ├── auth/           # Login, register, OAuth buttons, password input
+│   ├── auth/           # Login, register, OAuth buttons, password input, token refresh
 │   ├── notes/          # Notes table, filters, search, pagination, autosave
 │   └── profile/        # Profile settings (planned)
 ├── components/         # Shared UI components
@@ -103,7 +103,7 @@ server/src/
 
 1. **OAuth** (Google/GitHub/Facebook): NextAuth handles browser auth → `linkAccount` callback sets `userType` → JWT callback calls `POST /api/auth/oauth-login` with `X-Internal-Secret` header → backend issues JWT
 2. **Credentials**: `POST /api/auth/login` → bcrypt compare → JWT issued
-3. **Token lifecycle**: 1-hour JWT, proactive refresh at 55 min via axios interceptor, 401 retry with refreshed token
+3. **Token lifecycle**: 1-hour JWT, proactive refresh when within 10 min of expiry via axios interceptor + periodic background check (`useTokenRefresh` hook with 10-min interval), 401 retry with refreshed token
 4. **Password reset**: 32-byte random token, 15-min expiry, sent via Nodemailer (Gmail SMTP)
 
 ### File Uploads (Signed URL Pattern)
