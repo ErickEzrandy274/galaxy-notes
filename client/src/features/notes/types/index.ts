@@ -10,13 +10,8 @@ export type ColumnKey =
 export interface Note {
   id: string;
   title: string;
-  content: string | null;
   status: NoteStatus;
   tags: string[];
-  videoUrl: string | null;
-  version: number;
-  isDeleted: boolean;
-  userId: string;
   createdAt: string;
   updatedAt: string;
   _count: { shares: number };
@@ -44,6 +39,7 @@ export interface NoteDetail {
   status: NoteStatus;
   tags: string[];
   photo: string | null;
+  photoUrl: string | null;
   videoUrl: string | null;
   version: number;
   isDeleted: boolean;
@@ -80,9 +76,17 @@ export interface NoteEditorData {
   status: NoteStatus;
 }
 
+export interface NoteStats {
+  total: number;
+  published: number;
+  draft: number;
+  archived: number;
+  shared: number;
+}
+
 export interface SignedUploadUrlResponse {
   signedUrl: string;
   token: string;
   path: string;
-  publicUrl: string;
+  downloadUrl: string | null;
 }
