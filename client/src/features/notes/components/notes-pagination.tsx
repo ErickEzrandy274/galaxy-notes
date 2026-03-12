@@ -1,12 +1,16 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+
+const LIMIT_OPTIONS = [10, 20, 50, 100] as const;
 
 interface NotesPaginationProps {
   page: number;
   limit: number;
   total: number;
   onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
 }
 
 export function NotesPagination({
@@ -14,6 +18,7 @@ export function NotesPagination({
   limit,
   total,
   onPageChange,
+  onLimitChange,
 }: NotesPaginationProps) {
   const totalPages = Math.ceil(total / limit);
   const start = (page - 1) * limit + 1;
@@ -43,9 +48,44 @@ export function NotesPagination({
 
   return (
     <nav className="flex items-center justify-between pt-4" aria-label="Pagination">
-      <p className="text-sm text-muted-foreground">
-        Showing {start}&ndash;{end} of {total} notes
-      </p>
+      <span className="flex items-center gap-3">
+        <p className="text-sm text-muted-foreground">
+          Showing {start} to {end} of {total} entries
+        </p>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <button className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted">
+              {limit} Rows
+              <ChevronDown size={14} className="text-muted-foreground" />
+            </button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              align="start"
+              sideOffset={4}
+              className="z-50 min-w-[140px] rounded-lg border border-border bg-card p-1 shadow-lg"
+            >
+              <DropdownMenu.RadioGroup
+                value={String(limit)}
+                onValueChange={(v) => onLimitChange(Number(v))}
+              >
+                {LIMIT_OPTIONS.map((opt) => (
+                  <DropdownMenu.RadioItem
+                    key={opt}
+                    value={String(opt)}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted"
+                  >
+                    <span className="flex-1">{opt} Rows</span>
+                    <DropdownMenu.ItemIndicator>
+                      <Check size={14} className="text-primary" />
+                    </DropdownMenu.ItemIndicator>
+                  </DropdownMenu.RadioItem>
+                ))}
+              </DropdownMenu.RadioGroup>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
+      </span>
       <ul className="flex items-center gap-1">
         <li>
           <button

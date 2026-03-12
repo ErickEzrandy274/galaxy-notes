@@ -6,6 +6,7 @@ import { Loader2, Plus } from 'lucide-react';
 import { useNotes } from '../hooks/use-notes';
 import { useNotesFilters } from '../hooks/use-notes-filters';
 import { useColumnVisibility } from '../hooks/use-column-visibility';
+import { NotesStats } from './notes-stats';
 import { NotesFilters } from './notes-filters';
 import { NotesSearch } from './notes-search';
 import { NotesColumnsDropdown } from './notes-columns-dropdown';
@@ -14,10 +15,10 @@ import { NotesPagination } from './notes-pagination';
 import { NotesEmptyState } from './notes-empty-state';
 
 export function NotesPage() {
-  const { filters, setStatus, setSearch, setTags, setPage } =
+  const { filters, setStatus, setSearch, setTags, setPage, setLimit } =
     useNotesFilters();
   const { columns, toggleColumn } = useColumnVisibility();
-  const { data, isLoading } = useNotes(filters);
+  const { data, isLoading, isError } = useNotes(filters);
 
   const handleSearchChange = useCallback(
     (search: string) => setSearch(search),
@@ -30,7 +31,7 @@ export function NotesPage() {
 
   const hasFilters = !!(filters.status || filters.search || filters.tags);
   const isEmpty = data?.total === 0 && !hasFilters;
-  const isFilteredEmpty = data?.notes.length === 0 && hasFilters;
+  const isFilteredEmpty = data?.notes?.length === 0 && hasFilters;
 
   return (
     <section className="flex h-full flex-col p-6">
@@ -44,6 +45,10 @@ export function NotesPage() {
           New Note
         </Link>
       </header>
+
+      <div className="mb-4">
+        <NotesStats activeFilter={filters.status} onFilterChange={setStatus} />
+      </div>
 
       <nav className="mb-4" aria-label="Note status filters">
         <NotesFilters
@@ -66,20 +71,27 @@ export function NotesPage() {
         <output className="flex flex-1 items-center justify-center" aria-busy="true">
           <Loader2 size={32} className="animate-spin text-muted-foreground" />
         </output>
+      ) : isError || !data ? (
+        <p className="flex flex-1 items-center justify-center text-lg text-muted-foreground">
+          Failed to load notes. Please try again later.
+        </p>
       ) : isEmpty ? (
         <NotesEmptyState />
       ) : isFilteredEmpty ? (
-        <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+        <p className="flex flex-1 items-center justify-center text-lg text-muted-foreground">
           No notes match your filters.
         </p>
       ) : (
         <>
-          <NotesTable notes={data!.notes} columns={columns} />
+          <section className="flex-1 overflow-auto">
+            <NotesTable notes={data!.notes} columns={columns} />
+          </section>
           <NotesPagination
             page={data!.page}
             limit={data!.limit}
             total={data!.total}
             onPageChange={setPage}
+            onLimitChange={setLimit}
           />
         </>
       )}

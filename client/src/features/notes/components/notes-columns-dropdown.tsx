@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check, Grid2x2 } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import type { ColumnKey } from '../types';
 
@@ -25,6 +25,7 @@ export function NotesColumnsDropdown({
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <button className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground">
+          <Grid2x2 size={14} />
           Columns
           <ChevronDown size={14} />
         </button>
@@ -33,7 +34,7 @@ export function NotesColumnsDropdown({
       <DropdownMenu.Portal>
         <DropdownMenu.Content
           align="end"
-          className="z-50 min-w-[160px] rounded-lg border border-border bg-card p-1 shadow-lg"
+          className="z-50 min-w-[160px] mt-2 rounded-lg border border-border bg-card p-1 shadow-lg"
         >
           {(Object.keys(columnLabels) as ColumnKey[]).map((key) => (
             <DropdownMenu.CheckboxItem

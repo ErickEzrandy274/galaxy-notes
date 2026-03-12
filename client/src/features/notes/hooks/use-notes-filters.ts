@@ -6,7 +6,7 @@ import type { NotesFilters } from '../types';
 export function useNotesFilters() {
   const [filters, setFilters] = useState<NotesFilters>({
     page: 1,
-    limit: 6,
+    limit: 10,
   });
 
   const setStatus = (status?: string) =>
@@ -20,5 +20,8 @@ export function useNotesFilters() {
 
   const setPage = (page: number) => setFilters((f) => ({ ...f, page }));
 
-  return { filters, setStatus, setSearch, setTags, setPage };
+  const setLimit = (limit: number) =>
+    setFilters((f) => ({ ...f, limit, page: 1 }));
+
+  return { filters, setStatus, setSearch, setTags, setPage, setLimit };
 }
