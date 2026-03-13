@@ -29,19 +29,20 @@ PasswordResetLayout
 2. Navigates to `/forgot-password`
 3. Enters email address
 4. Clicks "Send Reset Link"
-5. `supabase.auth.resetPasswordForEmail(email)` is called with `redirectTo` pointing to `/reset-password`
-6. On success, redirects to `/reset-link-sent?email={encodedEmail}`
+5. `POST /api/auth/forgot-password` is called with `{ email }`
+6. Backend generates a 32-byte random token, stores it in `PasswordResetToken` table (15-min expiry), sends email via Nodemailer (Gmail SMTP)
+7. On success, redirects to `/reset-link-sent?email={encodedEmail}`
 
 ### Error States
 - **Invalid email format**: Inline validation error from Zod schema ("Invalid email address")
 - **Empty email**: Required field validation
-- **API error**: Toast notification with error message (e.g., rate limit exceeded)
+- **API error**: Toast notification with error message
 - **Network error**: Toast "Something went wrong. Please try again."
 
 ## API Integration
-- **Supabase Auth**: `supabase.auth.resetPasswordForEmail(email, { redirectTo })`
-- Supabase generates a secure token internally, triggers Send Email Hook
-- The hook calls a Supabase Edge Function to send branded email via Resend API
+- **Endpoint**: `POST /api/auth/forgot-password` (NestJS backend)
+- **Body**: `{ email }`
+- Backend generates a secure token, stores it with 15-min expiry, and sends a reset email via Nodemailer (Gmail SMTP) with a link to `/reset-password?token={token}`
 
 ## Validation Schema
 Uses `forgotPasswordSchema` from `@/schemas/auth`:

@@ -32,14 +32,13 @@ PasswordResetLayout
 - Starts at **60 seconds** on page load
 - Displays "Resend in M:SS" in muted text while active
 - When timer reaches 0, displays a clickable "Resend" link in purple/accent color
-- Clicking "Resend" re-calls `supabase.auth.resetPasswordForEmail(email)` and resets the timer to 60s
+- Clicking "Resend" re-calls `POST /api/auth/forgot-password` with the email and resets the timer to 60s
 - Success toast: "Reset link sent again!"
-- Error toast: Shows Supabase error message or generic fallback
+- Error toast: Shows error message or generic fallback
 
 ## Rate Limiting
-- **Supabase side**: Built-in rate limiting on `resetPasswordForEmail`
+- **Server side**: Backend can enforce rate limiting on the forgot-password endpoint
 - **Client side**: 60-second cooldown between resend attempts via CountdownTimer
-- **Resend API**: Free tier allows 3,000 emails/month, 100/day
 
 ## Design Specs
 - Icon: Green/emerald circle with Mail icon

@@ -2,17 +2,22 @@
 
 ## Overview
 
-The server-side auth module handles user registration, credentials-based login, and JWT token generation. It integrates with Passport.js for JWT validation on protected routes.
+The server-side auth module handles user registration, credentials-based login, OAuth login, token refresh with rotation, logout, and password reset. It integrates with Passport.js for JWT validation on protected routes.
 
 ## Module Structure
 
 ```
 server/src/auth/
 ├── auth.module.ts          # Module definition (imports, providers, exports)
-├── auth.controller.ts      # REST endpoints: POST /register, POST /login
-├── auth.service.ts         # Business logic: register, login, token generation
-└── strategies/
-    └── jwt.strategy.ts     # Passport JWT extraction & validation
+├── auth.controller.ts      # REST endpoints (7 routes)
+├── auth.service.ts         # Business logic: register, login, OAuth, refresh, password reset
+├── strategies/
+│   └── jwt.strategy.ts     # Passport JWT extraction & validation
+├── guards/
+│   └── refresh-token.guard.ts  # Refresh token validation from httpOnly cookie
+└── dto/
+    ├── forgot-password.dto.ts  # Forgot password validation
+    └── reset-password.dto.ts   # Reset password validation
 ```
 
 ## API Endpoints
@@ -36,9 +41,13 @@ Creates a new user account.
 **Success Response (201):**
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIs..."
+  "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+  "id": "clxyz...",
+  "email": "user@example.com",
+  "name": "John Doe"
 }
 ```
+Also sets `refresh_token` httpOnly cookie.
 
 **Error Responses:**
 - `409 Conflict` — Email already registered
@@ -47,7 +56,8 @@ Creates a new user account.
 1. Check if user with email already exists (`prisma.user.findUnique`)
 2. Hash password with bcrypt (12 salt rounds)
 3. Create user with `userType: 'general_user'`
-4. Generate and return JWT token
+4. Generate JWT access token + refresh token
+5. Return access token and user data
 
 ### POST /api/auth/login
 
@@ -70,15 +80,49 @@ Authenticates a user with email/password credentials.
   "name": "John Doe"
 }
 ```
+Also sets `refresh_token` httpOnly cookie.
 
 **Error Responses:**
 - `401 Unauthorized` — Invalid credentials (wrong email/password or OAuth-only user without password)
 
+### POST /api/auth/oauth-login
+
+Handles OAuth sign-in from NextAuth. Called server-side with `X-Internal-Secret` header for verification.
+
+**Logic:** Finds or creates user, sets `userType` based on provider, generates tokens.
+
+### POST /api/auth/refresh
+
+Issues new access token and rotates refresh token. See `token-refresh.md` for details.
+
+### POST /api/auth/logout
+
+Revokes the current refresh token and clears the httpOnly cookie.
+
+### POST /api/auth/forgot-password
+
+Generates a password reset token and sends email.
+
+**Body:** `{ email }`
+
 **Logic:**
 1. Find user by email
-2. Verify user exists and has a password (OAuth-only users have `null` password)
-3. Compare provided password with stored bcrypt hash
-4. Return JWT token + user data
+2. Generate 32-byte random token
+3. Store in `PasswordResetToken` table with 15-min expiry
+4. Send email via Nodemailer (Gmail SMTP) with reset link
+
+### POST /api/auth/reset-password
+
+Validates reset token and updates password.
+
+**Body:** `{ token, password }`
+
+**Logic:**
+1. Find token in `PasswordResetToken` table
+2. Validate not expired (15-min window)
+3. Hash new password (bcrypt, 12 rounds)
+4. Update user's password
+5. Mark token as used
 
 ## JWT Strategy
 
@@ -120,8 +164,8 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String?  // Nullable — OAuth users have no password
-  firstName String
-  lastName  String
+  firstName String?  @map("first_name")
+  lastName  String?  @map("last_name")
   userType  UserType @default(general_user)
   // ... other fields
 }
@@ -140,6 +184,7 @@ enum UserType {
 @Module({
   imports: [
     UsersModule,
+    MailModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

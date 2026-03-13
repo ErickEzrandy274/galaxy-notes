@@ -1,13 +1,13 @@
 # Reset Password
 
 ## Route
-`/reset-password`
+`/reset-password?token={token}`
 
 ## Figma Reference
 Node ID: `2-1157` — [View in Figma](https://www.figma.com/design/sy3qiDaLaCL4jDtkVRnWze/Note-Management?node-id=2-1157)
 
 ## Overview
-Page where users set a new password after clicking the reset link from their email. Handles Supabase token exchange and password update.
+Page where users set a new password after clicking the reset link from their email. Handles token validation and password update via the NestJS backend.
 
 ## Component Composition
 ```
@@ -25,11 +25,10 @@ PasswordResetLayout
 ```
 
 ## Token Handling
-1. Supabase sends a magic link with `access_token` and `refresh_token` in the URL hash fragment
-2. On page load, `useEffect` extracts tokens from `window.location.hash`
-3. Calls `supabase.auth.setSession({ access_token, refresh_token })` to establish a session
-4. If session is valid, shows the password form
-5. If invalid/expired, shows error toast and redirects to `/forgot-password`
+1. User clicks the reset link in their email: `/reset-password?token={token}`
+2. On page load, `useSearchParams()` extracts the `token` from the query string
+3. If no token is present, shows error toast and redirects to `/forgot-password`
+4. Token is sent with the password reset request to the backend for validation
 
 ## Password Strength Bar
 Visual indicator computed from the password string:
@@ -62,24 +61,25 @@ Uses `resetPasswordSchema` from `@/schemas/auth`:
 
 ### Happy Path
 1. User clicks reset link in email
-2. Redirected to `/reset-password#access_token=...&refresh_token=...`
-3. Token exchange happens automatically
-4. User enters new password (strength bar updates in real-time)
-5. User confirms password
-6. Clicks "Reset Password"
-7. `supabase.auth.updateUser({ password })` is called
-8. On success: signs out, redirects to `/login` with success toast
+2. Navigates to `/reset-password?token={token}`
+3. User enters new password (strength bar updates in real-time)
+4. User confirms password
+5. Clicks "Reset Password"
+6. `POST /api/auth/reset-password` is called with `{ token, password }`
+7. Backend validates token (checks existence, expiry, usage), hashes new password, updates user
+8. On success: redirects to `/login` with success toast
 
 ### Error States
-- **Invalid/expired token**: Toast "Invalid or expired reset link." → redirect to `/forgot-password`
+- **Missing token**: Toast "Invalid or expired reset link." → redirect to `/forgot-password`
+- **Invalid/expired token**: Backend returns error → toast message
 - **Weak password**: Inline Zod validation errors
 - **Password mismatch**: "Passwords do not match"
 - **API error**: Toast with error message
 
 ## API Integration
-- **Token exchange**: `supabase.auth.setSession({ access_token, refresh_token })`
-- **Password update**: `supabase.auth.updateUser({ password })`
-- **Sign out**: `supabase.auth.signOut()` (after successful reset)
+- **Endpoint**: `POST /api/auth/reset-password` (NestJS backend)
+- **Body**: `{ token, password }`
+- Backend validates the token against `PasswordResetToken` table, checks 15-min expiry, hashes and updates the user's password
 
 ## Design Specs
 - No icon at top (unlike other pages)

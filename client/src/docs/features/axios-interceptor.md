@@ -12,7 +12,7 @@ client/src/lib/
 └── auth.ts           # NextAuth config (stores accessToken in JWT)
 
 client/src/features/auth/hooks/
-└── use-token-refresh.ts  # Periodic background token refresh (10-min interval)
+└── use-token-refresh.ts  # Periodic background token refresh (5-min interval)
 
 client/src/components/
 └── providers.tsx     # TokenRefreshManager component runs useTokenRefresh()
@@ -29,9 +29,9 @@ client/src/types/
 2. **Hydration**: On first API call, axios reads the token from NextAuth session (`getSession()`) and caches it in memory
 3. **Attachment**: Every subsequent request gets `Authorization: Bearer <token>` header automatically
 4. **Proactive Refresh**: Before each request, if the token expires within 10 minutes, the interceptor calls `POST /auth/refresh` to get a new token
-5. **Periodic Background Refresh**: A `useTokenRefresh` hook runs a 10-minute interval that checks `isTokenExpiringSoon()` and calls `getSession()` to trigger a server-side refresh, ensuring tokens are refreshed even without API activity
+5. **Periodic Background Refresh**: A `useTokenRefresh` hook runs a 5-minute interval that checks `isTokenExpiringSoon()` and calls `getSession()` to trigger a server-side refresh. Also triggers on tab visibility change and window focus events.
 6. **Retry on 401**: If a response returns 401, the interceptor attempts one refresh and retries the original request
-7. **Redirect**: If refresh fails, clears the token and redirects to `/login`
+7. **Redirect**: If refresh fails, calls `logout()` (revokes refresh token on backend, resets auth state) then `signOut()` from NextAuth to redirect to `/login`
 
 ### Token Storage
 
@@ -90,7 +90,9 @@ await refreshPromise;
 | Function | Purpose |
 |----------|---------|
 | `setAccessToken(token)` | Set the in-memory cached token (called after login) |
-| `clearAccessToken()` | Clear the in-memory cached token (called on logout) |
+| `clearAccessToken()` | Clear the in-memory cached token |
+| `resetAuthState()` | Clear cached token and refresh promise |
+| `logout()` | POST to `/auth/logout` to revoke refresh token, then reset auth state |
 | `isTokenExpiringSoon()` | Returns `true` if token expires within 10 minutes (used by periodic refresh hook) |
 | `default` (api) | The configured axios instance |
 
@@ -125,7 +127,7 @@ Extends NextAuth types to include:
 | Backend JWT expiry | 1 hour |
 | NextAuth session maxAge | 1 hour |
 | Proactive refresh buffer (client) | 10 minutes before expiry |
-| Periodic background check interval | Every 10 minutes (via `useTokenRefresh` hook) |
+| Periodic background check interval | Every 5 minutes (via `useTokenRefresh` hook) |
 | Server-side refresh threshold | 55 minutes after issue |
 
 ## Dependencies

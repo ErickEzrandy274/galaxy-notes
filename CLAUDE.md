@@ -11,7 +11,7 @@ Galaxy Notes is a full-stack note management application with multi-provider aut
 | Workspace | Stack | Port | Purpose |
 |-----------|-------|------|---------|
 | `client/` | Next.js 16, React 19, TanStack Query, Tailwind CSS 4 | 3000 | Frontend SPA with App Router |
-| `server/` | NestJS 11, Passport JWT, Nodemailer, class-validator | 8080 | REST API backend |
+| `server/` | NestJS 11, Passport JWT, Nodemailer, class-validator, @nestjs/schedule | 8080 | REST API backend |
 | `database/` | Prisma ORM, PostgreSQL (Supabase) | — | Shared schema package (`@galaxy-notes/database`) |
 
 ## Commands
@@ -49,7 +49,7 @@ Connection pooling via PgBouncer (`?pgbouncer=true` in `DATABASE_URL`). `DIRECT_
 
 **Important**: If migration drift exists, use `pnpm db:push` instead of `pnpm db:migrate:dev` to avoid database resets.
 
-**Models**: User, Account, Session, VerificationToken, PasswordResetToken, Note, NoteShare, NoteVersion, Notification.
+**Models**: User, Account, Session, VerificationToken, RefreshToken, PasswordResetToken, Note, NoteShare, NoteVersion, Notification.
 
 ### Client (`client/`)
 
@@ -64,7 +64,7 @@ client/src/
 ├── features/           # Feature modules (api/, components/, hooks/, types/, utils/)
 │   ├── auth/           # Login, register, OAuth buttons, password input, token refresh
 │   ├── notes/          # Notes table, filters, search, pagination, autosave
-│   └── profile/        # Profile settings (planned)
+│   └── profile/        # Profile settings, avatar upload, password change
 ├── components/         # Shared UI components
 ├── lib/                # axios (with JWT interceptor), auth (NextAuth config), prisma, query-client
 ├── schemas/            # Zod validation schemas
@@ -86,6 +86,8 @@ server/src/
 ├── auth/               # Login, register, OAuth login, token refresh, password reset
 ├── users/              # Profile CRUD, photo upload, password change
 ├── notes/              # Notes CRUD, versioning, file uploads, sharing
+├── notifications/      # Notification creation service
+├── cleanup/            # Scheduled cleanup cron job (stale versions, expired tokens)
 ├── mail/               # Nodemailer service + HTML email templates
 │   └── templates/      # Email template functions (password-reset)
 ├── prisma/             # Global PrismaService module
@@ -103,40 +105,34 @@ server/src/
 
 1. **OAuth** (Google/GitHub/Facebook): NextAuth handles browser auth → `linkAccount` callback sets `userType` → JWT callback calls `POST /api/auth/oauth-login` with `X-Internal-Secret` header → backend issues JWT
 2. **Credentials**: `POST /api/auth/login` → bcrypt compare → JWT issued
-3. **Token lifecycle**: 1-hour JWT, proactive refresh when within 10 min of expiry via axios interceptor + periodic background check (`useTokenRefresh` hook with 10-min interval), 401 retry with refreshed token
+3. **Token lifecycle**: 1-hour JWT, httpOnly cookie refresh tokens with rotation and stolen token detection. Proactive refresh when within 10 min of expiry via axios interceptor + periodic background check (`useTokenRefresh` hook with 5-min interval), 401 retry with refreshed token
 4. **Password reset**: 32-byte random token, 15-min expiry, sent via Nodemailer (Gmail SMTP)
 
 ### File Uploads (Signed URL Pattern)
 
-Client requests signed URL from backend → backend generates Supabase Storage signed URL (service role key) → client PUTs file directly to Supabase → saves public URL. Max 1MB, types: webp/jpeg/png.
+Client requests signed URL from backend → backend generates Supabase Storage signed URL (service role key) → client PUTs file directly to Supabase → saves storage path. Two upload sources:
+
+- **Rich-text editor images:** max 1MB, types: webp/jpeg/png
+- **Note attachments (PDF):** max 3MB, type: application/pdf
 
 ### Note Versioning & Autosave
 
-Optimistic locking via `version` field (409 on mismatch). Non-draft notes create snapshots on update (max 20). Client `useNoteAutosave`: 2s debounce + 30s interval + localStorage draft recovery.
+Optimistic locking via `version` field (409 on mismatch). Non-draft notes create snapshots on update (max 30, 10-min throttle for autosave, 30s dedup for manual save). Client `useNoteAutosave`: 2s debounce + 2-min interval + localStorage draft recovery.
+
+### Scheduled Cleanup (Cron)
+
+Weekly cron job (Sunday 3 AM) via `@nestjs/schedule` purges stale data:
+- **Note versions**: Deletes all `NoteVersion` records for notes trashed (`isDeleted = true`) for 30+ days. Creates a notification per affected note.
+- **Expired tokens**: Deletes expired or revoked `RefreshToken` rows and expired `PasswordResetToken` rows.
+
+On soft-delete, a notification warns the user that version history will be purged after 30 days.
 
 ## Feature Documentation
 
-Detailed feature docs with component trees, API specs, user flows, and design specs:
+Detailed feature docs with component trees, API specs, user flows, and design specs are located in:
 
-### Client Features (`client/src/docs/features/`)
-
-| File | Feature |
-|------|---------|
-| `auth.md` | Login & Register (credentials + OAuth flows, components, validation) |
-| `forgot-password.md` | Forgot password page (email submission, API integration) |
-| `reset-link-sent.md` | Reset link confirmation (countdown timer, resend mechanism) |
-| `reset-password.md` | Password reset form (token handling, strength bar, validation) |
-| `oauth-linking.md` | OAuth account linking (collision detection, password verification) |
-| `axios-interceptor.md` | JWT token management (proactive refresh, 401 retry, caching) |
-| `notes.md` | My Notes dashboard (table, filters, search, pagination, column visibility) |
-
-### Server Features (`server/src/docs/features/`)
-
-| File | Feature |
-|------|---------|
-| `auth.md` | Auth module (register, login, JWT strategy, password security) |
-| `token-refresh.md` | Token refresh endpoint (JWT renewal, timing, security) |
-| `notes.md` | Notes API (CRUD, filtering, pagination, soft delete, versioning) |
+- **Client:** `client/src/docs/features/`
+- **Server:** `server/src/docs/features/`
 
 ## Code Style
 
