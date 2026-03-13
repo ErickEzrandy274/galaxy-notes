@@ -16,6 +16,7 @@ import { MailService } from '../mail/mail.service';
 @Injectable()
 export class AuthService {
   private static readonly RESET_TOKEN_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
+  private static readonly REFRESH_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 
   constructor(
     private readonly prisma: PrismaService,
@@ -49,8 +50,11 @@ export class AuthService {
       },
     });
 
+    const refreshToken = await this.createRefreshToken(user.id);
+
     return {
       ...this.generateToken(user.id, user.email),
+      refreshToken,
       id: user.id,
       email: user.email,
       name: `${user.firstName} ${user.lastName}`,
@@ -68,8 +72,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    const refreshToken = await this.createRefreshToken(user.id);
+
     return {
       ...this.generateToken(user.id, user.email),
+      refreshToken,
       id: user.id,
       email: user.email,
       name: `${user.firstName} ${user.lastName}`,
@@ -98,16 +105,63 @@ export class AuthService {
       }
     }
 
+    const refreshToken = await this.createRefreshToken(user.id);
+
     return {
       ...this.generateToken(user.id, user.email),
+      refreshToken,
       id: user.id,
       email: user.email,
       name: user.name || `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || user.email,
     };
   }
 
-  async refresh(userId: string, email: string) {
-    return this.generateToken(userId, email);
+  async refreshWithToken(currentToken: string, userId: string, email: string) {
+    const now = new Date();
+
+    return this.prisma.$transaction(async (tx) => {
+      // Create new refresh token
+      const newToken = randomBytes(40).toString('hex');
+      const expiresAt = new Date(
+        Date.now() + AuthService.REFRESH_TOKEN_EXPIRY_MS,
+      );
+
+      // Revoke old token and link to new one
+      await tx.refreshToken.update({
+        where: { token: currentToken },
+        data: { revokedAt: now, replacedByToken: newToken },
+      });
+
+      // Create new token
+      await tx.refreshToken.create({
+        data: { token: newToken, userId, expiresAt },
+      });
+
+      return {
+        ...this.generateToken(userId, email),
+        refreshToken: newToken,
+      };
+    });
+  }
+
+  async createRefreshToken(userId: string): Promise<string> {
+    const token = randomBytes(40).toString('hex');
+    const expiresAt = new Date(
+      Date.now() + AuthService.REFRESH_TOKEN_EXPIRY_MS,
+    );
+
+    await this.prisma.refreshToken.create({
+      data: { token, userId, expiresAt },
+    });
+
+    return token;
+  }
+
+  async revokeAllRefreshTokens(userId: string) {
+    await this.prisma.refreshToken.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
   }
 
   async forgotPassword(email: string) {
