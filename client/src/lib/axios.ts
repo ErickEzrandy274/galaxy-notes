@@ -44,9 +44,36 @@ export function isTokenExpiringSoon(): boolean {
   return tokenExpiry - Date.now() < 10 * 60 * 1000;
 }
 
-async function refreshToken(): Promise<string | null> {
-  if (!cachedToken) return null;
+export function resetAuthState() {
+  cachedToken = null;
+  tokenExpiry = 0;
+  authFailed = false;
+  sessionPromise = null;
+  refreshPromise = null;
+}
 
+export async function logout() {
+  try {
+    const baseURL =
+      process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+    await axios.post(
+      `${baseURL}/auth/logout`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${cachedToken}`,
+          'Content-Type': 'application/json',
+        },
+        withCredentials: true,
+      },
+    );
+  } catch {
+    // Best-effort — ignore errors
+  }
+  resetAuthState();
+}
+
+async function refreshToken(): Promise<string | null> {
   try {
     const baseURL =
       process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
@@ -54,10 +81,8 @@ async function refreshToken(): Promise<string | null> {
       `${baseURL}/auth/refresh`,
       {},
       {
-        headers: {
-          Authorization: `Bearer ${cachedToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: true, // Browser sends refresh_token cookie
       },
     );
     const newToken = response.data.accessToken;
@@ -89,10 +114,14 @@ api.interceptors.request.use(
           .then((session) => {
             if (session?.accessToken) {
               setAccessToken(session.accessToken);
+            } else {
+              // Session empty — allow retry on next request
+              sessionPromise = null;
             }
           })
           .catch(() => {
-            // Session not available
+            // Session not available — allow retry on next request
+            sessionPromise = null;
           });
       }
       await sessionPromise;
@@ -146,9 +175,9 @@ api.interceptors.response.use(
       }
 
       // Refresh failed — permanently stop all API calls and sign out
-      clearAccessToken();
       authFailed = true;
       if (typeof window !== 'undefined') {
+        await logout();
         signOut({ callbackUrl: '/login' });
       }
       return Promise.reject(error);

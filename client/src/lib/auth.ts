@@ -13,7 +13,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: 'jwt',
-    maxAge: 60 * 60, // 1 hour
+    maxAge: 24 * 60 * 60, // 24 hours — matches refresh token expiry
   },
   pages: {
     signIn: '/login',
@@ -45,14 +45,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!credentials?.email || !credentials?.password) return null;
 
         try {
-          const { data } = await axios.post(
+          const response = await axios.post(
             `${apiBaseUrl}/auth/login`,
             {
               email: credentials.email,
               password: credentials.password,
             },
           );
-          return data;
+
+          // Extract refresh token from Set-Cookie header
+          const setCookie = response.headers['set-cookie'];
+          let refreshToken: string | undefined;
+          if (setCookie) {
+            const cookies = Array.isArray(setCookie) ? setCookie : [setCookie];
+            for (const cookie of cookies) {
+              const match = cookie.match(/refresh_token=([^;]+)/);
+              if (match) {
+                refreshToken = match[1];
+                break;
+              }
+            }
+          }
+
+          return { ...response.data, refreshToken };
         } catch {
           return null;
         }
@@ -85,8 +100,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.provider = account.provider;
 
         if (account.provider === 'credentials') {
-          // Credentials login — backend already returned accessToken
+          // Credentials login — backend returned accessToken, refreshToken from cookie
           token.accessToken = user.accessToken;
+          token.refreshToken = user.refreshToken;
         } else {
           // OAuth login — request a backend JWT via the internal endpoint
           try {
@@ -100,6 +116,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               },
             );
             token.accessToken = data.accessToken;
+            token.refreshToken = data.refreshToken;
             token.id = data.id;
           } catch {
             token.error = 'OAuthTokenError';
@@ -118,19 +135,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return token;
       }
 
-      // Token expired — try refresh
-      if (token.accessToken) {
+      // Token expired — try refresh using opaque refresh token
+      if (token.refreshToken) {
         try {
           const { data } = await axios.post(
             `${apiBaseUrl}/auth/refresh`,
             {},
             {
               headers: {
-                Authorization: `Bearer ${token.accessToken}`,
+                'X-Refresh-Token': token.refreshToken,
               },
             },
           );
           token.accessToken = data.accessToken;
+          token.refreshToken = data.refreshToken;
           token.accessTokenExpires = Date.now() + 55 * 60 * 1000;
         } catch {
           token.error = 'RefreshTokenError';
