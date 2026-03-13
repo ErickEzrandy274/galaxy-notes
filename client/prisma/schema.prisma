@@ -40,6 +40,7 @@ model User {
   notes         Note[]
   sharedNotes   NoteShare[]
   notifications Notification[]
+  refreshTokens RefreshToken[]
 
   @@map("users")
 }
@@ -84,6 +85,24 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+// ─── Refresh Token ──────────────────────────────────────────────────────────
+
+model RefreshToken {
+  id              String    @id @default(cuid())
+  token           String    @unique
+  userId          String    @map("user_id")
+  expiresAt       DateTime  @map("expires_at")
+  revokedAt       DateTime? @map("revoked_at")
+  replacedByToken String?   @map("replaced_by_token")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
 }
 
 // ─── Note ────────────────────────────────────────────────────────────────────

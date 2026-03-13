@@ -19,14 +19,17 @@ enum UserType {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String?
-  firstName String?  @map("first_name")
-  lastName  String?  @map("last_name")
-  bio       String?
-  photo     String?
-  userType  UserType @default(general_user) @map("user_type")
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  password      String?
+  name          String?
+  firstName     String?   @map("first_name")
+  lastName      String?   @map("last_name")
+  bio           String?
+  image         String?
+  photo         String?
+  userType      UserType  @default(general_user) @map("user_type")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -37,6 +40,7 @@ model User {
   notes         Note[]
   sharedNotes   NoteShare[]
   notifications Notification[]
+  refreshTokens RefreshToken[]
 
   @@map("users")
 }
@@ -83,6 +87,24 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
+// ─── Refresh Token ──────────────────────────────────────────────────────────
+
+model RefreshToken {
+  id              String    @id @default(cuid())
+  token           String    @unique
+  userId          String    @map("user_id")
+  expiresAt       DateTime  @map("expires_at")
+  revokedAt       DateTime? @map("revoked_at")
+  replacedByToken String?   @map("replaced_by_token")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
 // ─── Note ────────────────────────────────────────────────────────────────────
 
 enum NoteStatus {
@@ -93,14 +115,15 @@ enum NoteStatus {
 }
 
 model Note {
-  id       String     @id @default(cuid())
-  title    String     @db.VarChar(255)
-  content  String?    @db.Text
-  status   NoteStatus @default(draft)
-  photo    String?
-  videoUrl String?    @map("video_url")
-  tags     String[]   @default([])
-  version  Int        @default(1)
+  id           String     @id @default(cuid())
+  title        String     @db.VarChar(255)
+  content      String?    @db.Text
+  status       NoteStatus @default(draft)
+  document     String?    @map("photo")
+  documentSize Int?       @map("document_size")
+  videoUrl     String?    @map("video_url")
+  tags         String[]   @default([])
+  version      Int        @default(1)
 
   // Soft delete
   isDeleted Boolean   @default(false) @map("is_deleted")
@@ -150,12 +173,16 @@ model NoteShare {
 // ─── Note Version History ────────────────────────────────────────────────────
 
 model NoteVersion {
-  id        String @id @default(cuid())
-  noteId    String @map("note_id")
-  version   Int
-  title     String @db.VarChar(255)
-  content   String @db.Text
-  changedBy String @map("changed_by")
+  id           String   @id @default(cuid())
+  noteId       String   @map("note_id")
+  version      Int
+  title        String   @db.VarChar(255)
+  content      String   @db.Text
+  changedBy    String   @map("changed_by")
+  document     String?
+  documentSize Int?     @map("document_size")
+  videoUrl     String?  @map("video_url")
+  tags         String[] @default([])
 
   createdAt DateTime @default(now()) @map("created_at")
 
