@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsArray, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  IsNumber,
+  IsBoolean,
+} from 'class-validator';
 
 export class UpdateNoteDto {
   @IsOptional()
@@ -24,8 +30,16 @@ export class UpdateNoteDto {
 
   @IsOptional()
   @IsString()
-  photo?: string | null;
+  document?: string | null;
+
+  @IsOptional()
+  @IsNumber()
+  documentSize?: number | null;
 
   @IsNumber()
   version: number;
+
+  @IsOptional()
+  @IsBoolean()
+  snapshot?: boolean;
 }

@@ -15,6 +15,7 @@ import { NotesService } from './notes.service';
 import { CreateSignedUploadUrlDto } from './dto/create-signed-upload-url.dto';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
+import { GetVersionsDto } from './dto/get-versions.dto';
 
 @Controller('notes')
 @UseGuards(AuthGuard('jwt'))
@@ -60,6 +61,38 @@ export class NotesController {
       dto.fileSize,
       dto.source,
     );
+  }
+
+  @Get(':id/versions')
+  getVersionHistory(
+    @Param('id') id: string,
+    @Request() req: { user: { id: string } },
+    @Query() query: GetVersionsDto,
+  ) {
+    return this.notesService.getVersionHistory(
+      id,
+      req.user.id,
+      query.cursor,
+      query.limit,
+    );
+  }
+
+  @Get(':id/versions/:versionId')
+  getVersionById(
+    @Param('id') id: string,
+    @Param('versionId') versionId: string,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.notesService.getVersionById(id, versionId, req.user.id);
+  }
+
+  @Post(':id/versions/:versionId/restore')
+  restoreVersion(
+    @Param('id') id: string,
+    @Param('versionId') versionId: string,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.notesService.restoreVersion(id, versionId, req.user.id);
   }
 
   @Get(':id')

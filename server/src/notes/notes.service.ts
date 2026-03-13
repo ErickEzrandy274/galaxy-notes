@@ -8,8 +8,11 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
-const MAX_VERSIONS = 20;
+const MAX_VERSIONS = 30;
+const SNAPSHOT_THROTTLE_MS = 10 * 60 * 1000; // 10 minutes
+const SNAPSHOT_DEDUP_MS = 30 * 1000; // 30 seconds — prevents duplicate versions from autosave + manual save race
 const ALLOWED_MIME_TYPES_EDITOR = ['image/webp', 'image/jpeg', 'image/png'];
 const ALLOWED_MIME_TYPES_ATTACHMENT = ['application/pdf'];
 const MAX_FILE_SIZE_EDITOR = 1 * 1024 * 1024; // 1MB
@@ -22,6 +25,7 @@ export class NotesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly notificationsService: NotificationsService,
   ) {
     this.supabase = createClient(
       this.config.get<string>('SUPABASE_URL')!,
@@ -117,7 +121,7 @@ export class NotesService {
     return {
       ...note,
       content: await this.resolveContentImages(note.content),
-      photoUrl: await this.resolvePhotoUrl(note.photo),
+      documentUrl: await this.resolveDocumentUrl(note.document),
     };
   }
 
@@ -129,7 +133,7 @@ export class NotesService {
       status?: string;
       tags?: string[];
       videoUrl?: string;
-      photo?: string;
+      document?: string;
     },
   ) {
     const sanitizedDto = {
@@ -155,8 +159,10 @@ export class NotesService {
       status?: string;
       tags?: string[];
       videoUrl?: string;
-      photo?: string | null;
+      document?: string | null;
+      documentSize?: number | null;
       version: number;
+      snapshot?: boolean;
     },
   ) {
     const note = await this.prisma.note.findFirst({
@@ -183,19 +189,19 @@ export class NotesService {
       }
     }
 
-    const { version, ...updateData } = dto;
+    const { version, snapshot, ...updateData } = dto;
 
-    // Sanitize photo: extract storage path if a full URL was sent
-    if (updateData.photo && updateData.photo.startsWith('http')) {
-      const match = updateData.photo.match(/\/galaxy-notes-staging\/([^?]+)/);
-      updateData.photo = match ? decodeURIComponent(match[1]) : undefined;
+    // Sanitize document: extract storage path if a full URL was sent
+    if (updateData.document && updateData.document.startsWith('http')) {
+      const match = updateData.document.match(/\/galaxy-notes-staging\/([^?]+)/);
+      updateData.document = match ? decodeURIComponent(match[1]) : undefined;
     }
 
-    // Delete old photo from storage when cleared or replaced
-    if (note.photo && updateData.photo !== undefined && note.photo !== updateData.photo) {
+    // Delete old document from storage when cleared or replaced
+    if (note.document && updateData.document !== undefined && note.document !== updateData.document) {
       await this.supabase.storage
         .from('galaxy-notes-staging')
-        .remove([note.photo]);
+        .remove([note.document]);
     }
 
     // Sanitize content: convert Supabase signed URLs to storage paths
@@ -217,7 +223,27 @@ export class NotesService {
 
     // Version tracking for non-draft notes
     if (note.status !== 'draft') {
-      await this.createVersionSnapshot(noteId, note, userId);
+      const lastVersion = await this.prisma.noteVersion.findFirst({
+        where: { noteId },
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true },
+      });
+      const elapsed = lastVersion
+        ? Date.now() - lastVersion.createdAt.getTime()
+        : Infinity;
+
+      if (snapshot) {
+        // Manual save / publish — create snapshot unless one was just created
+        // (dedup window prevents double-versioning from autosave + manual save race)
+        if (elapsed >= SNAPSHOT_DEDUP_MS) {
+          await this.createVersionSnapshot(noteId, note, userId);
+        }
+      } else {
+        // Autosave — only snapshot if last one is older than throttle window
+        if (elapsed >= SNAPSHOT_THROTTLE_MS) {
+          await this.createVersionSnapshot(noteId, note, userId);
+        }
+      }
     }
 
     return this.prisma.note.update({
@@ -287,7 +313,7 @@ export class NotesService {
       throw new BadRequestException(`Upload failed: ${error.message}`);
     }
 
-    const downloadUrl = await this.resolvePhotoUrl(path);
+    const downloadUrl = await this.resolveDocumentUrl(path);
 
     return {
       signedUrl: data.signedUrl,
@@ -297,15 +323,15 @@ export class NotesService {
     };
   }
 
-  private async resolvePhotoUrl(
-    photo: string | null,
+  private async resolveDocumentUrl(
+    document: string | null,
   ): Promise<string | null> {
-    if (!photo) return null;
+    if (!document) return null;
 
     // Handle corrupted data: extract path from full signed URL
-    let storagePath = photo;
-    if (photo.startsWith('http')) {
-      const match = photo.match(/\/galaxy-notes-staging\/([^?]+)/);
+    let storagePath = document;
+    if (document.startsWith('http')) {
+      const match = document.match(/\/galaxy-notes-staging\/([^?]+)/);
       if (match) {
         storagePath = decodeURIComponent(match[1]);
       } else {
@@ -370,7 +396,7 @@ export class NotesService {
     while ((m = imgRegex.exec(content)) !== null) {
       const src = m[1];
       if (src.startsWith('http') || src.startsWith('blob:') || src === '//:0' || !src) continue;
-      const signedUrl = await this.resolvePhotoUrl(src);
+      const signedUrl = await this.resolveDocumentUrl(src);
       if (signedUrl) {
         replacements.push({ from: m[0], to: `<img src="${signedUrl}"` });
       }
@@ -385,7 +411,15 @@ export class NotesService {
 
   private async createVersionSnapshot(
     noteId: string,
-    note: { version: number; title: string; content: string | null },
+    note: {
+      version: number;
+      title: string;
+      content: string | null;
+      document?: string | null;
+      documentSize?: number | null;
+      videoUrl?: string | null;
+      tags?: string[];
+    },
     changedBy: string,
   ) {
     const versionCount = await this.prisma.noteVersion.count({
@@ -409,6 +443,163 @@ export class NotesService {
         title: note.title,
         content: note.content ?? '',
         changedBy,
+        document: note.document ?? null,
+        documentSize: note.documentSize ?? null,
+        videoUrl: note.videoUrl ?? null,
+        tags: note.tags ?? [],
+      },
+    });
+  }
+
+  async getVersionHistory(
+    noteId: string,
+    userId: string,
+    cursor?: string,
+    limit = 10,
+  ) {
+    // Verify note exists and user has access
+    const note = await this.prisma.note.findFirst({
+      where: { id: noteId, isDeleted: false },
+      include: { shares: { select: { userId: true } } },
+    });
+    if (!note) throw new NotFoundException('Note not found');
+
+    const isOwner = note.userId === userId;
+    const isShared = note.shares.some((s) => s.userId === userId);
+    if (!isOwner && !isShared) throw new ForbiddenException('Access denied');
+
+    const totalVersions = await this.prisma.noteVersion.count({
+      where: { noteId },
+    });
+
+    const where: any = { noteId };
+    if (cursor) {
+      where.id = { lt: cursor };
+    }
+
+    const versions = await this.prisma.noteVersion.findMany({
+      where,
+      orderBy: { version: 'desc' },
+      take: limit + 1,
+      select: {
+        id: true,
+        version: true,
+        title: true,
+        changedBy: true,
+        createdAt: true,
+      },
+    });
+
+    const hasMore = versions.length > limit;
+    if (hasMore) versions.pop();
+
+    // Resolve changedBy user IDs to names
+    const userIds = [...new Set(versions.map((v) => v.changedBy))];
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, firstName: true, lastName: true },
+    });
+    const userMap = new Map(users.map((u) => [u.id, u]));
+
+    const enriched = versions.map((v) => {
+      const user = userMap.get(v.changedBy);
+      const name = user
+        ? [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Unknown'
+        : 'Unknown';
+      return { ...v, changedByName: name };
+    });
+
+    return {
+      versions: enriched,
+      nextCursor: hasMore ? versions[versions.length - 1].id : null,
+      hasMore,
+      totalVersions,
+    };
+  }
+
+  async getVersionById(noteId: string, versionId: string, userId: string) {
+    // Verify note exists and user has access
+    const note = await this.prisma.note.findFirst({
+      where: { id: noteId, isDeleted: false },
+      include: { shares: { select: { userId: true } } },
+    });
+    if (!note) throw new NotFoundException('Note not found');
+
+    const isOwner = note.userId === userId;
+    const isShared = note.shares.some((s) => s.userId === userId);
+    if (!isOwner && !isShared) throw new ForbiddenException('Access denied');
+
+    const version = await this.prisma.noteVersion.findFirst({
+      where: { id: versionId, noteId },
+    });
+    if (!version) throw new NotFoundException('Version not found');
+
+    const changedByUser = await this.prisma.user.findUnique({
+      where: { id: version.changedBy },
+      select: { firstName: true, lastName: true },
+    });
+    const changedByName = changedByUser
+      ? [changedByUser.firstName, changedByUser.lastName]
+          .filter(Boolean)
+          .join(' ') || 'Unknown'
+      : 'Unknown';
+
+    return {
+      ...version,
+      changedByName,
+      content: await this.resolveContentImages(version.content),
+      documentUrl: await this.resolveDocumentUrl(version.document),
+      currentContent: await this.resolveContentImages(note.content),
+      currentTitle: note.title,
+      currentDocument: note.document,
+      currentDocumentSize: note.documentSize,
+      currentDocumentUrl: await this.resolveDocumentUrl(note.document),
+      currentVideoUrl: note.videoUrl,
+      currentTags: note.tags,
+      noteStatus: note.status,
+    };
+  }
+
+  async restoreVersion(noteId: string, versionId: string, userId: string) {
+    const note = await this.prisma.note.findFirst({
+      where: { id: noteId, isDeleted: false },
+    });
+    if (!note) throw new NotFoundException('Note not found');
+
+    if (note.status === 'archived') {
+      throw new BadRequestException('Cannot restore versions on archived notes');
+    }
+
+    // Check write access
+    const isOwner = note.userId === userId;
+    if (!isOwner) {
+      const share = await this.prisma.noteShare.findUnique({
+        where: { noteId_userId: { noteId, userId } },
+      });
+      if (!share || share.permission !== 'WRITE') {
+        throw new ForbiddenException('Write access denied');
+      }
+    }
+
+    const version = await this.prisma.noteVersion.findFirst({
+      where: { id: versionId, noteId },
+    });
+    if (!version) throw new NotFoundException('Version not found');
+
+    // Snapshot current state before restoring
+    await this.createVersionSnapshot(noteId, note, userId);
+
+    // Restore: overwrite note with version data
+    return this.prisma.note.update({
+      where: { id: noteId },
+      data: {
+        title: version.title,
+        content: version.content,
+        document: version.document,
+        documentSize: version.documentSize,
+        videoUrl: version.videoUrl ?? null,
+        tags: version.tags ?? [],
+        version: note.version + 1,
       },
     });
   }
@@ -419,13 +610,21 @@ export class NotesService {
     });
     if (!note) throw new NotFoundException('Note not found');
 
-    return this.prisma.$transaction([
+    await this.prisma.$transaction([
       this.prisma.note.update({
         where: { id: noteId },
         data: { isDeleted: true, deletedAt: new Date() },
       }),
       this.prisma.noteShare.deleteMany({ where: { noteId } }),
     ]);
+
+    await this.notificationsService.create({
+      userId,
+      title: 'Version History Scheduled for Deletion',
+      message: `The version history of Note '${note.title}' will be permanently deleted after 30 days`,
+      type: 'version_cleanup',
+      noteId,
+    });
   }
 
   async restore(noteId: string, userId: string) {

@@ -23,5 +23,5 @@ export class CreateNoteDto {
 
   @IsOptional()
   @IsString()
-  photo?: string;
+  document?: string;
 }
