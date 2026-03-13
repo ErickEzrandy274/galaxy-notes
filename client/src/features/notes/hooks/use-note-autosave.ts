@@ -48,7 +48,7 @@ export function useNoteAutosave({
   savedNoteIdRef.current = savedNoteId;
   contentTransformRef.current = contentTransform;
 
-  const save = useCallback(async () => {
+  const save = useCallback(async (snapshot = false) => {
     if (savingRef.current || !isDirtyRef.current) return;
     if (!dataRef.current.title.trim()) return;
 
@@ -66,10 +66,12 @@ export function useNoteAutosave({
           title: dataRef.current.title,
           content,
           tags: dataRef.current.tags,
-          photo: dataRef.current.photo,
+          document: dataRef.current.document,
+          documentSize: dataRef.current.documentSize,
           videoUrl: dataRef.current.videoUrl || undefined,
           status: dataRef.current.status,
           version: versionRef.current,
+          snapshot,
         });
         markClean(result.version);
       } else {
@@ -77,7 +79,7 @@ export function useNoteAutosave({
           title: dataRef.current.title,
           content,
           tags: dataRef.current.tags,
-          photo: dataRef.current.photo ?? undefined,
+          document: dataRef.current.document ?? undefined,
           videoUrl: dataRef.current.videoUrl || undefined,
           status: dataRef.current.status,
         });
@@ -177,12 +179,14 @@ export function useNoteAutosave({
   // Manual save (for Save as Draft / Publish buttons)
   const saveNow = useCallback(
     async (overrideStatus?: string) => {
+      // Cancel any pending debounce autosave to prevent duplicate version snapshots
+      clearTimeout(debounceRef.current);
       if (overrideStatus) {
         dataRef.current = { ...dataRef.current, status: overrideStatus as NoteEditorData['status'] };
       }
       isDirtyRef.current = true;
       skipGuardRef.current = true;
-      await save();
+      await save(true);
     },
     [save],
   );

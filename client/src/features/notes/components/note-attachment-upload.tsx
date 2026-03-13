@@ -5,17 +5,17 @@ import { Paperclip, Loader2, FileText, Eye, Trash2, AlertTriangle } from 'lucide
 import { useNoteUpload } from '../hooks/use-note-upload';
 
 interface NoteAttachmentUploadProps {
-  photo: string | null;
-  onChange: (url: string | null) => void;
+  document: string | null;
+  onChange: (url: string | null, fileSize?: number | null) => void;
   noteId?: string;
-  initialPhotoUrl?: string | null;
+  initialDocumentUrl?: string | null;
 }
 
 export function NoteAttachmentUpload({
-  photo,
+  document,
   onChange,
   noteId,
-  initialPhotoUrl,
+  initialDocumentUrl,
 }: NoteAttachmentUploadProps) {
   const { upload, isUploading, progress } = useNoteUpload(noteId ?? '', 'attachment');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -27,7 +27,7 @@ export function NoteAttachmentUpload({
     async (file: File) => {
       const result = await upload(file);
       if (result) {
-        onChange(result.path);
+        onChange(result.path, result.fileSize);
         setUploadedDownloadUrl(result.downloadUrl);
       }
     },
@@ -53,13 +53,13 @@ export function NoteAttachmentUpload({
     setIsDragOver(false);
   }, []);
 
-  const fileName = photo
+  const fileName = document
     ? decodeURIComponent(
-        photo.split('?')[0].split('/').pop()?.replace(/^\d+_/, '') ?? 'attachment',
+        document.split('?')[0].split('/').pop()?.replace(/^\d+_/, '') ?? 'attachment',
       )
     : null;
 
-  const previewUrl = uploadedDownloadUrl ?? initialPhotoUrl;
+  const previewUrl = uploadedDownloadUrl ?? initialDocumentUrl;
 
   return (
     <section aria-label="Attachments">
@@ -103,7 +103,7 @@ export function NoteAttachmentUpload({
               )}
             </section>
             <p className="text-sm text-muted-foreground">
-              {photo ? 'Replace attachment' : 'Drop files or click to upload'}
+              {document ? 'Replace attachment' : 'Drop files or click to upload'}
             </p>
             <p className="text-xs font-semibold text-muted-foreground">
               Max 3MB &middot; PDF File only
@@ -123,7 +123,7 @@ export function NoteAttachmentUpload({
         />
       </label>
 
-      {photo && fileName && (
+      {document && fileName && (
         <figure className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2.5">
           <span className="flex items-center gap-2 min-w-0">
             <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -179,7 +179,7 @@ export function NoteAttachmentUpload({
               <button
                 type="button"
                 onClick={() => {
-                  onChange(null);
+                  onChange(null, null);
                   setUploadedDownloadUrl(null);
                   setShowConfirm(false);
                 }}

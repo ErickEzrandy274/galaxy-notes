@@ -6,6 +6,8 @@ import type {
   NoteStats,
   TagOption,
   SignedUploadUrlResponse,
+  VersionHistoryResponse,
+  NoteVersionDetail,
 } from '../types';
 
 export async function fetchNotes(
@@ -37,7 +39,7 @@ export async function createNote(data: {
   status?: string;
   tags?: string[];
   videoUrl?: string;
-  photo?: string;
+  document?: string;
 }): Promise<NoteDetail> {
   const response = await api.post<NoteDetail>('/notes', data);
   return response.data;
@@ -51,8 +53,10 @@ export async function updateNote(
     status?: string;
     tags?: string[];
     videoUrl?: string;
-    photo?: string | null;
+    document?: string | null;
+    documentSize?: number | null;
     version: number;
+    snapshot?: boolean;
   },
 ): Promise<NoteDetail> {
   const response = await api.patch<NoteDetail>(`/notes/${noteId}`, data);
@@ -81,4 +85,34 @@ export async function createSignedUploadUrl(
     { noteId, fileName, mimeType, fileSize, source },
   );
   return response.data;
+}
+
+export async function fetchVersionHistory(
+  noteId: string,
+  cursor?: string,
+): Promise<VersionHistoryResponse> {
+  const params = new URLSearchParams();
+  if (cursor) params.set('cursor', cursor);
+  params.set('limit', '10');
+  const response = await api.get<VersionHistoryResponse>(
+    `/notes/${noteId}/versions?${params.toString()}`,
+  );
+  return response.data;
+}
+
+export async function fetchVersionDetail(
+  noteId: string,
+  versionId: string,
+): Promise<NoteVersionDetail> {
+  const response = await api.get<NoteVersionDetail>(
+    `/notes/${noteId}/versions/${versionId}`,
+  );
+  return response.data;
+}
+
+export async function restoreVersion(
+  noteId: string,
+  versionId: string,
+): Promise<void> {
+  await api.post(`/notes/${noteId}/versions/${versionId}/restore`);
 }

@@ -9,7 +9,8 @@ const EMPTY_EDITOR: NoteEditorData = {
   title: '',
   content: '',
   tags: [],
-  photo: null,
+  document: null,
+  documentSize: null,
   videoUrl: '',
   status: 'draft' as NoteStatus,
 };
@@ -19,7 +20,7 @@ export function useNoteEditor(noteId?: string) {
   const [isDirty, setIsDirty] = useState(false);
   const [version, setVersion] = useState(1);
   const [savedNoteId, setSavedNoteId] = useState<string | undefined>(noteId);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const initializedRef = useRef(false);
 
   const { isLoading } = useQuery({
@@ -33,11 +34,12 @@ export function useNoteEditor(noteId?: string) {
           title: note.title,
           content: note.content ?? '',
           tags: note.tags,
-          photo: note.photo ?? null,
+          document: note.document ?? null,
+          documentSize: note.documentSize ?? null,
           videoUrl: note.videoUrl ?? '',
           status: note.status,
         });
-        setPhotoUrl(note.photoUrl ?? null);
+        setDocumentUrl(note.documentUrl ?? null);
         setVersion(note.version);
         setSavedNoteId(note.id);
       }
@@ -67,6 +69,6 @@ export function useNoteEditor(noteId?: string) {
     isLoading: noteId ? isLoading : false,
     updateField,
     markClean,
-    photoUrl,
+    documentUrl,
   };
 }

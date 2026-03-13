@@ -38,8 +38,9 @@ export interface NoteDetail {
   content: string | null;
   status: NoteStatus;
   tags: string[];
-  photo: string | null;
-  photoUrl: string | null;
+  document: string | null;
+  documentUrl: string | null;
+  documentSize: number | null;
   videoUrl: string | null;
   version: number;
   isDeleted: boolean;
@@ -71,7 +72,8 @@ export interface NoteEditorData {
   title: string;
   content: string;
   tags: string[];
-  photo: string | null;
+  document: string | null;
+  documentSize: number | null;
   videoUrl: string;
   status: NoteStatus;
 }
@@ -89,4 +91,44 @@ export interface SignedUploadUrlResponse {
   token: string;
   path: string;
   downloadUrl: string | null;
+}
+
+export interface NoteVersionSummary {
+  id: string;
+  version: number;
+  title: string;
+  changedBy: string;
+  changedByName: string;
+  createdAt: string;
+}
+
+export interface NoteVersionDetail {
+  id: string;
+  noteId: string;
+  version: number;
+  title: string;
+  content: string;
+  changedBy: string;
+  changedByName: string;
+  createdAt: string;
+  document: string | null;
+  documentSize: number | null;
+  documentUrl: string | null;
+  videoUrl: string | null;
+  tags: string[];
+  currentContent: string | null;
+  currentTitle: string;
+  currentDocument: string | null;
+  currentDocumentSize: number | null;
+  currentDocumentUrl: string | null;
+  currentVideoUrl: string | null;
+  currentTags: string[];
+  noteStatus: NoteStatus;
+}
+
+export interface VersionHistoryResponse {
+  versions: NoteVersionSummary[];
+  nextCursor: string | null;
+  hasMore: boolean;
+  totalVersions: number;
 }

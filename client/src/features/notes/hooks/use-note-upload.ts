@@ -44,7 +44,7 @@ export function useNoteUpload(noteId: string, source: 'rich-text-editor' | 'atta
 
   const upload = async (
     file: File,
-  ): Promise<{ path: string; downloadUrl: string | null } | null> => {
+  ): Promise<{ path: string; downloadUrl: string | null; fileSize: number } | null> => {
     const allowedTypes =
       source === 'attachment' ? ALLOWED_TYPES_ATTACHMENT : ALLOWED_TYPES_EDITOR;
     const maxSize =
@@ -78,7 +78,7 @@ export function useNoteUpload(noteId: string, source: 'rich-text-editor' | 'atta
 
       await uploadWithProgress(signedUrl, file, setProgress);
 
-      return { path, downloadUrl };
+      return { path, downloadUrl, fileSize: file.size };
     } catch (error: unknown) {
       // Only show toast for non-API errors (e.g. direct fetch to Supabase)
       // API errors are handled by the axios interceptor with request ID

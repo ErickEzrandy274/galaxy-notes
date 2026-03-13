@@ -29,7 +29,7 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
     isLoading,
     updateField,
     markClean,
-    photoUrl,
+    documentUrl,
   } = useNoteEditor(noteId);
 
   // Shared map: blob URL → storage path. Populated by NoteEditorContent on
@@ -128,7 +128,7 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
           updateField={updateField}
           version={version}
           noteId={noteId ?? savedNoteId}
-          photoUrl={photoUrl}
+          documentUrl={documentUrl}
         />
       </section>
       <UnsavedChangesDialog

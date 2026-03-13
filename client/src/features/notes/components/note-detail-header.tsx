@@ -13,9 +13,10 @@ interface NoteDetailHeaderProps {
   noteId: string;
   title: string;
   version: number;
+  onOpenHistory: () => void;
 }
 
-export function NoteDetailHeader({ noteId, title, version }: NoteDetailHeaderProps) {
+export function NoteDetailHeader({ noteId, title, version, onOpenHistory }: NoteDetailHeaderProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isReverting, setIsReverting] = useState(false);
@@ -79,7 +80,7 @@ export function NoteDetailHeader({ noteId, title, version }: NoteDetailHeaderPro
         </button>
         <button
           type="button"
-          onClick={() => toast('Coming soon')}
+          onClick={onOpenHistory}
           className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
         >
           <History className="h-3.5 w-3.5" />

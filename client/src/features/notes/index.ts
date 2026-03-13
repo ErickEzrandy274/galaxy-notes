@@ -22,6 +22,11 @@ export { NoteInfoPanel } from './components/note-info-panel';
 export { NoteSharePanel } from './components/note-share-panel';
 export { NoteAutosaveIndicator } from './components/note-autosave-indicator';
 export { NotesStats } from './components/notes-stats';
+export { VersionHistoryDrawer } from './components/version-history-drawer';
+export { VersionHistoryItem } from './components/version-history-item';
+export { VersionPreviewBanner } from './components/version-preview-banner';
+export { VersionDiffView } from './components/version-diff-view';
+export { VersionPreviewPage } from './components/version-preview-page';
 
 // Hooks
 export { useNotes } from './hooks/use-notes';
@@ -32,6 +37,7 @@ export { useNoteAutosave } from './hooks/use-note-autosave';
 export { useNoteTags } from './hooks/use-note-tags';
 export { useNoteUpload } from './hooks/use-note-upload';
 export { useNoteStats } from './hooks/use-note-stats';
+export { useVersionHistory } from './hooks/use-version-history';
 
 // Utils
 export { getTagColor } from './utils/tag-colors';
@@ -52,4 +58,7 @@ export type {
   NoteEditorData,
   NoteStats,
   SignedUploadUrlResponse,
+  NoteVersionSummary,
+  NoteVersionDetail,
+  VersionHistoryResponse,
 } from './types';

@@ -25,13 +25,13 @@ export function NoteDetailContent({ note }: NoteDetailContentProps) {
       })
     : '';
 
-  const fileName = note.photo
+  const fileName = note.document
     ? decodeURIComponent(
-        note.photo.split('?')[0].split('/').pop()?.replace(/^\d+_/, '') ?? 'attachment',
+        note.document.split('?')[0].split('/').pop()?.replace(/^\d+_/, '') ?? 'attachment',
       )
     : null;
 
-  const hasSidebar = note.photo || videoId;
+  const hasSidebar = note.document || videoId;
 
   return (
     <section className="flex flex-1 overflow-hidden">
@@ -79,7 +79,7 @@ export function NoteDetailContent({ note }: NoteDetailContentProps) {
       {/* Right: Sidebar with attachment & video */}
       {hasSidebar && (
         <aside className="w-96 shrink-0 space-y-6 overflow-y-auto border-l border-border p-4">
-          {note.photo && (
+          {note.document && (
             <section>
               <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Paperclip className="h-4 w-4" />
@@ -92,10 +92,10 @@ export function NoteDetailContent({ note }: NoteDetailContentProps) {
                     {fileName}
                   </span>
                 </span>
-                {note.photoUrl && (
+                {note.documentUrl && (
                   <span className="flex shrink-0 items-center gap-1">
                     <a
-                      href={note.photoUrl}
+                      href={note.documentUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="cursor-pointer rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -106,7 +106,7 @@ export function NoteDetailContent({ note }: NoteDetailContentProps) {
                     <button
                       type="button"
                       onClick={async () => {
-                        const res = await fetch(note.photoUrl!);
+                        const res = await fetch(note.documentUrl!);
                         const blob = await res.blob();
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');

@@ -15,7 +15,7 @@ interface NoteEditorSidebarProps {
   createdAt?: string;
   version: number;
   noteId?: string;
-  photoUrl?: string | null;
+  documentUrl?: string | null;
 }
 
 export function NoteEditorSidebar({
@@ -24,15 +24,18 @@ export function NoteEditorSidebar({
   createdAt,
   version,
   noteId,
-  photoUrl,
+  documentUrl,
 }: NoteEditorSidebarProps) {
   return (
     <aside className="w-96 shrink-0 overflow-y-auto space-y-6 border-l border-border p-4">
       <NoteAttachmentUpload
-        photo={data.photo}
-        onChange={(url) => updateField('photo', url)}
+        document={data.document}
+        onChange={(url, fileSize) => {
+          updateField('document', url);
+          updateField('documentSize', fileSize ?? null);
+        }}
         noteId={noteId}
-        initialPhotoUrl={photoUrl}
+        initialDocumentUrl={documentUrl}
       />
 
       <NoteSharePanel noteStatus={data.status} />
