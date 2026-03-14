@@ -20,7 +20,7 @@ const cards: {
   { key: 'total', label: 'Total Notes', icon: FileText, color: 'text-violet-400', activeBg: 'bg-violet-500/10 border-violet-500/40', filterValue: undefined },
   { key: 'published', label: 'Published', icon: Globe, color: 'text-green-400', activeBg: 'bg-green-500/10 border-green-500/40', filterValue: 'published' },
   { key: 'draft', label: 'Drafts', icon: PenLine, color: 'text-amber-400', activeBg: 'bg-amber-500/10 border-amber-500/40', filterValue: 'draft' },
-  { key: 'shared', label: 'Shared', icon: Users, color: 'text-sky-400', activeBg: 'bg-sky-500/10 border-sky-500/40', filterValue: 'shared' },
+  { key: 'shared', label: 'Shared', icon: Users, color: 'text-sky-400', activeBg: 'bg-sky-500/10 border-sky-500/40', filterValue: 'has_shares' },
 ];
 
 export function NotesStats({ activeFilter, onFilterChange }: NotesStatsProps) {

@@ -6,7 +6,7 @@ const tabs: { label: string; value?: NoteStatus }[] = [
   { label: 'All' },
   { label: 'Published', value: 'published' },
   { label: 'Draft', value: 'draft' },
-  { label: 'Shared', value: 'shared' },
+  { label: 'Shared', value: 'has_shares' },
 ];
 
 interface NotesFiltersProps {

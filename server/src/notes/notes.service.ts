@@ -36,11 +36,16 @@ export class NotesService {
   }
 
   async getStats(userId: string) {
-    const counts = await this.prisma.note.groupBy({
-      by: ['status'],
-      where: { userId, isDeleted: false },
-      _count: { status: true },
-    });
+    const [counts, sharedCount] = await Promise.all([
+      this.prisma.note.groupBy({
+        by: ['status'],
+        where: { userId, isDeleted: false },
+        _count: { status: true },
+      }),
+      this.prisma.note.count({
+        where: { userId, isDeleted: false, shares: { some: {} } },
+      }),
+    ]);
 
     const map = Object.fromEntries(
       counts.map((c) => [c.status, c._count.status]),
@@ -53,7 +58,7 @@ export class NotesService {
       published: map['published'] ?? 0,
       draft: map['draft'] ?? 0,
       archived: map['archived'] ?? 0,
-      shared: map['shared'] ?? 0,
+      shared: sharedCount,
     };
   }
 
@@ -160,7 +165,11 @@ export class NotesService {
     }
 
     const where: any = { userId, isDeleted: false };
-    if (filters?.status) where.status = filters.status;
+    if (filters?.status === 'has_shares') {
+      where.shares = { some: {} };
+    } else if (filters?.status) {
+      where.status = filters.status;
+    }
     if (filters?.search) {
       where.title = { contains: filters.search, mode: 'insensitive' };
     }
