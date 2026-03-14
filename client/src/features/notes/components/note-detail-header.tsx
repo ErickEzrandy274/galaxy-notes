@@ -7,26 +7,31 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { updateNote, deleteNote } from '../api/notes-api';
+import { useArchiveNote } from '../hooks/use-archive-mutations';
 import { RevertAsDraftDialog } from './revert-as-draft-dialog';
 import { ShareModal } from './share-modal';
 import { TrashConfirmDialog } from '@/features/trash/components/trash-confirm-dialog';
+import { ArchiveConfirmDialog } from './archive-confirm-dialog';
 
 interface NoteDetailHeaderProps {
   noteId: string;
   title: string;
+  status: string;
   version: number;
   isOwner: boolean;
   shareCount: number;
   onOpenHistory: () => void;
 }
 
-export function NoteDetailHeader({ noteId, title, version, isOwner, shareCount, onOpenHistory }: NoteDetailHeaderProps) {
+export function NoteDetailHeader({ noteId, title, status, version, isOwner, shareCount, onOpenHistory }: NoteDetailHeaderProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isReverting, setIsReverting] = useState(false);
   const [showRevertDialog, setShowRevertDialog] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showTrashDialog, setShowTrashDialog] = useState(false);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const archiveMutation = useArchiveNote();
 
   const trashMutation = useMutation({
     mutationFn: () => deleteNote(noteId),
@@ -106,14 +111,16 @@ export function NoteDetailHeader({ noteId, title, version, isOwner, shareCount, 
           <History className="h-3.5 w-3.5" />
           History
         </button>
-        <button
-          type="button"
-          onClick={() => toast('Coming soon')}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-        >
-          <Archive className="h-3.5 w-3.5" />
-          Archive
-        </button>
+        {isOwner && status !== 'draft' && (
+          <button
+            type="button"
+            onClick={() => setShowArchiveDialog(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+          >
+            <Archive className="h-3.5 w-3.5" />
+            Archive
+          </button>
+        )}
         <button
           type="button"
           onClick={handleRevert}
@@ -159,6 +166,23 @@ export function NoteDetailHeader({ noteId, title, version, isOwner, shareCount, 
         }}
         onCancel={() => setShowTrashDialog(false)}
         isLoading={trashMutation.isPending}
+      />
+      <ArchiveConfirmDialog
+        open={showArchiveDialog}
+        variant="archive"
+        noteTitle={title}
+        shareCount={shareCount}
+        onConfirm={() => {
+          archiveMutation.mutate(noteId, {
+            onSuccess: () => {
+              toast.success('Note archived successfully');
+              router.push('/archived');
+            },
+            onSettled: () => setShowArchiveDialog(false),
+          });
+        }}
+        onCancel={() => setShowArchiveDialog(false)}
+        isLoading={archiveMutation.isPending}
       />
     </header>
   );

@@ -268,6 +268,12 @@ export class NotesService {
     });
     if (!note) throw new NotFoundException('Note not found');
 
+    if (note.status === 'archived') {
+      throw new BadRequestException(
+        'Cannot edit an archived note. Unarchive it first.',
+      );
+    }
+
     // Optimistic locking
     if (note.version !== dto.version) {
       throw new ConflictException({
@@ -735,6 +741,12 @@ export class NotesService {
     });
     if (!note) throw new NotFoundException('Note not found');
 
+    if (note.status === 'archived') {
+      throw new BadRequestException(
+        'Cannot delete an archived note directly. Unarchive it first.',
+      );
+    }
+
     // Collect collaborators before deleting shares
     const collaboratorIds = note.shares
       .map((s) => s.userId)
@@ -875,6 +887,75 @@ export class NotesService {
     });
 
     return { deleted: count };
+  }
+
+  async archive(noteId: string, userId: string) {
+    const note = await this.prisma.note.findFirst({
+      where: { id: noteId, userId, isDeleted: false },
+      include: {
+        shares: { select: { userId: true } },
+      },
+    });
+    if (!note) throw new NotFoundException('Note not found');
+    if (note.status === 'draft') {
+      throw new BadRequestException('Draft notes cannot be archived');
+    }
+    if (note.status === 'archived') {
+      throw new BadRequestException('Note is already archived');
+    }
+
+    const collaboratorIds = note.shares
+      .map((s) => s.userId)
+      .filter((id) => id !== userId);
+
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.note.update({
+        where: { id: noteId },
+        data: { status: 'archived', previousStatus: note.status },
+      }),
+      this.prisma.noteShare.deleteMany({ where: { noteId } }),
+    ]);
+
+    for (const collaboratorId of collaboratorIds) {
+      await this.notificationsService.create({
+        userId: collaboratorId,
+        title: 'Shared Note Archived',
+        message: `A note '${note.title}' shared with you has been archived by the owner`,
+        type: 'archive',
+        noteId,
+        actorId: userId,
+      });
+    }
+
+    return updated;
+  }
+
+  async unarchive(noteId: string, userId: string) {
+    const note = await this.prisma.note.findFirst({
+      where: { id: noteId, userId, isDeleted: false, status: 'archived' },
+    });
+    if (!note) throw new NotFoundException('Archived note not found');
+
+    // Restore to previous status; if it was 'shared', use 'published' since shares were revoked
+    let restoredStatus = note.previousStatus ?? 'draft';
+    if (restoredStatus === 'shared') {
+      restoredStatus = 'published';
+    }
+
+    const updated = await this.prisma.note.update({
+      where: { id: noteId },
+      data: { status: restoredStatus, previousStatus: null },
+    });
+
+    await this.notificationsService.create({
+      userId,
+      title: 'Note Unarchived',
+      message: `Note '${note.title || 'Untitled'}' has been restored as ${restoredStatus}`,
+      type: 'restore',
+      noteId,
+    });
+
+    return updated;
   }
 
   async cleanupNoteStorage(note: {

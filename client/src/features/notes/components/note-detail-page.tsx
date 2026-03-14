@@ -50,6 +50,7 @@ export function NoteDetailPage({ noteId }: NoteDetailPageProps) {
             <NoteDetailHeader
               noteId={noteId}
               title={note.title}
+              status={note.status}
               version={note.version}
               isOwner={note.userId === session?.user?.id}
               shareCount={note.shares.length}
