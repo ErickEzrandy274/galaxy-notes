@@ -39,8 +39,13 @@ model User {
   sessions      Session[]
   notes         Note[]
   sharedNotes   NoteShare[]
-  notifications Notification[]
-  refreshTokens RefreshToken[]
+  notifications       Notification[]
+  actedNotifications  Notification[]     @relation("NotificationActor")
+  refreshTokens       RefreshToken[]
+  sentInvites         NoteInvite[]       @relation("InvitedByUser")
+  mutedNotifications  NotificationMute[] @relation("MutedByUser")
+  mutedByOthers       NotificationMute[] @relation("MutedTargetUser")
+  preference          UserPreference?
 
   @@map("users")
 }
@@ -105,6 +110,26 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
+// ─── User Preferences ────────────────────────────────────────────────────────
+
+enum AutoDeleteBehavior {
+  delete_note_and_versions
+  delete_versions_only
+}
+
+model UserPreference {
+  id                 String              @id @default(cuid())
+  userId             String              @unique @map("user_id")
+  trashRetentionDays Int                 @default(30) @map("trash_retention_days")
+  autoDeleteBehavior AutoDeleteBehavior  @default(delete_versions_only) @map("auto_delete_behavior")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
 // ─── Note ────────────────────────────────────────────────────────────────────
 
 enum NoteStatus {
@@ -139,6 +164,7 @@ model Note {
   // Relations
   shares   NoteShare[]
   versions NoteVersion[]
+  invites  NoteInvite[]
 
   @@index([userId, isDeleted])
   @@index([status])
@@ -197,6 +223,7 @@ model NoteVersion {
 model Notification {
   id      String  @id @default(cuid())
   userId  String  @map("user_id")
+  actorId String? @map("actor_id")
   title   String
   message String  @db.Text
   isRead  Boolean @default(false) @map("is_read")
@@ -205,8 +232,47 @@ model Notification {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([userId, isRead])
+  @@index([actorId])
   @@map("notifications")
+}
+
+// ─── Notification Mute ───────────────────────────────────────────────────────
+
+model NotificationMute {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  mutedUserId String    @map("muted_user_id")
+  expiresAt   DateTime? @map("expires_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User @relation("MutedByUser", fields: [userId], references: [id], onDelete: Cascade)
+  mutedUser User @relation("MutedTargetUser", fields: [mutedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mutedUserId])
+  @@map("notification_mutes")
+}
+
+// ─── Note Invite ──────────────────────────────────────────────────────────────
+
+model NoteInvite {
+  id         String     @id @default(cuid())
+  token      String     @unique
+  email      String
+  noteId     String     @map("note_id")
+  permission Permission @default(READ)
+  invitedBy  String     @map("invited_by")
+  expiresAt  DateTime   @map("expires_at")
+  acceptedAt DateTime?  @map("accepted_at")
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  note    Note @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  inviter User @relation("InvitedByUser", fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@map("note_invites")
 }
