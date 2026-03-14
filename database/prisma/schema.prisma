@@ -92,6 +92,19 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
+// ─── Password Reset Token ────────────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([email, expiresAt])
+  @@map("password_reset_tokens")
+}
+
 // ─── Refresh Token ──────────────────────────────────────────────────────────
 
 model RefreshToken {
@@ -149,6 +162,9 @@ model Note {
   videoUrl     String?    @map("video_url")
   tags         String[]   @default([])
   version      Int        @default(1)
+
+  // Archive: stores status before archiving so unarchive can restore it
+  previousStatus NoteStatus? @map("previous_status")
 
   // Soft delete
   isDeleted Boolean   @default(false) @map("is_deleted")
