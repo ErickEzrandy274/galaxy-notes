@@ -1,5 +1,5 @@
-import { UnderDevelopment } from '@/components/shared/under-development';
+import { NotificationsPage } from '@/features/notes';
 
-export default function NotificationsPage() {
-  return <UnderDevelopment feature="Notifications" />;
+export default function NotificationsRoute() {
+  return <NotificationsPage />;
 }
