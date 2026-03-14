@@ -37,6 +37,8 @@ export class SharesService {
       throw new ForbiddenException('Only the note owner can share');
     if (note.status === 'draft')
       throw new BadRequestException('Publish the note before sharing');
+    if (note.status === 'archived')
+      throw new BadRequestException('Cannot share an archived note');
 
     const shared: any[] = [];
     const invited: any[] = [];
@@ -279,6 +281,146 @@ export class SharesService {
 
     await this.prisma.noteInvite.delete({ where: { id: inviteId } });
     return { message: 'Invite removed' };
+  }
+
+  async requestAccess(noteId: string, userId: string) {
+    const note = await this.prisma.note.findFirst({
+      where: { id: noteId, isDeleted: false },
+      select: { id: true, title: true, userId: true },
+    });
+    if (!note) throw new NotFoundException('Note not found');
+    if (note.userId === userId)
+      throw new BadRequestException('You are the owner of this note');
+
+    // Check if already has access
+    const existingShare = await this.prisma.noteShare.findUnique({
+      where: { noteId_userId: { noteId, userId } },
+    });
+    if (existingShare)
+      throw new BadRequestException('You already have access to this note');
+
+    // Prevent duplicate requests (within 1 hour)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentRequest = await this.prisma.notification.findFirst({
+      where: {
+        userId: note.userId,
+        actorId: userId,
+        noteId,
+        type: 'access_request',
+        createdAt: { gt: oneHourAgo },
+      },
+    });
+    if (recentRequest)
+      throw new BadRequestException(
+        'Access request already sent. Please wait before requesting again.',
+      );
+
+    const requester = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { firstName: true, lastName: true, email: true },
+    });
+    const requesterName = requester
+      ? [requester.firstName, requester.lastName].filter(Boolean).join(' ') ||
+        requester.email
+      : 'Someone';
+
+    await this.notificationsService.create({
+      userId: note.userId,
+      title: 'Access Requested',
+      message: `${requesterName} requested access to your note '${note.title}'`,
+      type: 'access_request',
+      noteId,
+      actorId: userId,
+    });
+
+    return { message: 'Access request sent' };
+  }
+
+  async grantAccess(
+    noteId: string,
+    requesterId: string,
+    ownerId: string,
+    permission: 'READ' | 'WRITE' = 'READ',
+  ) {
+    const note = await this.prisma.note.findFirst({
+      where: { id: noteId, userId: ownerId, isDeleted: false },
+      select: { id: true, title: true, status: true, userId: true },
+    });
+    if (!note) throw new NotFoundException('Note not found');
+    if (note.status === 'archived')
+      throw new BadRequestException('Cannot share an archived note');
+
+    const existingShare = await this.prisma.noteShare.findUnique({
+      where: { noteId_userId: { noteId, userId: requesterId } },
+    });
+    if (existingShare)
+      throw new BadRequestException('User already has access');
+
+    await this.prisma.noteShare.create({
+      data: { noteId, userId: requesterId, permission },
+    });
+
+    // Update note status to shared if currently published
+    if (note.status === 'published') {
+      await this.prisma.note.update({
+        where: { id: noteId },
+        data: { status: 'shared' },
+      });
+    }
+
+    await this.sendShareNotification(requesterId, note, ownerId);
+
+    // Mark the original access_request notification as resolved
+    await this.prisma.notification.updateMany({
+      where: {
+        userId: ownerId,
+        noteId,
+        actorId: requesterId,
+        type: 'access_request',
+      },
+      data: { type: 'access_granted' },
+    });
+
+    return { message: 'Access granted' };
+  }
+
+  async declineAccess(noteId: string, requesterId: string, ownerId: string) {
+    const note = await this.prisma.note.findFirst({
+      where: { id: noteId, userId: ownerId, isDeleted: false },
+      select: { id: true, title: true },
+    });
+    if (!note) throw new NotFoundException('Note not found');
+
+    const owner = await this.prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { firstName: true, lastName: true, email: true },
+    });
+    const ownerName = owner
+      ? [owner.firstName, owner.lastName].filter(Boolean).join(' ') ||
+        owner.email
+      : 'The owner';
+
+    await this.notificationsService.create({
+      userId: requesterId,
+      title: 'Access Request Declined',
+      message: `${ownerName} declined your access request for note '${note.title}'`,
+      type: 'access_declined',
+      noteId,
+      actorId: ownerId,
+    });
+
+    // Mark the original access_request notification as resolved
+    await this.prisma.notification.updateMany({
+      where: {
+        userId: ownerId,
+        noteId,
+        actorId: requesterId,
+        type: 'access_request',
+      },
+      data: { type: 'access_declined_by_owner' },
+    });
+
+    return { message: 'Access request declined' };
   }
 
   private async sendShareNotification(

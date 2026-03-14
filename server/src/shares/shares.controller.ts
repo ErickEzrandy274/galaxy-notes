@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   Req,
 } from '@nestjs/common';
@@ -50,6 +51,38 @@ export class SharesController {
     @Param('shareId') shareId: string,
   ) {
     return this.sharesService.removeShare(shareId, req.user.id);
+  }
+
+  @Post('request-access/:noteId')
+  requestAccess(
+    @Req() req: { user: { id: string } },
+    @Param('noteId') noteId: string,
+  ) {
+    return this.sharesService.requestAccess(noteId, req.user.id);
+  }
+
+  @Post('grant-access/:noteId/:userId')
+  grantAccess(
+    @Req() req: { user: { id: string } },
+    @Param('noteId') noteId: string,
+    @Param('userId') userId: string,
+    @Query('permission') permission?: 'READ' | 'WRITE',
+  ) {
+    return this.sharesService.grantAccess(
+      noteId,
+      userId,
+      req.user.id,
+      permission,
+    );
+  }
+
+  @Post('decline-access/:noteId/:userId')
+  declineAccess(
+    @Req() req: { user: { id: string } },
+    @Param('noteId') noteId: string,
+    @Param('userId') userId: string,
+  ) {
+    return this.sharesService.declineAccess(noteId, userId, req.user.id);
   }
 
   @Delete('invite/:inviteId')
