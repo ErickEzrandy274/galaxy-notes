@@ -1,5 +1,5 @@
-import { UnderDevelopment } from '@/components/shared/under-development';
+import { SharedNotesPage } from '@/features/notes';
 
 export default function SharedPage() {
-  return <UnderDevelopment feature="Shared with Me" />;
+  return <SharedNotesPage />;
 }
