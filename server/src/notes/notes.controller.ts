@@ -163,4 +163,17 @@ export class NotesController {
   restore(@Param('id') id: string, @Request() req: { user: { id: string } }) {
     return this.notesService.restore(id, req.user.id);
   }
+
+  @Post(':id/archive')
+  archive(@Param('id') id: string, @Request() req: { user: { id: string } }) {
+    return this.notesService.archive(id, req.user.id);
+  }
+
+  @Post(':id/unarchive')
+  unarchive(
+    @Param('id') id: string,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.notesService.unarchive(id, req.user.id);
+  }
 }

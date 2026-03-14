@@ -164,7 +164,7 @@ export class NotesService {
       return { notes: flatNotes, total, page, limit };
     }
 
-    const where: any = { userId, isDeleted: false };
+    const where: any = { userId, isDeleted: false, status: { not: 'archived' } };
     if (filters?.status === 'has_shares') {
       where.shares = { some: {} };
     } else if (filters?.status) {
@@ -920,7 +920,11 @@ export class NotesService {
     const [updated] = await this.prisma.$transaction([
       this.prisma.note.update({
         where: { id: noteId },
-        data: { status: 'archived', previousStatus: note.status },
+        data: {
+          status: 'archived',
+          previousStatus: note.status,
+          previousCollaboratorIds: collaboratorIds,
+        },
       }),
       this.prisma.noteShare.deleteMany({ where: { noteId } }),
     ]);
@@ -953,7 +957,11 @@ export class NotesService {
 
     const updated = await this.prisma.note.update({
       where: { id: noteId },
-      data: { status: restoredStatus, previousStatus: null },
+      data: {
+        status: restoredStatus,
+        previousStatus: null,
+        previousCollaboratorIds: [],
+      },
     });
 
     await this.notificationsService.create({
@@ -963,6 +971,28 @@ export class NotesService {
       type: 'restore',
       noteId,
     });
+
+    // Notify previous collaborators that the note is available again
+    const ownerName = await this.prisma.user
+      .findUnique({
+        where: { id: userId },
+        select: { firstName: true, lastName: true },
+      })
+      .then(
+        (u) =>
+          [u?.firstName, u?.lastName].filter(Boolean).join(' ') || 'The owner',
+      );
+
+    for (const collaboratorId of note.previousCollaboratorIds) {
+      await this.notificationsService.create({
+        userId: collaboratorId,
+        title: 'Note Available Again',
+        message: `${ownerName} unarchived the note '${note.title || 'Untitled'}'. The note is now available as read-only. You may request access again.`,
+        type: 'restore',
+        noteId,
+        actorId: userId,
+      });
+    }
 
     return updated;
   }
