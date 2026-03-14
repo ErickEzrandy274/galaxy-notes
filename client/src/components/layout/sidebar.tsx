@@ -23,6 +23,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { useQueryClient, useIsFetching } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
+import packageJson from "../../../package.json";
 import { useProfile } from "@/features/profile/hooks/use-profile";
 import { useUnreadNotificationCount } from "@/features/notes/hooks/use-notifications";
 import { useNotificationStream } from "@/features/notes/hooks/use-notification-stream";
@@ -92,7 +93,7 @@ export function Sidebar() {
 			</button>
 
 			{/* Zone 1: Identity */}
-			<header className="flex justify-center items-center border-b border-border p-4">
+			<header className="flex flex-col items-center border-b border-border p-4">
 				<Link
 					href="/notes"
 					className="cursor-pointer text-2xl font-bold flex gap-2"
@@ -105,6 +106,11 @@ export function Sidebar() {
 						</>
 					)}
 				</Link>
+				{!collapsed && (
+					<p className="text-xs font-semibold text-muted-foreground">
+						v{packageJson.version}
+					</p>
+				)}
 			</header>
 
 			{/* Zone 2: Navigation */}
