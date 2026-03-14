@@ -164,7 +164,8 @@ model Note {
   version      Int        @default(1)
 
   // Archive: stores status before archiving so unarchive can restore it
-  previousStatus NoteStatus? @map("previous_status")
+  previousStatus          NoteStatus? @map("previous_status")
+  previousCollaboratorIds String[]    @default([]) @map("previous_collaborator_ids")
 
   // Soft delete
   isDeleted Boolean   @default(false) @map("is_deleted")
