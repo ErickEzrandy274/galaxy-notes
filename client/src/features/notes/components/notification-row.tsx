@@ -1,6 +1,6 @@
 'use client';
 
-import { Link2, Pencil, Trash2, Bell, ShieldCheck, ShieldOff, LogOut, MoreHorizontal, RotateCcw, Archive } from 'lucide-react';
+import { Link2, Pencil, Trash2, Bell, ShieldCheck, ShieldOff, LogOut, MoreHorizontal, RotateCcw, Archive, UserPlus, UserCheck, UserX } from 'lucide-react';
 import { NotificationContextMenu } from './notification-context-menu';
 import { useMarkNotificationRead } from '../hooks/use-notifications';
 import { useRouter } from 'next/navigation';
@@ -43,6 +43,30 @@ function getNotificationIcon(type: string) {
         icon: RotateCcw,
         bg: 'bg-green-500/20',
         color: 'text-green-400',
+      };
+    case 'access_request':
+      return {
+        icon: UserPlus,
+        bg: 'bg-indigo-500/20',
+        color: 'text-indigo-400',
+      };
+    case 'access_declined':
+      return {
+        icon: UserPlus,
+        bg: 'bg-red-500/20',
+        color: 'text-red-400',
+      };
+    case 'access_granted':
+      return {
+        icon: UserCheck,
+        bg: 'bg-green-500/20',
+        color: 'text-green-400',
+      };
+    case 'access_declined_by_owner':
+      return {
+        icon: UserX,
+        bg: 'bg-muted',
+        color: 'text-muted-foreground',
       };
     case 'archive':
       return {
@@ -90,8 +114,12 @@ export function NotificationRow({ notification }: NotificationRowProps) {
   const markRead = useMarkNotificationRead();
   const router = useRouter();
 
+  const isNoteAvailableAgain =
+    notification.type === 'restore' &&
+    notification.title === 'Note Available Again';
+
   const isReadOnly =
-    notification.isNoteAvailable === false || notification.type === 'leave' || notification.type === 'revoke' || notification.type === 'archive' || notification.type === 'trash';
+    notification.isNoteAvailable === false || notification.type === 'leave' || notification.type === 'revoke' || notification.type === 'archive' || notification.type === 'trash' || notification.type === 'access_request' || notification.type === 'access_declined' || notification.type === 'access_granted' || notification.type === 'access_declined_by_owner' || isNoteAvailableAgain;
 
   const handleClick = () => {
     if (isReadOnly) return;
@@ -125,8 +153,8 @@ export function NotificationRow({ notification }: NotificationRowProps) {
       onClick={isReadOnly ? undefined : handleClick}
       className={`group flex items-start gap-3 rounded-lg px-4 py-3 transition-colors ${
         isReadOnly
-          ? 'cursor-default opacity-50'
-          : `cursor-pointer hover:bg-muted/50 ${!notification.isRead ? 'bg-primary/5' : ''}`
+          ? 'cursor-default'
+          : `cursor-pointer hover:bg-muted/50 ${notification.isRead ? '' : 'bg-primary/5'}`
       }`}
     >
       {/* Unread indicator */}

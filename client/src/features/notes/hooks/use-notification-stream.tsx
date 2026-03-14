@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Link2, ShieldCheck, Pencil, Trash2, Bell, LogOut, RotateCcw } from "lucide-react";
+import { Link2, ShieldCheck, Pencil, Trash2, Bell, LogOut, RotateCcw, UserPlus } from "lucide-react";
 import toast from "react-hot-toast";
 import { getAccessToken } from "@/lib/axios";
 import type { NotificationItem } from "../types";
@@ -24,6 +24,10 @@ function getToastIcon(type: string) {
       return { Icon: Pencil, color: "text-yellow-400" };
     case "leave":
       return { Icon: LogOut, color: "text-red-400" };
+    case "access_request":
+      return { Icon: UserPlus, color: "text-indigo-400" };
+    case "access_declined":
+      return { Icon: UserPlus, color: "text-red-400" };
     case "restore":
       return { Icon: RotateCcw, color: "text-green-400" };
     case "trash":
