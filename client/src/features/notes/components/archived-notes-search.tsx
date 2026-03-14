@@ -31,7 +31,7 @@ export function ArchivedNotesSearch({
   return (
     <search className="flex items-center gap-4">
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted-foreground">Title</span>
+        <span className="text-sm font-medium text-foreground">Title</span>
         <div className="relative">
           <Search
             size={15}
@@ -47,7 +47,7 @@ export function ArchivedNotesSearch({
         </div>
       </label>
       <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted-foreground">Tags</span>
+        <span className="text-sm font-medium text-foreground">Tags</span>
         <div className="relative">
           <Tag
             size={15}
