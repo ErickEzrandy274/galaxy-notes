@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, MoreHorizontal, Pencil, Share2, Trash2 } from 'lucide-react';
+import { Archive, Eye, MoreHorizontal, Pencil, Share2, Trash2 } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { deleteNote } from '../api/notes-api';
+import { useArchiveNote } from '../hooks/use-archive-mutations';
 import { ShareModal } from './share-modal';
+import { ArchiveConfirmDialog } from './archive-confirm-dialog';
 import { TrashConfirmDialog } from '@/features/trash/components/trash-confirm-dialog';
 
 interface NotesRowActionsProps {
@@ -21,7 +23,9 @@ export function NotesRowActions({ noteId, noteTitle, noteStatus, shareCount }: N
   const router = useRouter();
   const queryClient = useQueryClient();
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showTrashDialog, setShowTrashDialog] = useState(false);
+  const archiveMutation = useArchiveNote();
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteNote(noteId),
@@ -70,6 +74,15 @@ export function NotesRowActions({ noteId, noteTitle, noteStatus, shareCount }: N
               Share
             </DropdownMenu.Item>
           )}
+          {noteStatus !== 'draft' && (
+            <DropdownMenu.Item
+              onClick={() => setShowArchiveDialog(true)}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted"
+            >
+              <Archive size={14} />
+              Archive
+            </DropdownMenu.Item>
+          )}
           <DropdownMenu.Separator className="my-1 h-px bg-border" />
           <DropdownMenu.Item
             onClick={() => setShowTrashDialog(true)}
@@ -86,6 +99,22 @@ export function NotesRowActions({ noteId, noteTitle, noteStatus, shareCount }: N
         onClose={() => setShowShareModal(false)}
         noteId={noteId}
         noteTitle={noteTitle}
+      />
+      <ArchiveConfirmDialog
+        open={showArchiveDialog}
+        variant="archive"
+        noteTitle={noteTitle}
+        shareCount={shareCount}
+        onConfirm={() => {
+          archiveMutation.mutate(noteId, {
+            onSuccess: () => {
+              toast.success('Note archived successfully');
+            },
+            onSettled: () => setShowArchiveDialog(false),
+          });
+        }}
+        onCancel={() => setShowArchiveDialog(false)}
+        isLoading={archiveMutation.isPending}
       />
       <TrashConfirmDialog
         open={showTrashDialog}
