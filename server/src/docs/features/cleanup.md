@@ -41,7 +41,7 @@ Two notification touchpoints with type `version_cleanup`:
 | Note soft-deleted (trash) | Version History Scheduled for Deletion | The version history of Note '{title}' will be permanently deleted after 30 days |
 | Cron purges versions | Version History Deleted | The version history of Note '{title}' has been permanently deleted |
 
-The trash notification is created in `NotesService.softDelete()`, not in `CleanupService`.
+The trash notification is created in `NotesService.softDelete()`, not in `CleanupService`. Additionally, `softDelete()` sends a `trash` notification (title: `"Shared Note Deleted"`) to each collaborator who had access to the note before deletion.
 
 ## Module Structure
 

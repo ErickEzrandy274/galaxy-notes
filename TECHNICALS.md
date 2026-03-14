@@ -31,17 +31,26 @@ For detailed technical docs, see:
 │  NestJS 11  ·  Passport JWT  ·  class-validator                    │
 │  Port 8080  ·  Global prefix: /api                                 │
 │                                                                     │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐           │
-│  │  Auth    │  │  Notes   │  │  Users   │  │  Health  │           │
-│  │  Module  │  │  Module  │  │  Module  │  │  Module  │           │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────────┘           │
-│       │             │             │                                 │
-│       └─────────────┴─────────────┘                                 │
-│                     │                                               │
-│              ┌──────┴──────┐                                        │
-│              │ PrismaModule │  (Global)                             │
-│              │ PrismaService│                                       │
-│              └──────┬──────┘                                        │
+│  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐│
+│  │  Auth  │ │ Notes  │ │ Shares │ │Notific.│ │ Users  │ │ Health ││
+│  │ Module │ │ Module │ │ Module │ │ Module │ │ Module │ │ Module ││
+│  └───┬────┘ └───┬────┘ └───┬────┘ └───┬────┘ └───┬────┘ └────────┘│
+│      │          │          │          │          │                  │
+│      │   ┌──────┴──────┐   │   ┌──────┴──────┐   │                  │
+│      │   │  Cleanup    │   │   │ Preferences │   │                  │
+│      │   │  Module     │   │   │ Module      │   │                  │
+│      │   └──────┬──────┘   │   └──────┬──────┘   │                  │
+│      └──────────┴──────────┴──────────┴──────────┘                  │
+│                            │                                        │
+│                     ┌──────┴──────┐                                  │
+│                     │ PrismaModule │  (Global)                       │
+│                     │ PrismaService│                                  │
+│                     └──────┬──────┘                                  │
+│                            │                                        │
+│  ┌─────────────────────────┼────────────────────────────────────┐   │
+│  │         SSE Stream      │    (Notifications → Browser)       │   │
+│  │  /api/notifications/stream?token=JWT                         │   │
+│  └──────────────────────────────────────────────────────────────┘   │
 └─────────────────────┼───────────────────────────────────────────────┘
                       │
           ┌───────────┴───────────┐
@@ -106,20 +115,38 @@ Source of truth for the Prisma schema at `database/prisma/schema.prisma`.
      │    │ isDeleted│    └─────────────┘
      │    └────┬─────┘
      │         │
-     │         └───<┌──────────┐
-     │              │NoteShare │
-     │              │permission│
-     │              │(READ/    │
-     │              │ WRITE)   │
-     │              └──────────┘
+     │         ├───<┌──────────────┐
+     │         │    │  NoteShare   │
+     │         │    │ permission   │
+     │         │    │ (READ/WRITE) │
+     │         │    │lastNotifiedAt│
+     │         │    └──────────────┘
+     │         │
+     │         └───<┌──────────────┐
+     │              │  NoteInvite  │
+     │              │ token        │
+     │              │ email        │
+     │              │ permission   │
+     │              │ invitedBy    │
+     │              │ acceptedAt?  │
+     │              │ expiresAt    │
+     │              └──────────────┘
      │
-     └───<┌──────────────┐
-          │ Notification │
-          │ title        │
-          │ message      │
-          │ isRead       │
-          │ type         │
-          └──────────────┘
+     ├───<┌──────────────┐
+     │    │ Notification │
+     │    │ title        │
+     │    │ message      │
+     │    │ isRead       │
+     │    │ type         │
+     │    │ actorId?     │
+     │    │ noteId?      │
+     │    └──────────────┘
+     │
+     └───<┌──────────────────┐
+          │NotificationMute  │
+          │ mutedUserId      │
+          │ expiresAt?       │
+          └──────────────────┘
 ```
 
 ### Key Enums

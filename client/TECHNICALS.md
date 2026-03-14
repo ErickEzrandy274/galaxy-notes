@@ -25,12 +25,18 @@ app/
 ├── (auth)/              # Public routes — Login, Register
 │   ├── login/
 │   └── register/
-├── (dashboard)/         # Authenticated routes — Notes, Profile
+├── (dashboard)/         # Authenticated routes
 │   ├── notes/
 │   │   ├── [id]/        # Note detail (view)
 │   │   ├── [id]/edit/   # Note editor
 │   │   └── [id]/versions/ # Version history
-│   └── profile/
+│   ├── shared/
+│   │   └── [id]/        # Shared note detail (read-only or write)
+│   ├── notifications/   # Notification center
+│   ├── trash/
+│   │   └── [id]/        # Trashed note detail (read-only)
+│   ├── profile/         # User profile
+│   └── settings/        # User settings / preferences
 └── (password-reset)/    # Public routes — Password reset flow
     ├── forgot-password/
     ├── reset-link-sent/
@@ -246,6 +252,52 @@ The axios response interceptor automatically shows `react-hot-toast` notificatio
 - Skipped during 401 retry attempts
 - Message comes from `error.response.data.message` (fallback: "Something went wrong")
 - Appends request ID suffix: `(Ref: abc-123)` when `X-Request-ID` header is present
+
+## Notification Stream (`use-notification-stream.tsx`)
+
+Opens an SSE connection to `/api/notifications/stream` for real-time notification delivery.
+
+### Connection
+
+- JWT token passed via `?token=` query param (EventSource doesn't support custom headers)
+- Exponential backoff with jitter on disconnect (1s initial, 30s max)
+- Cleans up on component unmount
+
+### On Message
+
+1. Refetches `['notifications']` query to update the notification list
+2. Invalidates `['shares']` query for `share`/`permission_change` types (live-updates the share modal)
+3. Shows a custom toast notification with type-specific icon and message (5s duration)
+
+### Toast Icons
+
+| Type | Icon | Color |
+|------|------|-------|
+| `share` | Link2 | purple |
+| `permission_change` | ShieldCheck | blue |
+| `edit` | Pencil | yellow |
+| `leave` | LogOut | red |
+| `restore` | RotateCcw | green |
+| `trash` / `version_cleanup` | Trash2 | muted |
+
+### Toast Navigation
+
+Clicking a toast dismisses it and navigates to the relevant page:
+- `share` / `permission_change` → `/shared/:noteId`
+- `version_cleanup` → `/trash/:noteId`
+- Default → `/notes/:noteId`
+
+## Shared Notes Page
+
+The Shared Notes page displays notes shared *with* the current user by other users. Uses `GET /api/notes?status=shared` with additional filters: `permission`, `ownerSearch`.
+
+### Leave Flow
+
+1. User clicks "Leave" in row actions dropdown
+2. `LeaveSharedNoteDialog` opens with confirmation message showing note title and owner name
+3. On confirm → `DELETE /api/shares/:shareId` (using `shareId` from the shared notes response)
+4. Server allows recipient to delete their own share and sends a `leave` notification to the owner
+5. On success → invalidates `shared-notes` query, shows success toast
 
 ## Environment Variables
 

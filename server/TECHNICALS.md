@@ -76,11 +76,16 @@ NestJS interceptor that logs every request/response:
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: ['.env.local', '.env'] }),
-    PrismaModule,       // Global — available to all modules without importing
-    AuthModule,         // Login, register, OAuth, refresh, password reset
-    UsersModule,        // Profile CRUD, avatar upload, password change
-    NotesModule,        // Notes CRUD, versioning, file uploads, sharing
-    HealthModule,       // GET /api/health
+    ScheduleModule.forRoot(),  // @nestjs/schedule for cron jobs
+    PrismaModule,              // Global — available to all modules without importing
+    AuthModule,                // Login, register, OAuth, refresh, password reset
+    UsersModule,               // Profile CRUD, avatar upload, password change
+    NotesModule,               // Notes CRUD, versioning, file uploads, trash
+    SharesModule,              // Note sharing, invites, permission management
+    NotificationsModule,       // Notification CRUD, SSE stream, user muting
+    PreferencesModule,         // User preferences (trash retention days)
+    CleanupModule,             // Scheduled cleanup cron (stale versions, expired tokens)
+    HealthModule,              // GET /api/health
   ],
 })
 export class AppModule implements NestModule {
@@ -132,11 +137,41 @@ All routes require `AuthGuard('jwt')`.
 | GET | `/:id` | Get single note with resolved file URLs |
 | POST | `/` | Create note |
 | PATCH | `/:id` | Update note (optimistic locking via version field) |
-| DELETE | `/:id` | Soft delete (sets isDeleted + deletedAt) |
+| DELETE | `/:id` | Soft delete (sets isDeleted + deletedAt, notifies collaborators) |
+| POST | `/:id/restore` | Restore from trash (resets to draft, creates restore notification) |
+| GET | `/trash/:id` | Get trashed note detail (owner only) |
 | POST | `/:id/upload-url` | Generate Supabase signed upload URL |
 | GET | `/:id/versions` | List version history |
 | GET | `/:id/versions/:versionId` | Get version detail with diff data |
 | POST | `/:id/versions/:versionId/restore` | Restore note to a previous version |
+
+### Shares (`/api/shares/`)
+
+All routes require `AuthGuard('jwt')`.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | `/` | Share note with recipients (owner only, rejects drafts) |
+| GET | `/note/:noteId` | Get shares + pending invites for a note (owner only) |
+| PATCH | `/:shareId` | Update share permission (owner only) |
+| DELETE | `/:shareId` | Remove share (owner revokes, or recipient leaves) |
+| DELETE | `/invite/:inviteId` | Remove pending invite (owner only) |
+
+### Notifications (`/api/notifications/`)
+
+SSE stream uses query param auth; all other routes require `AuthGuard('jwt')`.
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/stream` | SSE stream (JWT via `?token=` query param) |
+| GET | `/` | List notifications (paginated, filterable) |
+| GET | `/unread-count` | Count unread notifications |
+| PATCH | `/:id/read` | Mark single notification as read |
+| PATCH | `/read-all` | Mark all notifications as read |
+| DELETE | `/:id` | Delete a notification |
+| GET | `/muted-users` | List muted users |
+| POST | `/mute/:userId` | Mute user (with duration: 1h, 1d, 1w, forever) |
+| DELETE | `/mute/:userId` | Unmute user |
 
 ### Users (`/api/users/`)
 
@@ -308,6 +343,89 @@ This prevents concurrent edit conflicts — if two users edit the same note simu
 ## Soft Delete
 
 Notes use soft delete: `isDeleted: true` and `deletedAt: new Date()`. All list queries filter by `isDeleted: false`.
+
+On soft delete:
+1. All `NoteShare` records for the note are deleted in a transaction
+2. Each collaborator receives a `trash` notification: `"A note '{title}' shared with you has been deleted by the owner"`
+3. The owner receives a `version_cleanup` notification warning that version history will be purged after the configured retention period
+
+On restore: status is reset to `draft`, and the owner receives a `restore` notification.
+
+## Note Sharing (`shares.service.ts`)
+
+### Authorization
+
+| Operation | Who can do it |
+|-----------|---------------|
+| Add shares | Note owner only |
+| Get shares for note | Note owner only |
+| Update permission | Note owner only |
+| Remove share | Owner (revoke) OR recipient (leave) |
+| Remove invite | Note owner only |
+
+### Sharing Constraints
+
+- Draft notes cannot be shared (`400: Publish the note before sharing`)
+- Owners cannot share with themselves (silently skipped)
+- When the first share is created, note status changes from `published` to `shared`
+- When the last share is removed, note status reverts from `shared` to `published`
+
+### Email Invites
+
+For unregistered recipients, a `NoteInvite` is created:
+- 32-byte random token
+- 7-day expiry
+- Email sent via `MailService.sendShareInviteEmail()`
+- Duplicate invites (same email + noteId, not yet accepted) are skipped
+
+### Notification Lifecycle
+
+| Event | Type | Recipient | Debounced | Rate-limited |
+|-------|------|-----------|-----------|--------------|
+| Note shared | `share` | Share recipient | 15 min | 4/hr per note |
+| Permission changed | `permission_change` | Share recipient | 15 min | 4/hr per note |
+| Recipient leaves | `leave` | Note owner | No | No |
+| Owner revokes share | `revoke` | Removed user | No | No |
+| Note trashed | `trash` | All collaborators | No | No |
+
+Debouncing uses `lastNotifiedAt` on the `NoteShare` record. Rate limiting counts recent notifications per type/note/user within a 1-hour window.
+
+## Notifications (`notifications.service.ts`)
+
+### SSE Stream
+
+- `getStream(userId)` returns an `Observable<MessageEvent>` backed by a `Subject`
+- New notifications are pushed via `Subject.next()` after database insert
+- Client connects to `GET /api/notifications/stream?token=JWT` (EventSource)
+- Connection cleanup on `req.close` event via `removeStream(userId)`
+
+### User Muting
+
+Users can mute notifications from specific actors:
+- Duration options: `1h`, `1d`, `1w`, `forever` (null `expiresAt`)
+- Muted notifications are filtered from the default notification list
+- Expired mutes are ignored (treated as unmuted)
+
+### Notification Types
+
+| Type | Title | Source |
+|------|-------|--------|
+| `share` | Note Shared With You | `SharesService.addShares()` |
+| `permission_change` | Permission Updated | `SharesService.updatePermission()` |
+| `leave` | Collaborator Left | `SharesService.removeShare()` (recipient) |
+| `revoke` | Access Revoked | `SharesService.removeShare()` (owner) |
+| `trash` | Shared Note Deleted | `NotesService.softDelete()` |
+| `restore` | Note Restored | `NotesService.restore()` |
+| `version_cleanup` | Version History Scheduled/Deleted | `NotesService.softDelete()` / `CleanupService` |
+
+## Scheduled Cleanup (`cleanup.service.ts`)
+
+Cron expression: `0 3 * * 0` (every Sunday at 3:00 AM).
+
+### Tasks
+
+1. **Purge stale note versions**: Deletes all `NoteVersion` records for notes in trash (`isDeleted = true`) older than the configured retention period. Creates a `version_cleanup` notification per affected note.
+2. **Purge expired tokens**: Deletes expired/revoked `RefreshToken` rows and expired `PasswordResetToken` rows.
 
 ## Environment Variables
 

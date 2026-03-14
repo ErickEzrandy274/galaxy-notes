@@ -8,7 +8,10 @@ The My Notes dashboard is the primary page for viewing and managing notes. It in
 
 ```
 client/src/features/notes/
-├── api/notes-api.ts                  # API calls via axios
+├── api/
+│   ├── notes-api.ts                  # Notes CRUD API calls via axios
+│   ├── shares-api.ts                 # Shares CRUD API calls
+│   └── notifications-api.ts          # Notifications API calls
 ├── components/
 │   ├── notes-page.tsx                # Main orchestrator
 │   ├── notes-table.tsx               # Table with conditional column headers
@@ -19,12 +22,44 @@ client/src/features/notes/
 │   ├── notes-pagination.tsx          # Pagination controls
 │   ├── notes-empty-state.tsx         # Empty state (no notes)
 │   ├── notes-row-actions.tsx         # Three-dot action menu per row
+│   ├── notes-stats.tsx               # Stats cards (total, published, draft, etc.)
 │   ├── status-badge.tsx              # Colored status pill
-│   └── tag-badge.tsx                 # Colored tag pill + TagList
+│   ├── tag-badge.tsx                 # Colored tag pill + TagList
+│   ├── permission-badge.tsx          # READ/WRITE permission pill
+│   ├── archive-shared-note-dialog.tsx # Confirmation for archiving shared notes
+│   ├── leave-shared-note-dialog.tsx  # Confirmation for leaving a shared note
+│   ├── conflict-resolution-dialog.tsx # Optimistic locking conflict resolution
+│   ├── share-modal.tsx               # Share management modal
+│   ├── share-email-search.tsx        # User email search for sharing
+│   ├── share-permission-select.tsx   # Permission select dropdown
+│   ├── muted-users-list.tsx          # Muted users management list
+│   ├── shared-notes-page.tsx         # Shared Notes page orchestrator
+│   ├── shared-notes-table.tsx        # Shared notes data table
+│   ├── shared-notes-table-row.tsx    # Single shared note row
+│   ├── shared-notes-row-actions.tsx  # Shared note row actions (view, edit, leave)
+│   ├── shared-notes-filters.tsx      # Permission filter tabs
+│   ├── shared-notes-search.tsx       # Search for shared notes
+│   ├── shared-notes-columns-dropdown.tsx # Column visibility for shared notes
+│   ├── shared-notes-empty-state.tsx  # Empty state for shared notes
+│   ├── shared-note-detail-page.tsx   # Shared note detail view
+│   ├── shared-note-detail-header.tsx # Shared note detail header
+│   ├── notifications-page.tsx        # Notifications page orchestrator
+│   ├── notification-list.tsx         # Notification list with pagination
+│   ├── notification-row.tsx          # Single notification row with type-specific icon
+│   ├── notification-filter-tabs.tsx  # All/Unread/Shared/Muted filter tabs
+│   ├── notification-context-menu.tsx # Notification right-click/three-dot menu
+│   └── notification-empty-state.tsx  # Empty state for notifications
 ├── hooks/
 │   ├── use-notes.ts                  # React Query hook for notes
 │   ├── use-notes-filters.ts          # Filter/search/page state management
-│   └── use-column-visibility.ts      # localStorage-backed column toggle
+│   ├── use-column-visibility.ts      # localStorage-backed column toggle
+│   ├── use-note-stats.ts             # Note stats hook
+│   ├── use-note-tags.ts              # User tags hook
+│   ├── use-shared-notes.ts           # React Query hook for shared notes
+│   ├── use-shared-column-visibility.ts # Column toggle for shared notes table
+│   ├── use-shares.ts                 # Share CRUD mutations
+│   ├── use-notifications.ts          # Notification CRUD hooks
+│   └── use-notification-stream.tsx   # SSE stream + toast notifications
 ├── types/index.ts                    # TypeScript interfaces
 ├── utils/
 │   ├── tag-colors.ts                 # Hash-based tag color assignment
@@ -84,7 +119,7 @@ Stored in `localStorage` under key `galaxy-notes-column-visibility`.
 
 ## Row Actions
 
-Three-dot dropdown menu with: Edit (navigates to `/notes/:id`), Share, Move to Trash (soft delete with optimistic cache invalidation).
+Three-dot dropdown menu with: Edit (navigates to `/notes/:id`), Share (opens share modal), Move to Trash (soft delete — shows `ArchiveSharedNoteDialog` confirmation if note has active shares, then invalidates cache).
 
 ## Dependencies
 

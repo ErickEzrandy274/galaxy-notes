@@ -21,8 +21,10 @@ Fetch paginated notes for the authenticated user.
 | `status` | string | — | Filter by status: `draft`, `published`, `archived`, `shared` |
 | `search` | string | — | Case-insensitive title search (substring match) |
 | `tags` | string | — | Comma-separated tags, matches notes containing ANY of the tags |
+| `permission` | string | — | (shared only) Filter by permission: `READ`, `WRITE` |
+| `ownerSearch` | string | — | (shared only) Case-insensitive owner name search |
 
-**Response:**
+**Response (own notes):**
 
 ```json
 {
@@ -38,6 +40,32 @@ Fetch paginated notes for the authenticated user.
     }
   ],
   "total": 24,
+  "page": 1,
+  "limit": 10
+}
+```
+
+**Response (shared notes — `status=shared`):**
+
+When `status=shared`, returns notes shared *with* the current user (not owned by them), with flattened share data:
+
+```json
+{
+  "notes": [
+    {
+      "id": "cuid",
+      "title": "Note title",
+      "status": "shared",
+      "tags": ["work"],
+      "createdAt": "2026-01-15T00:00:00.000Z",
+      "updatedAt": "2026-03-07T00:00:00.000Z",
+      "owner": { "id": "...", "firstName": "Jane", "lastName": "Doe", "email": "jane@example.com", "photo": null },
+      "shareId": "cuid",
+      "permission": "READ",
+      "sharedOn": "2026-03-10T00:00:00.000Z"
+    }
+  ],
+  "total": 5,
   "page": 1,
   "limit": 10
 }
@@ -100,11 +128,19 @@ Generate a signed upload URL for file uploads.
 
 ### DELETE /api/notes/:id
 
-Soft delete: sets `isDeleted: true`, `deletedAt: now()`, removes all shares. Creates a notification with type `version_cleanup` warning the user that version history will be permanently deleted after 30 days.
+Soft delete: sets `isDeleted: true`, `deletedAt: now()`, removes all shares.
+
+**Notifications created:**
+- To each collaborator: type `trash`, title `"Shared Note Deleted"`, message includes note title and "deleted by the owner"
+- To the owner: type `version_cleanup`, warns that version history will be permanently deleted after the configured retention period
+
+### GET /api/notes/trash/:id
+
+Fetch a single trashed note by ID (owner only). Returns the note with resolved content images and document URL. Used for the trash detail view.
 
 ### POST /api/notes/:id/restore
 
-Restore from trash: sets `isDeleted: false`, `deletedAt: null`, `status: 'draft'`.
+Restore from trash: sets `isDeleted: false`, `deletedAt: null`, `status: 'draft'`. Creates a `restore` notification for the owner: `"Note '{title}' has been restored as a draft"`.
 
 ## Version History
 

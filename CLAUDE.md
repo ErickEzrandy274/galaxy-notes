@@ -49,7 +49,7 @@ Connection pooling via PgBouncer (`?pgbouncer=true` in `DATABASE_URL`). `DIRECT_
 
 **Important**: If migration drift exists, use `pnpm db:push` instead of `pnpm db:migrate:dev` to avoid database resets.
 
-**Models**: User, Account, Session, VerificationToken, RefreshToken, PasswordResetToken, Note, NoteShare, NoteVersion, Notification.
+**Models**: User, Account, Session, VerificationToken, RefreshToken, PasswordResetToken, Note, NoteShare, NoteInvite, NoteVersion, Notification, NotificationMute.
 
 ### Client (`client/`)
 
@@ -59,11 +59,12 @@ Next.js 16 App Router with feature-based architecture:
 client/src/
 ├── app/                # Next.js routes (thin wrappers importing feature components)
 │   ├── (auth)/         # Login, Register
-│   ├── (dashboard)/    # Notes, Profile (authenticated)
+│   ├── (dashboard)/    # Notes, Shared, Notifications, Trash, Profile, Settings (authenticated)
 │   └── (password-reset)/ # Forgot, Reset Link Sent, Reset Password
 ├── features/           # Feature modules (api/, components/, hooks/, types/, utils/)
 │   ├── auth/           # Login, register, OAuth buttons, password input, token refresh
-│   ├── notes/          # Notes table, filters, search, pagination, autosave
+│   ├── notes/          # Notes table, filters, search, pagination, autosave, sharing, notifications
+│   ├── trash/          # Trash management (list, detail, restore, permanent delete)
 │   └── profile/        # Profile settings, avatar upload, password change
 ├── components/         # Shared UI components
 ├── lib/                # axios (with JWT interceptor), auth (NextAuth config), prisma, query-client
@@ -85,11 +86,13 @@ NestJS 11 with module-based architecture:
 server/src/
 ├── auth/               # Login, register, OAuth login, token refresh, password reset
 ├── users/              # Profile CRUD, photo upload, password change
-├── notes/              # Notes CRUD, versioning, file uploads, sharing
-├── notifications/      # Notification creation service
+├── notes/              # Notes CRUD, versioning, file uploads, trash
+├── shares/             # Note sharing, invites, permission management, leave/revoke
+├── notifications/      # Notification CRUD, SSE stream, user muting
+├── preferences/        # User preferences (trash retention days)
 ├── cleanup/            # Scheduled cleanup cron job (stale versions, expired tokens)
 ├── mail/               # Nodemailer service + HTML email templates
-│   └── templates/      # Email template functions (password-reset)
+│   └── templates/      # Email template functions (password-reset, share-invite)
 ├── prisma/             # Global PrismaService module
 ├── health/             # Health check endpoint
 └── common/             # Middleware (RequestId, CSRF), interceptors (Logging)
@@ -115,6 +118,17 @@ Client requests signed URL from backend → backend generates Supabase Storage s
 - **Rich-text editor images:** max 1MB, types: webp/jpeg/png
 - **Note attachments (PDF):** max 3MB, type: application/pdf
 
+### Note Sharing
+
+Notes can be shared with other users (READ or WRITE permission). The share lifecycle generates notifications:
+- **Share:** Owner shares → recipient gets `share` notification (debounced 15 min, rate-limited 4/hr)
+- **Permission change:** Owner updates permission → recipient gets `permission_change` notification
+- **Leave:** Recipient leaves → owner gets `leave` notification
+- **Revoke:** Owner removes share → removed user gets `revoke` notification
+- **Trash:** Owner deletes note → all collaborators get `trash` notification
+
+Unregistered recipients receive email invites (7-day expiry token). Draft notes cannot be shared. Real-time notifications via SSE stream with toast popups on the client.
+
 ### Note Versioning & Autosave
 
 Optimistic locking via `version` field (409 on mismatch). Non-draft notes create snapshots on update (max 30, 10-min throttle for autosave, 30s dedup for manual save). Client `useNoteAutosave`: 2s debounce + 2-min interval + localStorage draft recovery.
@@ -125,7 +139,7 @@ Weekly cron job (Sunday 3 AM) via `@nestjs/schedule` purges stale data:
 - **Note versions**: Deletes all `NoteVersion` records for notes trashed (`isDeleted = true`) for 30+ days. Creates a notification per affected note.
 - **Expired tokens**: Deletes expired or revoked `RefreshToken` rows and expired `PasswordResetToken` rows.
 
-On soft-delete, a notification warns the user that version history will be purged after 30 days.
+On soft-delete, collaborators are notified (type `trash`) and the owner receives a `version_cleanup` warning that version history will be purged after the configured retention period. On restore, the owner receives a `restore` notification.
 
 ## Feature Documentation
 
