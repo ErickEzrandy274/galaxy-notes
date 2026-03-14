@@ -191,6 +191,12 @@ export function useNoteAutosave({
     async (overrideStatus?: string) => {
       // Cancel any pending debounce autosave to prevent duplicate version snapshots
       clearTimeout(debounceRef.current);
+
+      // Wait for any in-progress autosave to finish so the new status isn't skipped
+      while (savingRef.current) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+
       if (overrideStatus) {
         dataRef.current = { ...dataRef.current, status: overrideStatus as NoteEditorData['status'] };
       }

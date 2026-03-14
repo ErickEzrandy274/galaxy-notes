@@ -91,6 +91,7 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
     }
     setIsSaving(true);
     await saveNow('draft');
+    await queryClient.invalidateQueries({ queryKey: ['notes'], refetchType: 'all' });
     setIsSaving(false);
     router.push('/notes');
   };
@@ -99,6 +100,7 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
     setShowDraftDialog(false);
     setIsSaving(true);
     await saveNow('draft');
+    await queryClient.invalidateQueries({ queryKey: ['notes'], refetchType: 'all' });
     setIsSaving(false);
     router.push('/notes');
   };
@@ -111,6 +113,7 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
     setShowPublishDialog(false);
     setIsSaving(true);
     await saveNow('published');
+    await queryClient.invalidateQueries({ queryKey: ['notes'], refetchType: 'all' });
     setIsSaving(false);
     router.push('/notes');
   };
@@ -118,6 +121,7 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
   const handleSave = async () => {
     setIsSaving(true);
     await saveNow('published');
+    await queryClient.invalidateQueries({ queryKey: ['notes'], refetchType: 'all' });
     setIsSaving(false);
     router.push(isSharedEditor ? '/shared' : '/notes');
   };
