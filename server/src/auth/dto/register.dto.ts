@@ -1,8 +1,23 @@
-import { IsString, Matches, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
-export class ResetPasswordDto {
+export class RegisterDto {
   @IsString()
-  token: string;
+  @IsNotEmpty({ message: 'First name is required' })
+  firstName: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Last name is required' })
+  lastName: string;
+
+  @IsEmail({}, { message: 'Invalid email address' })
+  email: string;
 
   @IsString()
   @MinLength(12, { message: 'Password must be at least 12 characters' })
@@ -13,4 +28,8 @@ export class ResetPasswordDto {
     message: 'Password must contain a special character',
   })
   password: string;
+
+  @IsOptional()
+  @IsString()
+  inviteToken?: string;
 }

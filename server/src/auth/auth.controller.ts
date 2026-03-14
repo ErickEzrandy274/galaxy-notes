@@ -13,6 +13,7 @@ import { ConfigService } from '@nestjs/config';
 import * as express from 'express';
 import { AuthService } from './auth.service';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
+import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
@@ -25,13 +26,7 @@ export class AuthController {
 
   @Post('register')
   async register(
-    @Body()
-    dto: {
-      email: string;
-      password: string;
-      firstName: string;
-      lastName: string;
-    },
+    @Body() dto: RegisterDto,
     @Res({ passthrough: true }) res: express.Response,
   ) {
     const result = await this.authService.register(dto);

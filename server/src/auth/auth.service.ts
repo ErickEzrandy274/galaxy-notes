@@ -12,6 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +25,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async register(dto: {
@@ -31,6 +33,7 @@ export class AuthService {
     password: string;
     firstName: string;
     lastName: string;
+    inviteToken?: string;
   }) {
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
@@ -49,6 +52,11 @@ export class AuthService {
         userType: 'general_user',
       },
     });
+
+    // Process invite token if provided
+    if (dto.inviteToken) {
+      await this.processInviteToken(dto.inviteToken, user.id, dto.email);
+    }
 
     const refreshToken = await this.createRefreshToken(user.id);
 
@@ -112,7 +120,10 @@ export class AuthService {
       refreshToken,
       id: user.id,
       email: user.email,
-      name: user.name || `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || user.email,
+      name:
+        user.name ||
+        `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() ||
+        user.email,
     };
   }
 
@@ -177,9 +188,7 @@ export class AuthService {
 
     // Generate a secure random token
     const token = randomBytes(32).toString('hex');
-    const expiresAt = new Date(
-      Date.now() + AuthService.RESET_TOKEN_EXPIRY_MS,
-    );
+    const expiresAt = new Date(Date.now() + AuthService.RESET_TOKEN_EXPIRY_MS);
 
     await this.prisma.passwordResetToken.create({
       data: { email, token, expiresAt },
@@ -223,6 +232,73 @@ export class AuthService {
     ]);
 
     return { message: 'Password reset successfully' };
+  }
+
+  private async processInviteToken(
+    token: string,
+    userId: string,
+    email: string,
+  ) {
+    try {
+      const invite = await this.prisma.noteInvite.findUnique({
+        where: { token },
+        include: { note: { select: { id: true, title: true } } },
+      });
+
+      if (!invite || invite.acceptedAt || invite.expiresAt < new Date()) {
+        return; // Silently skip invalid/expired/already-accepted invites
+      }
+
+      if (invite.email.toLowerCase() !== email.toLowerCase()) {
+        return; // Token doesn't match the registering email
+      }
+
+      // Create the share
+      await this.prisma.noteShare.create({
+        data: {
+          noteId: invite.noteId,
+          userId,
+          permission: invite.permission,
+        },
+      });
+
+      // Mark invite as accepted
+      await this.prisma.noteInvite.update({
+        where: { id: invite.id },
+        data: { acceptedAt: new Date() },
+      });
+
+      // Notify the inviter
+      await this.notificationsService.create({
+        userId: invite.invitedBy,
+        title: 'Invite Accepted',
+        message: `${email} accepted your invite and joined the note '${invite.note.title}'`,
+        type: 'share',
+        noteId: invite.noteId,
+        actorId: userId,
+      });
+
+      // Notify the invitee that a note has been shared with them
+      const inviter = await this.prisma.user.findUnique({
+        where: { id: invite.invitedBy },
+        select: { firstName: true, lastName: true, email: true },
+      });
+      const inviterName = inviter
+        ? [inviter.firstName, inviter.lastName].filter(Boolean).join(' ') ||
+          inviter.email
+        : 'Someone';
+
+      await this.notificationsService.create({
+        userId,
+        title: 'Note Shared With You',
+        message: `${inviterName} shared the note '${invite.note.title}' with you`,
+        type: 'share',
+        noteId: invite.noteId,
+        actorId: invite.invitedBy,
+      });
+    } catch {
+      // Don't block registration if invite processing fails
+    }
   }
 
   private generateToken(userId: string, email: string) {
