@@ -27,6 +27,29 @@ export { VersionHistoryItem } from './components/version-history-item';
 export { VersionPreviewBanner } from './components/version-preview-banner';
 export { VersionDiffView } from './components/version-diff-view';
 export { VersionPreviewPage } from './components/version-preview-page';
+export { ShareModal } from './components/share-modal';
+export { ShareEmailSearch } from './components/share-email-search';
+export { SharePermissionSelect } from './components/share-permission-select';
+export { ConflictResolutionDialog } from './components/conflict-resolution-dialog';
+export { ArchiveSharedNoteDialog } from './components/archive-shared-note-dialog';
+export { NotificationsPage } from './components/notifications-page';
+export { NotificationFilterTabs } from './components/notification-filter-tabs';
+export { NotificationList } from './components/notification-list';
+export { NotificationRow } from './components/notification-row';
+export { NotificationContextMenu } from './components/notification-context-menu';
+export { NotificationEmptyState } from './components/notification-empty-state';
+export { MutedUsersList } from './components/muted-users-list';
+export { SharedNotesPage } from './components/shared-notes-page';
+export { SharedNotesTable } from './components/shared-notes-table';
+export { SharedNotesTableRow } from './components/shared-notes-table-row';
+export { SharedNotesFilters } from './components/shared-notes-filters';
+export { SharedNotesSearch } from './components/shared-notes-search';
+export { SharedNotesColumnsDropdown } from './components/shared-notes-columns-dropdown';
+export { SharedNotesRowActions } from './components/shared-notes-row-actions';
+export { SharedNotesEmptyState } from './components/shared-notes-empty-state';
+export { SharedNoteDetailPage } from './components/shared-note-detail-page';
+export { SharedNoteDetailHeader } from './components/shared-note-detail-header';
+export { PermissionBadge } from './components/permission-badge';
 
 // Hooks
 export { useNotes } from './hooks/use-notes';
@@ -38,6 +61,11 @@ export { useNoteTags } from './hooks/use-note-tags';
 export { useNoteUpload } from './hooks/use-note-upload';
 export { useNoteStats } from './hooks/use-note-stats';
 export { useVersionHistory } from './hooks/use-version-history';
+export { useShares, useAddShares, useUpdateSharePermission, useRemoveShare, useRemoveInvite, useSearchUsers } from './hooks/use-shares';
+export { useNotifications, useInfiniteNotifications, useUnreadNotificationCount, useMarkNotificationRead, useMarkAllNotificationsRead, useDeleteNotification, useMuteUser, useUnmuteUser, useMutedUsers } from './hooks/use-notifications';
+export { useNotificationStream } from './hooks/use-notification-stream';
+export { useSharedNotes, useSharedNotesFilters } from './hooks/use-shared-notes';
+export { useSharedColumnVisibility } from './hooks/use-shared-column-visibility';
 
 // Utils
 export { getTagColor } from './utils/tag-colors';
@@ -61,4 +89,22 @@ export type {
   NoteVersionSummary,
   NoteVersionDetail,
   VersionHistoryResponse,
+  NoteShareItem,
+  PendingInvite,
+  SharesResponse,
+  AddSharesRequest,
+  AddSharesResponse,
+  UserSearchResult,
+  PendingShareRecipient,
+  NotificationItem,
+  NotificationActor,
+  NotificationsResponse,
+  NotificationFilter,
+  MutedUser,
+  MuteDuration,
+  SharedNote,
+  SharedNoteOwner,
+  SharedNotesResponse,
+  SharedNotesFilters as SharedNotesFiltersType,
+  SharedNoteColumnKey,
 } from './types';

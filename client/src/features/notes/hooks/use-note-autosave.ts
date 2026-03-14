@@ -10,6 +10,10 @@ const DEBOUNCE_MS = 2000;
 const INTERVAL_MS = 120_000;
 const STORAGE_PREFIX = 'note-draft-';
 
+interface ConflictData {
+  currentVersion: number;
+}
+
 interface UseNoteAutosaveOptions {
   data: NoteEditorData;
   isDirty: boolean;
@@ -18,6 +22,7 @@ interface UseNoteAutosaveOptions {
   setSavedNoteId: (id: string) => void;
   markClean: (newVersion?: number) => void;
   contentTransform?: (content: string) => string;
+  onConflict?: (conflict: ConflictData) => void;
 }
 
 export function useNoteAutosave({
@@ -28,6 +33,7 @@ export function useNoteAutosave({
   setSavedNoteId,
   markClean,
   contentTransform,
+  onConflict,
 }: UseNoteAutosaveOptions) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -93,7 +99,11 @@ export function useNoteAutosave({
       setStatus('saved');
       setLastSavedAt(new Date());
       queryClient.invalidateQueries({ queryKey: ['notes'] });
-    } catch {
+    } catch (error: any) {
+      if (error?.response?.status === 409 && onConflict) {
+        const conflictData = error.response?.data;
+        onConflict({ currentVersion: conflictData?.currentVersion ?? version });
+      }
       setStatus('error');
     } finally {
       savingRef.current = false;

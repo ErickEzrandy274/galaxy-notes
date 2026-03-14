@@ -16,6 +16,8 @@ interface NoteEditorSidebarProps {
   version: number;
   noteId?: string;
   documentUrl?: string | null;
+  shareCount?: number;
+  isOwner?: boolean;
 }
 
 export function NoteEditorSidebar({
@@ -25,6 +27,8 @@ export function NoteEditorSidebar({
   version,
   noteId,
   documentUrl,
+  shareCount = 0,
+  isOwner = true,
 }: NoteEditorSidebarProps) {
   return (
     <aside className="w-96 shrink-0 overflow-y-auto space-y-6 border-l border-border p-4">
@@ -38,7 +42,13 @@ export function NoteEditorSidebar({
         initialDocumentUrl={documentUrl}
       />
 
-      <NoteSharePanel noteStatus={data.status} />
+      <NoteSharePanel
+        noteId={noteId}
+        noteTitle={data.title}
+        noteStatus={data.status}
+        shareCount={shareCount}
+        isOwner={isOwner}
+      />
 
       <NoteInfoPanel
         content={data.content}

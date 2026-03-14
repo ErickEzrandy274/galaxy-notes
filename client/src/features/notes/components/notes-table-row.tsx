@@ -51,7 +51,7 @@ export function NotesTableRow({ note, columns }: NotesTableRowProps) {
         </td>
       )}
       <td className="px-4 py-3">
-        <NotesRowActions noteId={note.id} noteStatus={note.status} />
+        <NotesRowActions noteId={note.id} noteTitle={note.title} noteStatus={note.status} shareCount={note._count.shares} />
       </td>
     </tr>
   );

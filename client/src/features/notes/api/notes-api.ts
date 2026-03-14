@@ -8,6 +8,8 @@ import type {
   SignedUploadUrlResponse,
   VersionHistoryResponse,
   NoteVersionDetail,
+  SharedNotesResponse,
+  SharedNotesFilters,
 } from '../types';
 
 export async function fetchNotes(
@@ -21,6 +23,24 @@ export async function fetchNotes(
   if (filters.tags) params.set('tags', filters.tags);
 
   const response = await api.get<NotesResponse>(`/notes?${params.toString()}`);
+  return response.data;
+}
+
+export async function fetchSharedNotes(
+  filters: SharedNotesFilters,
+): Promise<SharedNotesResponse> {
+  const params = new URLSearchParams();
+  params.set('page', String(filters.page));
+  params.set('limit', String(filters.limit));
+  params.set('status', 'shared');
+  if (filters.search) params.set('search', filters.search);
+  if (filters.ownerSearch) params.set('ownerSearch', filters.ownerSearch);
+  if (filters.tags) params.set('tags', filters.tags);
+  if (filters.permission) params.set('permission', filters.permission);
+
+  const response = await api.get<SharedNotesResponse>(
+    `/notes?${params.toString()}`,
+  );
   return response.data;
 }
 

@@ -51,6 +51,8 @@ export function NoteDetailPage({ noteId }: NoteDetailPageProps) {
               noteId={noteId}
               title={note.title}
               version={note.version}
+              isOwner={note.userId === session?.user?.id}
+              shareCount={note.shares.length}
               onOpenHistory={() => setHistoryOpen(true)}
             />
             <NoteDetailContent note={note} />
