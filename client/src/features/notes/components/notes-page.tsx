@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import Link from 'next/link';
-import { Loader2, Plus } from 'lucide-react';
+import { FileText, Loader2, Plus } from 'lucide-react';
 import { useNotes } from '../hooks/use-notes';
 import { useNotesFilters } from '../hooks/use-notes-filters';
 import { useColumnVisibility } from '../hooks/use-column-visibility';
@@ -36,7 +36,12 @@ export function NotesPage() {
   return (
     <section className="flex h-full flex-col p-6">
       <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">My Notes</h1>
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+            <FileText className="h-5 w-5 text-blue-500" />
+          </span>
+          <h1 className="text-xl font-bold text-foreground">My Notes</h1>
+        </div>
         <Link
           href="/notes/new"
           className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"

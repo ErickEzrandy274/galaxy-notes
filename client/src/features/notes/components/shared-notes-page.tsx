@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Users } from 'lucide-react';
 import { useSharedNotes, useSharedNotesFilters } from '../hooks/use-shared-notes';
 import { useSharedColumnVisibility } from '../hooks/use-shared-column-visibility';
 import { SharedNotesFilters } from './shared-notes-filters';
@@ -49,7 +49,12 @@ export function SharedNotesPage() {
   return (
     <section className="flex h-full flex-col p-6">
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Shared with Me</h1>
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+            <Users className="h-5 w-5 text-emerald-500" />
+          </span>
+          <h1 className="text-xl font-bold text-foreground">Shared with Me</h1>
+        </div>
       </header>
 
       <nav className="mb-4" aria-label="Permission filters">

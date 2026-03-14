@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import { NotesPagination } from '@/features/notes/components/notes-pagination';
 import { useTrash } from '../hooks/use-trash';
 import { useTrashFilters } from '../hooks/use-trash-filters';
@@ -42,7 +42,12 @@ export function TrashPage() {
   return (
     <section className="flex h-full flex-col p-6">
       <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Trash</h1>
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10">
+            <Trash2 className="h-5 w-5 text-red-500" />
+          </span>
+          <h1 className="text-xl font-bold text-foreground">Trash</h1>
+        </div>
         <TrashSettingsPopover />
       </header>
 

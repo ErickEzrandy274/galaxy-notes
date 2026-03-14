@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Bell, Loader2 } from 'lucide-react';
 import { NotificationFilterTabs } from './notification-filter-tabs';
 import { NotificationList } from './notification-list';
 import { NotificationEmptyState } from './notification-empty-state';
@@ -34,7 +34,12 @@ export function NotificationsPage() {
   return (
     <section className="flex h-full flex-col p-6">
       <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
+            <Bell className="h-5 w-5 text-orange-500" />
+          </span>
+          <h1 className="text-xl font-bold text-foreground">Notifications</h1>
+        </div>
         {hasUnread && !isMutedTab && (
           <button
             onClick={() => markAllRead.mutate()}
