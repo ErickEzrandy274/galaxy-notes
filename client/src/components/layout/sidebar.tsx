@@ -7,6 +7,7 @@ import {
 	Users,
 	Bell,
 	Trash2,
+	Archive,
 	User,
 	LogOut,
 	ChevronLeft,
@@ -28,6 +29,7 @@ import { useNotificationStream } from "@/features/notes/hooks/use-notification-s
 
 const navItems = [
 	{ href: "/notes", icon: FileText, label: "My Notes" },
+	{ href: "/archived", icon: Archive, label: "Archived" },
 	{ href: "/shared", icon: Users, label: "Shared with Me" },
 	{ href: "/notifications", icon: Bell, label: "Notifications" },
 	{ href: "/trash", icon: Trash2, label: "Trash" },
