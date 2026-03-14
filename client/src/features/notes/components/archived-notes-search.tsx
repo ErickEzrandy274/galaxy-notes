@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Search, Tag } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface ArchivedNotesSearchProps {
   onSearchChange: (value: string) => void;
@@ -25,43 +25,34 @@ export function ArchivedNotesSearch({
     return () => clearTimeout(id);
   }, [tagsInput, onTagsChange]);
 
-  const inputClass =
-    'h-9 rounded-lg border border-border bg-card pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary';
-
   return (
-    <search className="flex items-center gap-4">
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium text-foreground">Title</span>
-        <div className="relative">
-          <Search
-            size={15}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
+    <fieldset className="flex items-end gap-3">
+      <label className="flex-1">
+        <span className="mb-1 block text-sm font-medium text-foreground">Title</span>
+        <span className="flex items-center gap-2 rounded-lg border border-border bg-input px-3 py-2">
+          <Search size={16} className="text-muted-foreground" aria-hidden="true" />
           <input
-            type="text"
+            type="search"
             placeholder="Search by title..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className={inputClass}
+            className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
-        </div>
+        </span>
       </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-sm font-medium text-foreground">Tags</span>
-        <div className="relative">
-          <Tag
-            size={15}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
+      <label className="flex-1">
+        <span className="mb-1 block text-sm font-medium text-foreground">Tags</span>
+        <span className="flex items-center gap-2 rounded-lg border border-border bg-input px-3 py-2">
+          <Tag size={16} className="text-muted-foreground" aria-hidden="true" />
           <input
             type="text"
             placeholder="Filter by tags..."
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
-            className={inputClass}
+            className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
-        </div>
+        </span>
       </label>
-    </search>
+    </fieldset>
   );
 }
