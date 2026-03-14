@@ -82,7 +82,7 @@ export function useNotificationStream() {
       };
 
       es.onmessage = (event) => {
-        queryClient.refetchQueries({ queryKey: ["notifications"] });
+        queryClient.invalidateQueries({ queryKey: ["notifications"] });
 
         try {
           const notification: NotificationItem = JSON.parse(event.data);
