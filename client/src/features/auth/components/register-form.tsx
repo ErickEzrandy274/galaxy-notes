@@ -10,7 +10,12 @@ import { OAuthButtons } from './oauth-buttons';
 import { PasswordInput } from './password-input';
 import { generatePassword } from '../utils/generate-password';
 
-export function RegisterForm() {
+interface RegisterFormProps {
+  defaultEmail?: string;
+  inviteToken?: string;
+}
+
+export function RegisterForm({ defaultEmail, inviteToken }: RegisterFormProps) {
   const { register: submitRegister, isLoading } = useRegister();
   const {
     register,
@@ -23,7 +28,7 @@ export function RegisterForm() {
     defaultValues: {
       firstName: '',
       lastName: '',
-      email: '',
+      email: defaultEmail ?? '',
       password: '',
       confirmPassword: '',
     },
@@ -46,8 +51,8 @@ export function RegisterForm() {
       <p className="mt-2 text-zinc-400">Join Galaxy Notes today</p>
 
       <form
-        onSubmit={handleSubmit(submitRegister)}
-        className="mt-8 space-y-5"
+        onSubmit={handleSubmit((data) => submitRegister(data, inviteToken))}
+        className="flex flex-col gap-4 mt-8"
       >
         {/* First Name + Last Name */}
         <fieldset className="grid grid-cols-2 gap-4">
@@ -98,8 +103,9 @@ export function RegisterForm() {
             id="email"
             type="email"
             placeholder="you@example.com"
+            readOnly={!!defaultEmail}
             {...register('email')}
-            className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+            className="mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 read-only:cursor-not-allowed read-only:opacity-60"
           />
           {errors.email && (
             <p className="mt-1 text-sm text-red-500">

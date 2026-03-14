@@ -201,4 +201,9 @@ api.interceptors.response.use(
   },
 );
 
+/** Return the current in-memory access token (for EventSource, etc.) */
+export function getAccessToken(): string | null {
+  return cachedToken;
+}
+
 export default api;

@@ -11,11 +11,11 @@ export function useRegister() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const register = async (data: RegisterInput) => {
+  const register = async (data: RegisterInput, inviteToken?: string) => {
     setIsLoading(true);
     try {
       const { confirmPassword: _, ...registerData } = data;
-      await registerUser(registerData);
+      await registerUser({ ...registerData, inviteToken });
 
       const result = await signIn('credentials', {
         email: data.email,

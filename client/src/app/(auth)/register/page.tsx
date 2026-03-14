@@ -18,12 +18,18 @@ const registerBranding: AuthBrandingConfig = {
   ],
 };
 
-export default function RegisterPage() {
+interface RegisterPageProps {
+  searchParams: Promise<{ email?: string; invite?: string }>;
+}
+
+export default async function RegisterPage({ searchParams }: RegisterPageProps) {
+  const params = await searchParams;
+
   return (
     <>
       <AuthBranding config={registerBranding} />
       <section className="flex w-full items-center justify-center bg-[#090908] p-8 lg:w-1/2">
-        <RegisterForm />
+        <RegisterForm defaultEmail={params.email} inviteToken={params.invite} />
       </section>
     </>
   );
