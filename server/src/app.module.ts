@@ -8,6 +8,8 @@ import { NotesModule } from './notes/notes.module';
 import { HealthModule } from './health/health.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { CleanupModule } from './cleanup/cleanup.module';
+import { SharesModule } from './shares/shares.module';
+import { PreferencesModule } from './preferences/preferences.module';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { CsrfMiddleware } from './common/middleware/csrf.middleware';
 
@@ -25,12 +27,12 @@ import { CsrfMiddleware } from './common/middleware/csrf.middleware';
     HealthModule,
     NotificationsModule,
     CleanupModule,
+    SharesModule,
+    PreferencesModule,
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(RequestIdMiddleware, CsrfMiddleware)
-      .forRoutes('*');
+    consumer.apply(RequestIdMiddleware, CsrfMiddleware).forRoutes('*');
   }
 }
