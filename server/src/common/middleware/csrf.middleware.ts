@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NestMiddleware,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, NestMiddleware, ForbiddenException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
@@ -13,9 +9,7 @@ export class CsrfMiddleware implements NestMiddleware {
 
   constructor() {
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
-    this.allowedOrigins = new Set(
-      clientUrl.split(',').map((o) => o.trim()),
-    );
+    this.allowedOrigins = new Set(clientUrl.split(',').map((o) => o.trim()));
   }
 
   use(req: Request, res: Response, next: NextFunction) {
@@ -23,8 +17,8 @@ export class CsrfMiddleware implements NestMiddleware {
       return next();
     }
 
-    const origin = req.headers['origin'] as string | undefined;
-    const referer = req.headers['referer'] as string | undefined;
+    const origin = req.headers['origin'];
+    const referer = req.headers['referer'];
 
     // Extract origin from Referer as fallback (some browsers omit Origin on same-origin POST)
     const effectiveOrigin = origin || this.extractOrigin(referer);

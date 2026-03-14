@@ -2,6 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createTransport, type Transporter } from 'nodemailer';
 import { passwordResetTemplate } from './templates/password-reset.template';
+import {
+  shareInviteTemplate,
+  formatTimeAgo,
+} from './templates/share-invite.template';
 
 @Injectable()
 export class MailService {
@@ -25,10 +29,7 @@ export class MailService {
     });
   }
 
-  async sendPasswordResetEmail(
-    to: string,
-    resetUrl: string,
-  ): Promise<boolean> {
+  async sendPasswordResetEmail(to: string, resetUrl: string): Promise<boolean> {
     try {
       await this.transporter.sendMail({
         from: this.fromAddress,
@@ -41,6 +42,39 @@ export class MailService {
       return true;
     } catch (err) {
       this.logger.error(`Failed to send reset email to ${to}`, err);
+      return false;
+    }
+  }
+
+  async sendShareInviteEmail(
+    to: string,
+    data: {
+      sharerName: string;
+      noteTitle: string;
+      noteUpdatedAt: Date;
+      token: string;
+    },
+  ): Promise<boolean> {
+    try {
+      const clientUrl = this.configService.get<string>('CLIENT_URL');
+      const registerUrl = `${clientUrl}/register?email=${encodeURIComponent(to)}&invite=${data.token}`;
+
+      await this.transporter.sendMail({
+        from: this.fromAddress,
+        to,
+        subject: `${data.sharerName} shared a note with you on Galaxy Notes`,
+        html: shareInviteTemplate({
+          sharerName: data.sharerName,
+          noteTitle: data.noteTitle,
+          lastEditedAgo: formatTimeAgo(data.noteUpdatedAt),
+          registerUrl,
+        }),
+      });
+
+      this.logger.log(`Share invite email sent to ${to}`);
+      return true;
+    } catch (err) {
+      this.logger.error(`Failed to send share invite email to ${to}`, err);
       return false;
     }
   }

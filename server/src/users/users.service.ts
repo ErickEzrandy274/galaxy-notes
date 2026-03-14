@@ -39,8 +39,12 @@ export class UsersService {
   searchByEmail(query: string, excludeUserId: string) {
     return this.prisma.user.findMany({
       where: {
-        email: { contains: query, mode: 'insensitive' },
         id: { not: excludeUserId },
+        OR: [
+          { email: { contains: query, mode: 'insensitive' } },
+          { firstName: { contains: query, mode: 'insensitive' } },
+          { lastName: { contains: query, mode: 'insensitive' } },
+        ],
       },
       select: {
         id: true,
@@ -125,9 +129,7 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
 
     if (user.userType !== 'general_user') {
-      throw new BadRequestException(
-        'OAuth users cannot change password',
-      );
+      throw new BadRequestException('OAuth users cannot change password');
     }
 
     if (!user.password) {
