@@ -1,19 +1,16 @@
-'use client';
-
 import { Users } from 'lucide-react';
 
 export function SharedNotesEmptyState() {
   return (
-    <output className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-      <Users size={70} className="text-muted-foreground/30" strokeWidth={1} />
-      <section>
-        <h3 className="text-lg font-semibold text-foreground">
-          No shared notes
-        </h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Notes shared with you by others will appear here.
-        </p>
-      </section>
-    </output>
+    <section className="flex flex-1 flex-col items-center justify-center py-24">
+      <figure className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted" aria-hidden="true">
+        <Users size={32} className="text-muted-foreground" />
+      </figure>
+      <h2 className="mb-2 text-xl font-semibold text-foreground">No shared notes</h2>
+
+      <p className="mb-6 max-w-sm text-center text-sm text-muted-foreground">
+        Notes shared with you by others will appear here.
+      </p>
+    </section>
   );
 }
