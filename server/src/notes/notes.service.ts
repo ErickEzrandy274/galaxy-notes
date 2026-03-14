@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PreferencesService } from '../preferences/preferences.service';
 
 const MAX_VERSIONS = 30;
 const SNAPSHOT_THROTTLE_MS = 10 * 60 * 1000; // 10 minutes
@@ -26,6 +27,7 @@ export class NotesService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly notificationsService: NotificationsService,
+    private readonly preferencesService: PreferencesService,
   ) {
     this.supabase = createClient(
       this.config.get<string>('SUPABASE_URL')!,
@@ -44,10 +46,7 @@ export class NotesService {
       counts.map((c) => [c.status, c._count.status]),
     );
 
-    const total = Object.values(map).reduce(
-      (a: number, b: number) => a + b,
-      0,
-    );
+    const total = Object.values(map).reduce((a: number, b: number) => a + b, 0);
 
     return {
       total,
@@ -62,9 +61,103 @@ export class NotesService {
     userId: string,
     page = 1,
     limit = 10,
-    filters?: { status?: string; search?: string; tags?: string[] },
+    filters?: {
+      status?: string;
+      search?: string;
+      tags?: string[];
+      permission?: string;
+      ownerSearch?: string;
+    },
   ) {
     const skip = (page - 1) * limit;
+
+    // Special filter: show notes shared with current user (not owned by them)
+    if (filters?.status === 'shared') {
+      const shareFilter: any = { userId };
+      if (filters?.permission) {
+        shareFilter.permission = filters.permission;
+      }
+
+      const sharedWhere: any = {
+        isDeleted: false,
+        shares: { some: shareFilter },
+        NOT: { userId },
+      };
+      if (filters?.search) {
+        sharedWhere.title = { contains: filters.search, mode: 'insensitive' };
+      }
+      if (filters?.tags?.length) {
+        sharedWhere.tags = { hasSome: filters.tags };
+      }
+      if (filters?.ownerSearch) {
+        sharedWhere.user = {
+          OR: [
+            {
+              firstName: {
+                contains: filters.ownerSearch,
+                mode: 'insensitive',
+              },
+            },
+            {
+              lastName: {
+                contains: filters.ownerSearch,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        };
+      }
+
+      const [notes, total] = await Promise.all([
+        this.prisma.note.findMany({
+          where: sharedWhere,
+          orderBy: { updatedAt: 'desc' },
+          skip,
+          take: limit,
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            tags: true,
+            createdAt: true,
+            updatedAt: true,
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                photo: true,
+              },
+            },
+            shares: {
+              where: { userId },
+              select: { id: true, permission: true, createdAt: true },
+            },
+          },
+        }),
+        this.prisma.note.count({ where: sharedWhere }),
+      ]);
+
+      // Flatten share data for the current user
+      const flatNotes = notes.map((note) => {
+        const myShare = note.shares[0];
+        return {
+          id: note.id,
+          title: note.title,
+          status: note.status,
+          tags: note.tags,
+          createdAt: note.createdAt,
+          updatedAt: note.updatedAt,
+          owner: note.user,
+          shareId: myShare?.id ?? null,
+          permission: myShare?.permission ?? 'READ',
+          sharedOn: myShare?.createdAt ?? note.createdAt,
+        };
+      });
+
+      return { notes: flatNotes, total, page, limit };
+    }
 
     const where: any = { userId, isDeleted: false };
     if (filters?.status) where.status = filters.status;
@@ -105,7 +198,12 @@ export class NotesService {
         shares: {
           include: {
             user: {
-              select: { id: true, firstName: true, lastName: true, email: true },
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+              },
             },
           },
         },
@@ -193,12 +291,18 @@ export class NotesService {
 
     // Sanitize document: extract storage path if a full URL was sent
     if (updateData.document && updateData.document.startsWith('http')) {
-      const match = updateData.document.match(/\/galaxy-notes-staging\/([^?]+)/);
+      const match = updateData.document.match(
+        /\/galaxy-notes-staging\/([^?]+)/,
+      );
       updateData.document = match ? decodeURIComponent(match[1]) : undefined;
     }
 
     // Delete old document from storage when cleared or replaced
-    if (note.document && updateData.document !== undefined && note.document !== updateData.document) {
+    if (
+      note.document &&
+      updateData.document !== undefined &&
+      note.document !== updateData.document
+    ) {
       await this.supabase.storage
         .from('galaxy-notes-staging')
         .remove([note.document]);
@@ -248,7 +352,11 @@ export class NotesService {
 
     return this.prisma.note.update({
       where: { id: noteId },
-      data: { ...updateData, status: dto.status as any, version: note.version + 1 },
+      data: {
+        ...updateData,
+        status: dto.status as any,
+        version: note.version + 1,
+      },
     });
   }
 
@@ -285,9 +393,7 @@ export class NotesService {
         ? ALLOWED_MIME_TYPES_ATTACHMENT
         : ALLOWED_MIME_TYPES_EDITOR;
     const maxSize =
-      source === 'attachment'
-        ? MAX_FILE_SIZE_ATTACHMENT
-        : MAX_FILE_SIZE_EDITOR;
+      source === 'attachment' ? MAX_FILE_SIZE_ATTACHMENT : MAX_FILE_SIZE_EDITOR;
 
     if (!allowedTypes.includes(mimeType)) {
       throw new BadRequestException(
@@ -345,7 +451,9 @@ export class NotesService {
     return data?.signedUrl ?? null;
   }
 
-  private extractContentImagePaths(content: string | null | undefined): string[] {
+  private extractContentImagePaths(
+    content: string | null | undefined,
+  ): string[] {
     if (!content) return [];
     const paths: string[] = [];
     const regex = /<img\s+src="([^"]+)"/g;
@@ -353,7 +461,13 @@ export class NotesService {
     while ((m = regex.exec(content)) !== null) {
       const src = m[1];
       // Only collect storage paths (not URLs, blobs, or empty)
-      if (!src || src.startsWith('http') || src.startsWith('blob:') || src === '//:0') continue;
+      if (
+        !src ||
+        src.startsWith('http') ||
+        src.startsWith('blob:') ||
+        src === '//:0'
+      )
+        continue;
       paths.push(src);
     }
     return paths;
@@ -395,7 +509,13 @@ export class NotesService {
     let m;
     while ((m = imgRegex.exec(content)) !== null) {
       const src = m[1];
-      if (src.startsWith('http') || src.startsWith('blob:') || src === '//:0' || !src) continue;
+      if (
+        src.startsWith('http') ||
+        src.startsWith('blob:') ||
+        src === '//:0' ||
+        !src
+      )
+        continue;
       const signedUrl = await this.resolveDocumentUrl(src);
       if (signedUrl) {
         replacements.push({ from: m[0], to: `<img src="${signedUrl}"` });
@@ -567,7 +687,9 @@ export class NotesService {
     if (!note) throw new NotFoundException('Note not found');
 
     if (note.status === 'archived') {
-      throw new BadRequestException('Cannot restore versions on archived notes');
+      throw new BadRequestException(
+        'Cannot restore versions on archived notes',
+      );
     }
 
     // Check write access
@@ -607,8 +729,16 @@ export class NotesService {
   async softDelete(noteId: string, userId: string) {
     const note = await this.prisma.note.findFirst({
       where: { id: noteId, userId, isDeleted: false },
+      include: {
+        shares: { select: { userId: true } },
+      },
     });
     if (!note) throw new NotFoundException('Note not found');
+
+    // Collect collaborators before deleting shares
+    const collaboratorIds = note.shares
+      .map((s) => s.userId)
+      .filter((id) => id !== userId);
 
     await this.prisma.$transaction([
       this.prisma.note.update({
@@ -618,10 +748,24 @@ export class NotesService {
       this.prisma.noteShare.deleteMany({ where: { noteId } }),
     ]);
 
+    // Notify collaborators that the shared note was archived
+    for (const collaboratorId of collaboratorIds) {
+      await this.notificationsService.create({
+        userId: collaboratorId,
+        title: 'Shared Note Deleted',
+        message: `A note '${note.title}' shared with you has been deleted by the owner`,
+        type: 'trash',
+        noteId,
+        actorId: userId,
+      });
+    }
+
+    const prefs = await this.preferencesService.getPreferences(userId);
+
     await this.notificationsService.create({
       userId,
       title: 'Version History Scheduled for Deletion',
-      message: `The version history of Note '${note.title}' will be permanently deleted after 30 days`,
+      message: `The version history of Note '${note.title}' will be permanently deleted after ${prefs.trashRetentionDays} days`,
       type: 'version_cleanup',
       noteId,
     });
@@ -633,9 +777,123 @@ export class NotesService {
     });
     if (!note) throw new NotFoundException('Note not found in trash');
 
-    return this.prisma.note.update({
+    const restored = await this.prisma.note.update({
       where: { id: noteId },
       data: { isDeleted: false, deletedAt: null, status: 'draft' },
     });
+
+    await this.notificationsService.create({
+      userId,
+      title: 'Note Restored',
+      message: `Note '${note.title || 'Untitled'}' has been restored as a draft`,
+      type: 'restore',
+      noteId,
+    });
+
+    return restored;
+  }
+
+  async findTrashedById(noteId: string, userId: string) {
+    const note = await this.prisma.note.findFirst({
+      where: { id: noteId, userId, isDeleted: true },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+    if (!note) throw new NotFoundException('Note not found in trash');
+
+    return {
+      ...note,
+      content: await this.resolveContentImages(note.content),
+      documentUrl: await this.resolveDocumentUrl(note.document),
+      shares: [],
+    };
+  }
+
+  async findTrashed(
+    userId: string,
+    page = 1,
+    limit = 10,
+    filters?: { search?: string; tags?: string[] },
+  ) {
+    const skip = (page - 1) * limit;
+
+    const where: any = { userId, isDeleted: true };
+    if (filters?.search) {
+      where.title = { contains: filters.search, mode: 'insensitive' };
+    }
+    if (filters?.tags?.length) {
+      where.tags = { hasSome: filters.tags };
+    }
+
+    const [notes, total] = await Promise.all([
+      this.prisma.note.findMany({
+        where,
+        orderBy: { deletedAt: 'desc' },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          tags: true,
+          createdAt: true,
+          deletedAt: true,
+        },
+      }),
+      this.prisma.note.count({ where }),
+    ]);
+
+    return { notes, total, page, limit };
+  }
+
+  async permanentDelete(noteId: string, userId: string) {
+    const note = await this.prisma.note.findFirst({
+      where: { id: noteId, userId, isDeleted: true },
+    });
+    if (!note) throw new NotFoundException('Note not found in trash');
+
+    await this.cleanupNoteStorage(note);
+
+    await this.prisma.note.delete({ where: { id: noteId } });
+  }
+
+  async emptyTrash(userId: string) {
+    const trashedNotes = await this.prisma.note.findMany({
+      where: { userId, isDeleted: true },
+      select: { id: true, content: true, document: true },
+    });
+
+    if (trashedNotes.length === 0) return { deleted: 0 };
+
+    for (const note of trashedNotes) {
+      await this.cleanupNoteStorage(note);
+    }
+
+    const { count } = await this.prisma.note.deleteMany({
+      where: { userId, isDeleted: true },
+    });
+
+    return { deleted: count };
+  }
+
+  async cleanupNoteStorage(note: {
+    content?: string | null;
+    document?: string | null;
+  }) {
+    const paths: string[] = [];
+
+    if (note.document) {
+      paths.push(note.document);
+    }
+
+    const contentPaths = this.extractContentImagePaths(note.content);
+    paths.push(...contentPaths);
+
+    if (paths.length > 0) {
+      await this.supabase.storage
+        .from('galaxy-notes-staging')
+        .remove(paths);
+    }
   }
 }

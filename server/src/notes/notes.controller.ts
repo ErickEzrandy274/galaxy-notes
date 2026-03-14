@@ -16,6 +16,7 @@ import { CreateSignedUploadUrlDto } from './dto/create-signed-upload-url.dto';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { GetVersionsDto } from './dto/get-versions.dto';
+import { GetTrashedNotesDto } from './dto/get-trashed-notes.dto';
 
 @Controller('notes')
 @UseGuards(AuthGuard('jwt'))
@@ -30,11 +31,15 @@ export class NotesController {
     @Query('status') status?: string,
     @Query('search') search?: string,
     @Query('tags') tags?: string,
+    @Query('permission') permission?: string,
+    @Query('ownerSearch') ownerSearch?: string,
   ) {
     return this.notesService.findAll(req.user.id, +page, +limit, {
       status,
       search,
       tags: tags ? tags.split(',') : undefined,
+      permission,
+      ownerSearch,
     });
   }
 
@@ -61,6 +66,38 @@ export class NotesController {
       dto.fileSize,
       dto.source,
     );
+  }
+
+  @Get('trash')
+  findTrashed(
+    @Request() req: { user: { id: string } },
+    @Query() query: GetTrashedNotesDto,
+  ) {
+    return this.notesService.findTrashed(req.user.id, query.page, query.limit, {
+      search: query.search,
+      tags: query.tags ? query.tags.split(',') : undefined,
+    });
+  }
+
+  @Delete('trash')
+  emptyTrash(@Request() req: { user: { id: string } }) {
+    return this.notesService.emptyTrash(req.user.id);
+  }
+
+  @Get('trash/:id')
+  findTrashedById(
+    @Param('id') id: string,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.notesService.findTrashedById(id, req.user.id);
+  }
+
+  @Delete('trash/:id')
+  permanentDelete(
+    @Param('id') id: string,
+    @Request() req: { user: { id: string } },
+  ) {
+    return this.notesService.permanentDelete(id, req.user.id);
   }
 
   @Get(':id/versions')
@@ -96,18 +133,12 @@ export class NotesController {
   }
 
   @Get(':id')
-  findById(
-    @Param('id') id: string,
-    @Request() req: { user: { id: string } },
-  ) {
+  findById(@Param('id') id: string, @Request() req: { user: { id: string } }) {
     return this.notesService.findById(id, req.user.id);
   }
 
   @Post()
-  create(
-    @Request() req: { user: { id: string } },
-    @Body() dto: CreateNoteDto,
-  ) {
+  create(@Request() req: { user: { id: string } }, @Body() dto: CreateNoteDto) {
     return this.notesService.create(req.user.id, dto);
   }
 
@@ -129,10 +160,7 @@ export class NotesController {
   }
 
   @Post(':id/restore')
-  restore(
-    @Param('id') id: string,
-    @Request() req: { user: { id: string } },
-  ) {
+  restore(@Param('id') id: string, @Request() req: { user: { id: string } }) {
     return this.notesService.restore(id, req.user.id);
   }
 }
