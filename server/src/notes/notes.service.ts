@@ -35,6 +35,35 @@ export class NotesService {
     );
   }
 
+  /**
+   * Resolve filter tag inputs to actual stored tags using case-insensitive partial matching.
+   * e.g. filter "re" matches stored tags "React", "Recipe", etc.
+   */
+  private async resolveMatchingTags(
+    filterTags: string[],
+    where: { userId?: string; isDeleted?: boolean },
+  ): Promise<string[]> {
+    const notes = await this.prisma.note.findMany({
+      where,
+      select: { tags: true },
+    });
+
+    const allTags = new Set<string>();
+    for (const note of notes) {
+      for (const tag of note.tags) allTags.add(tag);
+    }
+
+    const matched = new Set<string>();
+    for (const tag of allTags) {
+      const lower = tag.toLowerCase();
+      if (filterTags.some((f) => lower.includes(f.toLowerCase()))) {
+        matched.add(tag);
+      }
+    }
+
+    return Array.from(matched);
+  }
+
   async getStats(userId: string) {
     const [counts, sharedCount] = await Promise.all([
       this.prisma.note.groupBy({
@@ -92,7 +121,12 @@ export class NotesService {
         sharedWhere.title = { contains: filters.search, mode: 'insensitive' };
       }
       if (filters?.tags?.length) {
-        sharedWhere.tags = { hasSome: filters.tags };
+        const matchedTags = await this.resolveMatchingTags(filters.tags, {
+          isDeleted: false,
+        });
+        sharedWhere.tags = matchedTags.length
+          ? { hasSome: matchedTags }
+          : { hasSome: ['__no_match__'] };
       }
       if (filters?.ownerSearch) {
         sharedWhere.user = {
@@ -174,7 +208,13 @@ export class NotesService {
       where.title = { contains: filters.search, mode: 'insensitive' };
     }
     if (filters?.tags?.length) {
-      where.tags = { hasSome: filters.tags };
+      const matchedTags = await this.resolveMatchingTags(filters.tags, {
+        userId,
+        isDeleted: false,
+      });
+      where.tags = matchedTags.length
+        ? { hasSome: matchedTags }
+        : { hasSome: ['__no_match__'] };
     }
 
     const [notes, total] = await Promise.all([
@@ -844,7 +884,13 @@ export class NotesService {
       where.title = { contains: filters.search, mode: 'insensitive' };
     }
     if (filters?.tags?.length) {
-      where.tags = { hasSome: filters.tags };
+      const matchedTags = await this.resolveMatchingTags(filters.tags, {
+        userId,
+        isDeleted: true,
+      });
+      where.tags = matchedTags.length
+        ? { hasSome: matchedTags }
+        : { hasSome: ['__no_match__'] };
     }
 
     const [notes, total] = await Promise.all([
