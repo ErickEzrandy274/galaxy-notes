@@ -50,6 +50,16 @@ export { SharedNotesEmptyState } from './components/shared-notes-empty-state';
 export { SharedNoteDetailPage } from './components/shared-note-detail-page';
 export { SharedNoteDetailHeader } from './components/shared-note-detail-header';
 export { PermissionBadge } from './components/permission-badge';
+export { ArchivedNotesPage } from './components/archived-notes-page';
+export { ArchivedNotesTable } from './components/archived-notes-table';
+export { ArchivedNotesTableRow } from './components/archived-notes-table-row';
+export { ArchivedNotesSearch } from './components/archived-notes-search';
+export { ArchivedNotesColumnsDropdown } from './components/archived-notes-columns-dropdown';
+export { ArchivedNotesRowActions } from './components/archived-notes-row-actions';
+export { ArchivedNotesEmptyState } from './components/archived-notes-empty-state';
+export { ArchivedNoteDetailPage } from './components/archived-note-detail-page';
+export { ArchivedNoteDetailHeader } from './components/archived-note-detail-header';
+export { ArchiveConfirmDialog } from './components/archive-confirm-dialog';
 
 // Hooks
 export { useNotes } from './hooks/use-notes';
@@ -61,11 +71,14 @@ export { useNoteTags } from './hooks/use-note-tags';
 export { useNoteUpload } from './hooks/use-note-upload';
 export { useNoteStats } from './hooks/use-note-stats';
 export { useVersionHistory } from './hooks/use-version-history';
-export { useShares, useAddShares, useUpdateSharePermission, useRemoveShare, useRemoveInvite, useSearchUsers } from './hooks/use-shares';
+export { useShares, useAddShares, useUpdateSharePermission, useRemoveShare, useRemoveInvite, useSearchUsers, useRequestNoteAccess, useGrantNoteAccess, useDeclineNoteAccess } from './hooks/use-shares';
 export { useNotifications, useInfiniteNotifications, useUnreadNotificationCount, useMarkNotificationRead, useMarkAllNotificationsRead, useDeleteNotification, useMuteUser, useUnmuteUser, useMutedUsers } from './hooks/use-notifications';
 export { useNotificationStream } from './hooks/use-notification-stream';
 export { useSharedNotes, useSharedNotesFilters } from './hooks/use-shared-notes';
 export { useSharedColumnVisibility } from './hooks/use-shared-column-visibility';
+export { useArchivedNotes, useArchivedNotesFilters } from './hooks/use-archived-notes';
+export { useArchivedColumnVisibility } from './hooks/use-archived-column-visibility';
+export { useArchiveNote, useUnarchiveNote } from './hooks/use-archive-mutations';
 
 // Utils
 export { getTagColor } from './utils/tag-colors';
@@ -107,4 +120,6 @@ export type {
   SharedNotesResponse,
   SharedNotesFilters as SharedNotesFiltersType,
   SharedNoteColumnKey,
+  ArchivedNotesFilters as ArchivedNotesFiltersType,
+  ArchivedNoteColumnKey,
 } from './types';
