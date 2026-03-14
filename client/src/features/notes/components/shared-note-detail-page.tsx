@@ -60,7 +60,7 @@ export function SharedNoteDetailPage({ noteId }: SharedNoteDetailPageProps) {
             />
 
             {permission === 'READ' && (
-              <aside className="flex items-center gap-2 border-b border-border bg-blue-500/5 px-6 py-2 text-sm text-blue-600">
+              <aside className="flex items-center gap-2 border-b border-border bg-blue-500/5 px-6 py-2 text-sm font-semibold text-blue-600">
                 <ShieldAlert className="h-4 w-4" />
                 You have read-only access to this note.
               </aside>
