@@ -278,3 +278,14 @@ export type SharedNoteColumnKey =
   | 'tags'
   | 'createdAt'
   | 'sharedOn';
+
+// ─── Archived Notes Types ───────────────────────────────────────────────────
+
+export interface ArchivedNotesFilters {
+  page: number;
+  limit: number;
+  search?: string;
+  tags?: string;
+}
+
+export type ArchivedNoteColumnKey = 'tags' | 'createdAt' | 'updatedAt';

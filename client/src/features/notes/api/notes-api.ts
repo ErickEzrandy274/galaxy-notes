@@ -10,6 +10,7 @@ import type {
   NoteVersionDetail,
   SharedNotesResponse,
   SharedNotesFilters,
+  ArchivedNotesFilters,
 } from '../types';
 
 export async function fetchNotes(
@@ -135,4 +136,26 @@ export async function restoreVersion(
   versionId: string,
 ): Promise<void> {
   await api.post(`/notes/${noteId}/versions/${versionId}/restore`);
+}
+
+export async function fetchArchivedNotes(
+  filters: ArchivedNotesFilters,
+): Promise<NotesResponse> {
+  const params = new URLSearchParams();
+  params.set('page', String(filters.page));
+  params.set('limit', String(filters.limit));
+  params.set('status', 'archived');
+  if (filters.search) params.set('search', filters.search);
+  if (filters.tags) params.set('tags', filters.tags);
+
+  const response = await api.get<NotesResponse>(`/notes?${params.toString()}`);
+  return response.data;
+}
+
+export async function archiveNote(noteId: string): Promise<void> {
+  await api.post(`/notes/${noteId}/archive`);
+}
+
+export async function unarchiveNote(noteId: string): Promise<void> {
+  await api.post(`/notes/${noteId}/unarchive`);
 }
