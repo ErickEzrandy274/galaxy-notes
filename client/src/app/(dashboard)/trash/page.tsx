@@ -1,5 +1,5 @@
-import { UnderDevelopment } from '@/components/shared/under-development';
+import { TrashPage } from '@/features/trash';
 
-export default function TrashPage() {
-  return <UnderDevelopment feature="Trash" />;
+export default function Trash() {
+  return <TrashPage />;
 }
