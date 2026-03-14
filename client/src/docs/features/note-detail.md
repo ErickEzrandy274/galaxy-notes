@@ -59,10 +59,20 @@ The sidebar only renders if the note has an attachment (`document`) or video (`v
 
 | Action | Condition | Behavior |
 |--------|-----------|---------|
-| Edit | Owner or WRITE share | Navigate to `/notes/:id` editor |
-| Version History | Non-draft, non-archived | Opens `VersionHistoryDrawer` |
-| Archive | Owner, not archived | Soft archive |
-| Move to Trash | Owner | Soft delete |
+| Edit | Owner or WRITE share, not archived | Navigate to `/notes/:id` editor |
+| Version History | Non-draft | Opens `VersionHistoryDrawer` |
+| Share | Owner, not archived | Opens share modal |
+| Archive | Owner, not archived, not draft | Soft archive (revokes shares, stores collaborator IDs) |
+| Move to Trash | Owner, not archived | Soft delete |
+
+### Archived Note Detail
+
+Archived notes have a dedicated detail page at `/archived/:id` (`ArchivedNoteDetailPage`):
+- **Warning banner:** Yellow bar stating "This note is archived and read-only. Unarchive to make edits."
+- **Edit/Share buttons:** Disabled with 50% opacity
+- **History button:** Enabled, opens version history drawer (read-only browsing)
+- **Unarchive button:** Primary purple button, triggers `ArchiveConfirmDialog` with variant `"unarchive"`
+- On unarchive: restores to previous status, notifies previous collaborators
 
 ## Data Fetching
 

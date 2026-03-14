@@ -26,7 +26,17 @@ client/src/features/notes/
 │   ├── status-badge.tsx              # Colored status pill
 │   ├── tag-badge.tsx                 # Colored tag pill + TagList
 │   ├── permission-badge.tsx          # READ/WRITE permission pill
-│   ├── archive-shared-note-dialog.tsx # Confirmation for archiving shared notes
+│   ├── archive-confirm-dialog.tsx     # Archive/unarchive confirmation dialog
+│   ├── archive-shared-note-dialog.tsx # Warning when archiving shared notes
+│   ├── archived-notes-page.tsx        # Archived notes list page (/archived)
+│   ├── archived-notes-table.tsx       # Archived notes data table
+│   ├── archived-notes-table-row.tsx   # Archived note table row
+│   ├── archived-notes-search.tsx      # Search + tag filter for archived notes
+│   ├── archived-notes-columns-dropdown.tsx # Column visibility for archived table
+│   ├── archived-notes-row-actions.tsx # Three-dot menu (view, unarchive)
+│   ├── archived-notes-empty-state.tsx # Empty state for archived notes
+│   ├── archived-note-detail-page.tsx  # Read-only archived note detail view
+│   ├── archived-note-detail-header.tsx # Header with unarchive button
 │   ├── leave-shared-note-dialog.tsx  # Confirmation for leaving a shared note
 │   ├── conflict-resolution-dialog.tsx # Optimistic locking conflict resolution
 │   ├── share-modal.tsx               # Share management modal
@@ -57,7 +67,10 @@ client/src/features/notes/
 │   ├── use-note-tags.ts              # User tags hook
 │   ├── use-shared-notes.ts           # React Query hook for shared notes
 │   ├── use-shared-column-visibility.ts # Column toggle for shared notes table
-│   ├── use-shares.ts                 # Share CRUD mutations
+│   ├── use-shares.ts                 # Share CRUD mutations + request access
+│   ├── use-archive-mutations.ts      # Archive/unarchive mutations
+│   ├── use-archived-notes.ts         # React Query hook for archived notes
+│   ├── use-archived-column-visibility.ts # Column toggle for archived table
 │   ├── use-notifications.ts          # Notification CRUD hooks
 │   └── use-notification-stream.tsx   # SSE stream + toast notifications
 ├── types/index.ts                    # TypeScript interfaces
@@ -119,7 +132,9 @@ Stored in `localStorage` under key `galaxy-notes-column-visibility`.
 
 ## Row Actions
 
-Three-dot dropdown menu with: Edit (navigates to `/notes/:id`), Share (opens share modal), Move to Trash (soft delete — shows `ArchiveSharedNoteDialog` confirmation if note has active shares, then invalidates cache).
+Three-dot dropdown menu with: Edit (navigates to `/notes/:id`), Share (opens share modal), Archive (archives note — shows `ArchiveSharedNoteDialog` warning if note has active shares), Move to Trash (soft delete, then invalidates cache).
+
+Note: Archived notes are excluded from the main notes list and appear on the dedicated `/archived` page instead.
 
 ## Dependencies
 

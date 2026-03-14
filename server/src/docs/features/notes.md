@@ -142,6 +142,35 @@ Fetch a single trashed note by ID (owner only). Returns the note with resolved c
 
 Restore from trash: sets `isDeleted: false`, `deletedAt: null`, `status: 'draft'`. Creates a `restore` notification for the owner: `"Note '{title}' has been restored as a draft"`.
 
+### POST /api/notes/:id/archive
+
+Archive a note. Owner-only.
+
+**Validations:**
+- Note must exist and not be deleted
+- Cannot archive draft notes (`400`)
+- Cannot archive an already archived note (`400`)
+
+**Behavior:**
+1. Stores collaborator IDs in `previousCollaboratorIds` field
+2. Sets `status: 'archived'`, saves `previousStatus`
+3. Deletes all `NoteShare` records (revokes access)
+4. Sends `archive` notification to each collaborator: `"A note '{title}' shared with you has been archived by the owner"`
+
+**Response:** Updated note object
+
+### POST /api/notes/:id/unarchive
+
+Unarchive a note. Owner-only.
+
+**Behavior:**
+1. Restores note to `previousStatus` (converts `shared` → `published` since shares were revoked)
+2. Clears `previousStatus` and `previousCollaboratorIds`
+3. Sends `restore` notification to the owner: `"Note '{title}' has been restored as {status}"`
+4. Sends `restore` notification to each previous collaborator: `"{OwnerName} unarchived the note '{title}'. The note is now available as read-only. You may request access again."`
+
+**Response:** Updated note object
+
 ## Version History
 
 ### GET /api/notes/:id/versions
@@ -207,22 +236,24 @@ A weekly cron job (Sunday 3:00 AM) in `CleanupService` permanently deletes all `
 
 ```prisma
 model Note {
-  id           String     @id @default(cuid())
-  title        String     @db.VarChar(255)
-  content      String?    @db.Text
-  status       NoteStatus @default(draft)
-  document     String?    @map("photo")          // PDF attachment storage path
-  documentSize Int?       @map("document_size")   // File size in bytes
-  videoUrl     String?    @map("video_url")
-  tags         String[]   @default([])
-  version      Int        @default(1)
-  isDeleted    Boolean    @default(false)
-  deletedAt    DateTime?
-  userId       String
-  createdAt    DateTime
-  updatedAt    DateTime
-  shares       NoteShare[]
-  versions     NoteVersion[]
+  id                      String      @id @default(cuid())
+  title                   String      @db.VarChar(255)
+  content                 String?     @db.Text
+  status                  NoteStatus  @default(draft)
+  document                String?     @map("photo")          // PDF attachment storage path
+  documentSize            Int?        @map("document_size")   // File size in bytes
+  videoUrl                String?     @map("video_url")
+  tags                    String[]    @default([])
+  version                 Int         @default(1)
+  previousStatus          NoteStatus? @map("previous_status")              // Status before archiving
+  previousCollaboratorIds String[]    @default([]) @map("previous_collaborator_ids") // Collaborators at archive time
+  isDeleted               Boolean     @default(false)
+  deletedAt               DateTime?
+  userId                  String
+  createdAt               DateTime
+  updatedAt               DateTime
+  shares                  NoteShare[]
+  versions                NoteVersion[]
 }
 
 model NoteVersion {

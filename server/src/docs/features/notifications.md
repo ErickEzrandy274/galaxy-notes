@@ -72,10 +72,22 @@ Unmute a previously muted user.
 | `permission_change` | `SharesService` | Permission Updated | {name} updated your permission to '{perm}' for note '{title}' | ShieldCheck (blue) |
 | `leave` | `SharesService` | Collaborator Left | {name} left the note '{title}' | LogOut (red) |
 | `revoke` | `SharesService` | Access Revoked | {name} revoked your access to the note '{title}' | ShieldOff (red) |
+| `access_request` | `SharesService` | Access Requested | {name} requested access to your note '{title}' | UserPlus (indigo) |
+| `access_granted` | `SharesService` | (mutated from `access_request`) | — | UserCheck (green) |
+| `access_declined_by_owner` | `SharesService` | (mutated from `access_request`) | — | UserX (muted) |
+| `access_declined` | `SharesService` | Access Request Declined | {name} declined your access request for note '{title}' | UserPlus (red) |
+| `archive` | `NotesService` | Shared Note Archived | A note '{title}' shared with you has been archived by the owner | Archive (muted) |
 | `trash` | `NotesService` | Shared Note Deleted | A note '{title}' shared with you has been deleted by the owner | Trash2 (muted) |
-| `restore` | `NotesService` | Note Restored | Note '{title}' has been restored as a draft | RotateCcw (green) |
+| `restore` | `NotesService` | Note Unarchived / Note Available Again | Note restored or available again for previous collaborators | RotateCcw (green) |
 | `version_cleanup` | `NotesService` / `CleanupService` | Version History Scheduled for Deletion / Version History Deleted | Version history warning or purge confirmation | Trash2 (muted) |
 | `edit` | — | — | — | Pencil (yellow) |
+
+### `restore` Notification Variants
+
+| Variant | Title | Recipient | Message | Clickable |
+|---------|-------|-----------|---------|-----------|
+| Owner unarchive | Note Unarchived | Note owner | Note '{title}' has been restored as {status} | Yes → `/notes/:noteId` |
+| Previous collaborator | Note Available Again | Previous collaborators | {owner} unarchived the note '{title}'. The note is now available as read-only. You may request access again. | No (use "Request Access" in three-dot menu) |
 
 ## Notification Model
 

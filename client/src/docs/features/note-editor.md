@@ -80,7 +80,9 @@ interface NoteEditorData {
 | Periodic interval | 2 minutes | No | Backup |
 | Save as Draft / Publish button | Immediate | Yes (`snapshot: true`) | Version history |
 
-**Race condition prevention:** `saveNow()` clears the debounce timer before saving to prevent the pending 2s autosave from creating a duplicate version. Backend also has a 30-second dedup window for manual saves.
+**Race condition prevention:** `saveNow()` clears the debounce timer and waits for any in-flight autosave to complete before proceeding. This ensures manual status changes (e.g. publish) aren't silently skipped when an autosave is in progress. Backend also has a 30-second dedup window for manual saves.
+
+**Cache freshness on navigation:** After `saveNow()` completes, all save handlers (`confirmPublish`, `confirmSaveDraft`, `handleSave`) await `queryClient.invalidateQueries({ queryKey: ['notes'], refetchType: 'all' })` before calling `router.push()`. This refetches inactive notes list queries so the cache has fresh data when the user lands on the list page.
 
 **Unsaved changes guard:** Warns on browser close (`beforeunload`) and in-app navigation (capture-phase click intercept on anchor tags). Shows `UnsavedChangesDialog` for in-app nav.
 

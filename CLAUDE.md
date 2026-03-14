@@ -59,11 +59,11 @@ Next.js 16 App Router with feature-based architecture:
 client/src/
 ├── app/                # Next.js routes (thin wrappers importing feature components)
 │   ├── (auth)/         # Login, Register
-│   ├── (dashboard)/    # Notes, Shared, Notifications, Trash, Profile, Settings (authenticated)
+│   ├── (dashboard)/    # Notes, Shared, Archived, Notifications, Trash, Profile, Settings (authenticated)
 │   └── (password-reset)/ # Forgot, Reset Link Sent, Reset Password
 ├── features/           # Feature modules (api/, components/, hooks/, types/, utils/)
 │   ├── auth/           # Login, register, OAuth buttons, password input, token refresh
-│   ├── notes/          # Notes table, filters, search, pagination, autosave, sharing, notifications
+│   ├── notes/          # Notes table, filters, search, pagination, autosave, sharing, notifications, archived notes
 │   ├── trash/          # Trash management (list, detail, restore, permanent delete)
 │   └── profile/        # Profile settings, avatar upload, password change
 ├── components/         # Shared UI components
@@ -126,8 +126,22 @@ Notes can be shared with other users (READ or WRITE permission). The share lifec
 - **Leave:** Recipient leaves → owner gets `leave` notification
 - **Revoke:** Owner removes share → removed user gets `revoke` notification
 - **Trash:** Owner deletes note → all collaborators get `trash` notification
+- **Archive:** Owner archives note → all collaborators get `archive` notification, shares are revoked, collaborator IDs stored in `previousCollaboratorIds`
+- **Unarchive:** Owner unarchives note → previous collaborators get `restore` notification ("Note Available Again"), can request access via three-dot menu
+- **Access request:** Previous collaborator requests access → owner gets `access_request` notification (1-hour duplicate cooldown)
+- **Grant access:** Owner grants access (Can View or Can Edit) → requester gets `share` notification, owner's `access_request` notification becomes `access_granted`
+- **Decline access:** Owner declines request → requester gets `access_declined` notification, owner's `access_request` notification becomes `access_declined_by_owner`
 
-Unregistered recipients receive email invites (7-day expiry token). Draft notes cannot be shared. Real-time notifications via SSE stream with toast popups on the client.
+Unregistered recipients receive email invites (7-day expiry token). Draft notes cannot be shared. Archived notes cannot be shared. Real-time notifications via SSE stream with toast popups on the client.
+
+### Note Archiving
+
+Notes can be archived by the owner (published/shared only, not draft). Archived notes are read-only — cannot be edited, shared, deleted, or have versions restored. They are excluded from the main notes list and shown on a dedicated `/archived` page.
+
+- **Archive:** Sets `status: 'archived'`, stores `previousStatus` and `previousCollaboratorIds`, deletes all shares, notifies collaborators
+- **Unarchive:** Restores to `previousStatus` (or `published` if it was `shared`), clears `previousCollaboratorIds`, notifies owner and previous collaborators
+- **Request access:** Previous collaborators can request access via notification three-dot menu → `POST /api/shares/request-access/:noteId` → owner gets `access_request` notification
+- **Grant/Decline:** Owner uses three-dot menu on `access_request` notification → `POST /api/shares/grant-access/:noteId/:userId?permission=READ|WRITE` or `POST /api/shares/decline-access/:noteId/:userId` → original notification type updates to `access_granted` or `access_declined_by_owner`, options removed
 
 ### Note Versioning & Autosave
 
@@ -140,6 +154,8 @@ Weekly cron job (Sunday 3 AM) via `@nestjs/schedule` purges stale data:
 - **Expired tokens**: Deletes expired or revoked `RefreshToken` rows and expired `PasswordResetToken` rows.
 
 On soft-delete, collaborators are notified (type `trash`) and the owner receives a `version_cleanup` warning that version history will be purged after the configured retention period. On restore, the owner receives a `restore` notification.
+
+Note: Archived notes cannot be deleted directly — they must be unarchived first.
 
 ## Feature Documentation
 

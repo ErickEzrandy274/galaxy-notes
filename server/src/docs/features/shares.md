@@ -59,6 +59,48 @@ Remove a share. Allowed by the **note owner** (revoke access) or the **share rec
 
 **Status cleanup:** If no shares remain and the note status is `shared`, reverts status to `published`.
 
+### POST /api/shares/request-access/:noteId
+
+Request access to a note (e.g., after it was unarchived). Sends an `access_request` notification to the note owner.
+
+**Validations:**
+- Note must exist and not be deleted (`404`)
+- Cannot request access to own note (`400`)
+- Cannot request if already has access (`400`)
+- Duplicate requests within 1 hour are blocked (`400`)
+
+**Response:** `{ message: "Access request sent" }`
+
+### POST /api/shares/grant-access/:noteId/:userId
+
+Grant access to a user who requested it. Owner-only. Accepts `?permission=READ|WRITE` query param (defaults to `READ`).
+
+**Behavior:**
+- Creates a `NoteShare` with the specified permission
+- Updates note status to `shared` if currently `published`
+- Sends `share` notification to the requester
+- Updates the owner's original `access_request` notification type to `access_granted` (removes Grant/Decline actions)
+
+**Validations:**
+- Note must exist and belong to the owner (`404`)
+- Note must not be archived (`400`)
+- User must not already have access (`400`)
+
+**Response:** `{ message: "Access granted" }`
+
+### POST /api/shares/decline-access/:noteId/:userId
+
+Decline an access request. Owner-only.
+
+**Behavior:**
+- Sends `access_declined` notification to the requester
+- Updates the owner's original `access_request` notification type to `access_declined_by_owner` (removes Grant/Decline actions)
+
+**Validations:**
+- Note must exist and belong to the owner (`404`)
+
+**Response:** `{ message: "Access request declined" }`
+
 ### DELETE /api/shares/invite/:inviteId
 
 Remove a pending invite. Owner-only.
@@ -71,6 +113,10 @@ Remove a pending invite. Owner-only.
 | `permission_change` | Permission updated | Share recipient | Yes (15 min) | Yes (4/hr) |
 | `leave` | Recipient leaves share | Note owner | No | No |
 | `revoke` | Owner removes share | Removed user | No | No |
+| `access_request` | Previous collaborator requests access | Note owner | No | Yes (1/hr per user per note) |
+| `access_granted` | Owner grants access (mutated from `access_request`) | Note owner (self) | — | — |
+| `access_declined_by_owner` | Owner declines access (mutated from `access_request`) | Note owner (self) | — | — |
+| `access_declined` | Owner declines request | Requester | No | No |
 
 **Debouncing:** Uses `lastNotifiedAt` field on the `NoteShare` record with a 15-minute window.
 

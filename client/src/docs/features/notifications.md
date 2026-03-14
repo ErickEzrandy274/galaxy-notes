@@ -56,7 +56,12 @@ NotificationsPage renders: FilterTabs + NotificationList + Pagination
 | `edit` | Pencil | Yellow | Yes | `/notes/:noteId` |
 | `leave` | LogOut | Red | No (read-only) | — |
 | `revoke` | ShieldOff | Red | No (read-only) | — |
-| `restore` | RotateCcw | Green | Yes | `/notes/:noteId` |
+| `restore` (owner) | RotateCcw | Green | Yes | `/notes/:noteId` |
+| `restore` ("Note Available Again") | RotateCcw | Green | No (read-only) | Three-dot menu: "Request Access" |
+| `access_request` | UserPlus | Indigo | No (read-only) | Three-dot menu: "Grant Access" (Can View / Can Edit) or "Decline" |
+| `access_granted` | UserCheck | Green | No (read-only) | — |
+| `access_declined_by_owner` | UserX | Muted | No (read-only) | — |
+| `access_declined` | UserPlus | Red | No (read-only) | — |
 | `archive` | Archive | Muted | No (read-only) | — |
 | `trash` | Trash2 | Muted | No (read-only) | — |
 | `version_cleanup` | Trash2 | Muted | Yes | `/trash/:noteId` |
@@ -70,6 +75,11 @@ Certain notification types render as non-clickable rows with reduced opacity (`c
 - `revoke` — the user lost access, nothing to navigate to
 - `archive` — the note was archived by the owner
 - `trash` — the shared note was deleted by the owner
+- `restore` with title "Note Available Again" — previous collaborator should use "Request Access" in three-dot menu instead
+- `access_request` — owner uses Grant/Decline in three-dot menu
+- `access_granted` — resolved access request (owner granted access)
+- `access_declined_by_owner` — resolved access request (owner declined)
+- `access_declined` — requester informed of decline
 - Any notification where `isNoteAvailable === false`
 
 ## Filter Tabs
@@ -85,11 +95,16 @@ Certain notification types render as non-clickable rows with reduced opacity (`c
 
 Three-dot dropdown per notification row:
 
-| Action | Behavior |
-|--------|---------|
-| Mark as read | `PATCH /api/notifications/:id/read` |
-| Delete | `DELETE /api/notifications/:id` |
-| Mute user | `POST /api/notifications/mute/:userId` (with duration) |
+| Action | Condition | Behavior |
+|--------|-----------|---------|
+| View note | Has `noteId`, note available, not read-only type | Navigates to note |
+| Request Access | `restore` type with title "Note Available Again" | `POST /api/shares/request-access/:noteId`, shows success toast |
+| Grant Access → Can View | `access_request` type | `POST /api/shares/grant-access/:noteId/:userId?permission=READ`, notification type becomes `access_granted` |
+| Grant Access → Can Edit | `access_request` type | `POST /api/shares/grant-access/:noteId/:userId?permission=WRITE`, notification type becomes `access_granted` |
+| Decline | `access_request` type | `POST /api/shares/decline-access/:noteId/:userId`, notification type becomes `access_declined_by_owner` |
+| Mark as read | Notification is unread | `PATCH /api/notifications/:id/read` |
+| Mute user | Has `actorId` | `POST /api/notifications/mute/:userId` (with duration) |
+| Remove notification | Always | `DELETE /api/notifications/:id` |
 
 ## NotificationItem Type
 

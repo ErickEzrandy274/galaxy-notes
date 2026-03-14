@@ -25,7 +25,7 @@ client/src/features/notes/
 ├── hooks/
 │   ├── use-shared-notes.ts                  # React Query hook for shared notes
 │   ├── use-shared-column-visibility.ts      # localStorage-backed column toggle
-│   └── use-shares.ts                        # Share CRUD mutations (add, remove, update)
+│   └── use-shares.ts                        # Share CRUD mutations (add, remove, update, request access)
 └── types/index.ts                           # SharedNote, SharedNotesResponse, etc.
 ```
 
