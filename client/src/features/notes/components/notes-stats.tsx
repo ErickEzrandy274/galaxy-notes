@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, Globe, PenLine, Archive, Users } from 'lucide-react';
+import { FileText, Globe, PenLine, Users } from 'lucide-react';
 import { useNoteStats } from '../hooks/use-note-stats';
 import type { NoteStats } from '../types';
 
@@ -20,7 +20,6 @@ const cards: {
   { key: 'total', label: 'Total Notes', icon: FileText, color: 'text-violet-400', activeBg: 'bg-violet-500/10 border-violet-500/40', filterValue: undefined },
   { key: 'published', label: 'Published', icon: Globe, color: 'text-green-400', activeBg: 'bg-green-500/10 border-green-500/40', filterValue: 'published' },
   { key: 'draft', label: 'Drafts', icon: PenLine, color: 'text-amber-400', activeBg: 'bg-amber-500/10 border-amber-500/40', filterValue: 'draft' },
-  { key: 'archived', label: 'Archived', icon: Archive, color: 'text-indigo-400', activeBg: 'bg-indigo-500/10 border-indigo-500/40', filterValue: 'archived' },
   { key: 'shared', label: 'Shared', icon: Users, color: 'text-sky-400', activeBg: 'bg-sky-500/10 border-sky-500/40', filterValue: 'shared' },
 ];
 
@@ -29,8 +28,8 @@ export function NotesStats({ activeFilter, onFilterChange }: NotesStatsProps) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-5 gap-3">
-        {Array.from({ length: 5 }).map((_, i) => (
+      <div className="grid grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
             className="h-[72px] animate-pulse rounded-lg border border-border/50 bg-card"
@@ -41,7 +40,7 @@ export function NotesStats({ activeFilter, onFilterChange }: NotesStatsProps) {
   }
 
   return (
-    <div className="grid grid-cols-5 gap-3">
+    <div className="grid grid-cols-4 gap-3">
       {cards.map(({ key, label, icon: Icon, color, activeBg, filterValue }) => {
         const isActive =
           filterValue === undefined ? !activeFilter : activeFilter === filterValue;
