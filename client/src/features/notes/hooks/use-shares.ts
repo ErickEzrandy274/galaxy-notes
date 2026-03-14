@@ -10,6 +10,9 @@ import {
   removeShare,
   removeInvite,
   searchUsers,
+  requestNoteAccess,
+  grantNoteAccess,
+  declineNoteAccess,
 } from '../api/shares-api';
 
 export function useShares(noteId: string) {
@@ -78,6 +81,58 @@ export function useRemoveInvite(noteId: string) {
     },
     onError: () => {
       toast.error('Failed to remove invite');
+    },
+  });
+}
+
+export function useRequestNoteAccess() {
+  return useMutation({
+    mutationFn: (noteId: string) => requestNoteAccess(noteId),
+    onSuccess: () => {
+      toast.success('Access request sent to the note owner');
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || 'Failed to request access';
+      toast.error(message);
+    },
+  });
+}
+
+export function useGrantNoteAccess() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ noteId, userId, permission }: { noteId: string; userId: string; permission?: 'READ' | 'WRITE' }) =>
+      grantNoteAccess(noteId, userId, permission),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      queryClient.invalidateQueries({ queryKey: ['shares'] });
+      toast.success('Access granted');
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || 'Failed to grant access';
+      toast.error(message);
+    },
+  });
+}
+
+export function useDeclineNoteAccess() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ noteId, userId }: { noteId: string; userId: string }) =>
+      declineNoteAccess(noteId, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success('Access request declined');
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || 'Failed to decline request';
+      toast.error(message);
     },
   });
 }

@@ -31,6 +31,22 @@ export async function removeInvite(inviteId: string): Promise<void> {
   await api.delete(`/shares/invite/${inviteId}`);
 }
 
+export async function requestNoteAccess(noteId: string): Promise<void> {
+  await api.post(`/shares/request-access/${noteId}`);
+}
+
+export async function grantNoteAccess(
+  noteId: string,
+  userId: string,
+  permission: 'READ' | 'WRITE' = 'READ',
+): Promise<void> {
+  await api.post(`/shares/grant-access/${noteId}/${userId}?permission=${permission}`);
+}
+
+export async function declineNoteAccess(noteId: string, userId: string): Promise<void> {
+  await api.post(`/shares/decline-access/${noteId}/${userId}`);
+}
+
 export async function searchUsers(email: string): Promise<UserSearchResult[]> {
   const response = await api.get<UserSearchResult[]>(
     `/users/search?email=${encodeURIComponent(email)}`,
