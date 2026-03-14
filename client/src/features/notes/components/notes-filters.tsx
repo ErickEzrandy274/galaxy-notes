@@ -6,7 +6,6 @@ const tabs: { label: string; value?: NoteStatus }[] = [
   { label: 'All' },
   { label: 'Published', value: 'published' },
   { label: 'Draft', value: 'draft' },
-  { label: 'Archived', value: 'archived' },
   { label: 'Shared', value: 'shared' },
 ];
 
