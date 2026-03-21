@@ -6,6 +6,7 @@ export { NotesFilters } from './components/notes-filters';
 export { NotesSearch } from './components/notes-search';
 export { NotesColumnsDropdown } from './components/notes-columns-dropdown';
 export { NotesPagination } from './components/notes-pagination';
+export { Pagination } from '@/components/shared/pagination';
 export { NotesEmptyState } from './components/notes-empty-state';
 export { NotesRowActions } from './components/notes-row-actions';
 export { StatusBadge } from './components/status-badge';

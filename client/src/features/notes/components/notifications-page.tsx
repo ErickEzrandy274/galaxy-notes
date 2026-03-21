@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, Loader2 } from 'lucide-react';
+import { Bell } from 'lucide-react';
+import { Spinner, Button } from '@/components/primitives';
+import { PageHeader } from '@/components/shared/page-header';
 import { NotificationFilterTabs } from './notification-filter-tabs';
 import { NotificationList } from './notification-list';
 import { NotificationEmptyState } from './notification-empty-state';
@@ -33,23 +35,18 @@ export function NotificationsPage() {
 
   return (
     <section className="flex h-full flex-col p-6">
-      <header className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
-            <Bell className="h-5 w-5 text-orange-500" />
-          </span>
-          <h1 className="text-xl font-bold text-foreground">Notifications</h1>
-        </div>
-        {hasUnread && !isMutedTab && (
-          <button
-            onClick={() => markAllRead.mutate()}
-            disabled={markAllRead.isPending}
-            className="cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
-          >
-            {markAllRead.isPending ? 'Marking...' : 'Mark all Read'}
-          </button>
-        )}
-      </header>
+      <PageHeader
+        icon={Bell}
+        iconColorClass="bg-orange-500/10 text-orange-500"
+        title="Notifications"
+        action={
+          hasUnread && !isMutedTab ? (
+            <Button variant="ghost-primary" onClick={() => markAllRead.mutate()} loading={markAllRead.isPending} loadingText="Marking...">
+              Mark all Read
+            </Button>
+          ) : undefined
+        }
+      />
 
       <nav className="mb-4" aria-label="Notification filters">
         <NotificationFilterTabs active={filter} onChange={setFilter} />
@@ -62,7 +59,7 @@ export function NotificationsPage() {
           className="flex flex-1 items-center justify-center"
           aria-busy="true"
         >
-          <Loader2 size={32} className="animate-spin text-muted-foreground" />
+          <Spinner size="xl" />
         </output>
       ) : isError ? (
         <p className="flex flex-1 items-center justify-center text-lg text-muted-foreground">

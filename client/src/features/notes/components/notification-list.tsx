@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/primitives';
 import { NotificationRow } from './notification-row';
 import type { NotificationItem } from '../types';
 
@@ -94,7 +94,7 @@ export function NotificationList({
 
       {isFetchingNextPage && (
         <output className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
-          <Loader2 size={16} className="animate-spin" />
+          <Spinner size="sm" />
           Loading more...
         </output>
       )}

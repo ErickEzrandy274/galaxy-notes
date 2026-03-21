@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, RotateCcw, Loader2, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Button } from '@/components/primitives';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { restoreVersion } from '../api/notes-api';
 import type { NoteStatus } from '../types';
 
@@ -73,62 +75,27 @@ export function VersionPreviewBanner({
               Restore This
             </button>
           )}
-          <button
-            type="button"
-            onClick={onBackToCurrent}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
+          <Button variant="outline-muted" size="sm" onClick={onBackToCurrent}>
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Current
-          </button>
+          </Button>
         </nav>
       </header>
 
-      {/* Restore confirmation dialog */}
-      {showRestoreDialog && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
-          <article className="relative z-10 w-96 rounded-lg border border-border bg-card p-6 shadow-xl">
-            <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-500/10">
-                <RotateCcw className="h-5 w-5 text-purple-600" />
-              </span>
-              <div>
-                <h4 className="text-sm font-semibold text-foreground">
-                  Restore this version?
-                </h4>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  The current note content will be saved as a new version before
-                  restoring. You won&apos;t lose any data.
-                </p>
-              </div>
-            </div>
-            <footer className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowRestoreDialog(false)}
-                className="cursor-pointer rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowRestoreDialog(false);
-                  restoreMutation.mutate();
-                }}
-                className="cursor-pointer rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
-              >
-                Restore Version
-              </button>
-            </footer>
-          </article>
-        </div>
-      )}
+      <ConfirmDialog
+        open={showRestoreDialog}
+        icon={<RotateCcw className="h-5 w-5 text-purple-600" />}
+        iconBgClass="bg-purple-500/10"
+        title="Restore this version?"
+        description="The current note content will be saved as a new version before restoring. You won't lose any data."
+        confirmLabel="Restore Version"
+        confirmClassName="bg-purple-600 text-white hover:bg-purple-700"
+        onConfirm={() => {
+          setShowRestoreDialog(false);
+          restoreMutation.mutate();
+        }}
+        onCancel={() => setShowRestoreDialog(false)}
+      />
     </>
   );
 }

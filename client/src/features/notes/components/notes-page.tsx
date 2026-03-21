@@ -2,7 +2,10 @@
 
 import { useCallback } from 'react';
 import Link from 'next/link';
-import { FileText, Loader2, Plus } from 'lucide-react';
+import { FileText, Plus } from 'lucide-react';
+import { PageHeader } from '@/components/shared/page-header';
+import { DataStateHandler } from '@/components/shared/data-state-handler';
+import { Pagination } from '@/components/shared/pagination';
 import { useNotes } from '../hooks/use-notes';
 import { useNotesFilters } from '../hooks/use-notes-filters';
 import { useColumnVisibility } from '../hooks/use-column-visibility';
@@ -11,7 +14,6 @@ import { NotesFilters } from './notes-filters';
 import { NotesSearch } from './notes-search';
 import { NotesColumnsDropdown } from './notes-columns-dropdown';
 import { NotesTable } from './notes-table';
-import { NotesPagination } from './notes-pagination';
 import { NotesEmptyState } from './notes-empty-state';
 
 export function NotesPage() {
@@ -35,21 +37,20 @@ export function NotesPage() {
 
   return (
     <section className="flex h-full flex-col p-6">
-      <header className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-            <FileText className="h-5 w-5 text-blue-500" />
-          </span>
-          <h1 className="text-xl font-bold text-foreground">My Notes</h1>
-        </div>
-        <Link
-          href="/notes/new"
-          className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-        >
-          <Plus size={18} />
-          New Note
-        </Link>
-      </header>
+      <PageHeader
+        icon={FileText}
+        iconColorClass="bg-blue-500/10 text-blue-500"
+        title="My Notes"
+        action={
+          <Link
+            href="/notes/new"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus size={18} />
+            New Note
+          </Link>
+        }
+      />
 
       <div className="mb-4">
         <NotesStats activeFilter={filters.status} onFilterChange={setStatus} />
@@ -72,34 +73,25 @@ export function NotesPage() {
         <NotesColumnsDropdown columns={columns} onToggle={toggleColumn} />
       </search>
 
-      {isLoading ? (
-        <output className="flex flex-1 items-center justify-center" aria-busy="true">
-          <Loader2 size={32} className="animate-spin text-muted-foreground" />
-        </output>
-      ) : isError || !data ? (
-        <p className="flex flex-1 items-center justify-center text-lg text-muted-foreground">
-          Failed to load notes. Please try again later.
-        </p>
-      ) : isEmpty ? (
-        <NotesEmptyState />
-      ) : isFilteredEmpty ? (
-        <p className="flex flex-1 items-center justify-center text-lg text-muted-foreground">
-          No notes match your filters.
-        </p>
-      ) : (
-        <>
-          <section className="flex-1 overflow-auto">
-            <NotesTable notes={data!.notes} columns={columns} />
-          </section>
-          <NotesPagination
-            page={data!.page}
-            limit={data!.limit}
-            total={data!.total}
-            onPageChange={setPage}
-            onLimitChange={setLimit}
-          />
-        </>
-      )}
+      <DataStateHandler
+        isLoading={isLoading}
+        isError={isError || !data}
+        isEmpty={isEmpty}
+        isFilteredEmpty={isFilteredEmpty}
+        entityName="notes"
+        emptyState={<NotesEmptyState />}
+      >
+        <section className="flex-1 overflow-auto">
+          <NotesTable notes={data?.notes ?? []} columns={columns} />
+        </section>
+        <Pagination
+          page={data?.page ?? 1}
+          limit={data?.limit ?? 10}
+          total={data?.total ?? 0}
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+        />
+      </DataStateHandler>
     </section>
   );
 }

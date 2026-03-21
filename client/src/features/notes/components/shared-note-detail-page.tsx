@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, ShieldAlert } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
+import { Spinner } from '@/components/primitives';
 import { useSession } from 'next-auth/react';
 import { fetchNote } from '../api/notes-api';
 import { SharedNoteDetailHeader } from './shared-note-detail-header';
@@ -39,7 +40,7 @@ export function SharedNoteDetailPage({ noteId }: SharedNoteDetailPageProps) {
         className="flex h-full items-center justify-center"
         aria-busy="true"
       >
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Spinner size="xl" />
       </output>
     );
   }

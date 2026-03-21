@@ -1,16 +1,11 @@
 'use client';
 
 import * as Tooltip from '@radix-ui/react-tooltip';
+import { Badge } from '@/components/shared/badge';
 import { getTagColor } from '../utils/tag-colors';
 
 export function TagBadge({ tag }: { tag: string }) {
-  return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getTagColor(tag)}`}
-    >
-      #{tag}
-    </span>
-  );
+  return <Badge className={getTagColor(tag)}>#{tag}</Badge>;
 }
 
 export function TagList({ tags, max = 3 }: { tags: string[]; max?: number }) {
@@ -20,14 +15,16 @@ export function TagList({ tags, max = 3 }: { tags: string[]; max?: number }) {
   return (
     <ul className="flex flex-wrap items-center gap-1">
       {visible.map((tag) => (
-        <li key={tag}><TagBadge tag={tag} /></li>
+        <li key={tag}>
+          <TagBadge tag={tag} />
+        </li>
       ))}
       {remaining.length > 0 && (
         <li>
           <Tooltip.Provider delayDuration={200}>
             <Tooltip.Root>
               <Tooltip.Trigger asChild>
-                <section className="flex aspect-square items-center justify-center p-1 rounded-full bg-muted text-[10px] font-bold text-muted-foreground cursor-pointer">
+                <section className="flex aspect-square cursor-pointer items-center justify-center rounded-full bg-muted p-1 text-[10px] font-bold text-muted-foreground">
                   +{remaining.length}
                 </section>
               </Tooltip.Trigger>
@@ -35,11 +32,13 @@ export function TagList({ tags, max = 3 }: { tags: string[]; max?: number }) {
                 <Tooltip.Content
                   side="bottom"
                   sideOffset={6}
-                  className="z-50 rounded-lg border border-border bg-muted px-3 py-2 shadow-lg w-sm"
+                  className="z-50 w-sm rounded-lg border border-border bg-muted px-3 py-2 shadow-lg"
                 >
                   <ul className="flex flex-wrap gap-1">
                     {remaining.map((tag) => (
-                      <li key={tag}><TagBadge tag={tag} /></li>
+                      <li key={tag}>
+                        <TagBadge tag={tag} />
+                      </li>
                     ))}
                   </ul>
                 </Tooltip.Content>

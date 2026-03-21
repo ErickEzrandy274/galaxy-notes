@@ -1,8 +1,9 @@
 'use client';
 
+import { FilterTabs } from '@/components/shared/filter-tabs';
 import type { NoteStatus } from '../types';
 
-const tabs: { label: string; value?: NoteStatus }[] = [
+const tabs: { label: string; value?: NoteStatus | 'has_shares' }[] = [
   { label: 'All' },
   { label: 'Published', value: 'published' },
   { label: 'Draft', value: 'draft' },
@@ -19,24 +20,11 @@ export function NotesFilters({
   onStatusChange,
 }: NotesFiltersProps) {
   return (
-    <menu className="flex items-center gap-1">
-      {tabs.map(({ label, value }) => {
-        const isActive = activeStatus === value;
-        return (
-          <li key={label}>
-            <button
-              onClick={() => onStatusChange(value)}
-              className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              }`}
-            >
-              {label}
-            </button>
-          </li>
-        );
-      })}
-    </menu>
+    <FilterTabs
+      tabs={tabs}
+      activeValue={activeStatus}
+      onChange={onStatusChange}
+      ariaLabel="Note status filters"
+    />
   );
 }

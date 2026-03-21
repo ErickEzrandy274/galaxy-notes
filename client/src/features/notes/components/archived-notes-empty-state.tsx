@@ -1,19 +1,12 @@
-'use client';
-
 import { Archive } from 'lucide-react';
+import { EmptyState } from '@/components/shared/empty-state';
 
 export function ArchivedNotesEmptyState() {
   return (
-    <section className="flex flex-1 flex-col items-center justify-center py-24">
-      <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-        <Archive className="h-8 w-8 text-muted-foreground" />
-      </span>
-      <h3 className="mt-4 text-lg font-semibold text-foreground">
-        No archived notes
-      </h3>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Notes you archive will appear here for safekeeping.
-      </p>
-    </section>
+    <EmptyState
+      icon={Archive}
+      title="No archived notes"
+      description="Notes you archive will appear here for safekeeping."
+    />
   );
 }

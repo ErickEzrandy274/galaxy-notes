@@ -1,3 +1,4 @@
+import { Badge } from '@/components/shared/badge';
 import type { NoteStatus } from '../types';
 
 const statusStyles: Record<NoteStatus, string> = {
@@ -8,11 +9,5 @@ const statusStyles: Record<NoteStatus, string> = {
 };
 
 export function StatusBadge({ status }: { status: NoteStatus }) {
-  return (
-    <span
-      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles[status]}`}
-    >
-      {status}
-    </span>
-  );
+  return <Badge className={statusStyles[status]}>{status}</Badge>;
 }

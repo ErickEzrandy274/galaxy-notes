@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useState, useCallback } from 'react';
-import { Paperclip, Loader2, FileText, Eye, Trash2, AlertTriangle } from 'lucide-react';
+import { Paperclip, FileText, Eye, Trash2, AlertTriangle } from 'lucide-react';
+import { Spinner } from '@/components/primitives';
 import { useNoteUpload } from '../hooks/use-note-upload';
 
 interface NoteAttachmentUploadProps {
@@ -79,7 +80,7 @@ export function NoteAttachmentUpload({
       >
         {isUploading ? (
           <output className="flex w-full flex-col items-center gap-3" aria-live="polite">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <Spinner size="xl" />
             <figure className="w-full space-y-1">
               <progress
                 value={progress}

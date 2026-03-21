@@ -1,5 +1,7 @@
 'use client';
 
+import { Badge } from '@/components/shared/badge';
+
 interface PermissionBadgeProps {
   permission: 'READ' | 'WRITE';
 }
@@ -11,11 +13,5 @@ const config = {
 
 export function PermissionBadge({ permission }: PermissionBadgeProps) {
   const { label, className } = config[permission];
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${className}`}
-    >
-      {label}
-    </span>
-  );
+  return <Badge className={className}>{label}</Badge>;
 }

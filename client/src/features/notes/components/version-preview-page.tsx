@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Paperclip, FileText, Eye, Video, AlertTriangle } from 'lucide-react';
+import { Paperclip, FileText, Eye, Video, AlertTriangle } from 'lucide-react';
+import { Spinner } from '@/components/primitives';
 import DOMPurify from 'dompurify';
 import { fetchVersionDetail } from '../api/notes-api';
 import { VersionPreviewBanner } from './version-preview-banner';
@@ -42,7 +43,7 @@ export function VersionPreviewPage({
   if (isLoading || !version) {
     return (
       <output className="flex h-full items-center justify-center" aria-busy="true">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Spinner size="xl" />
       </output>
     );
   }

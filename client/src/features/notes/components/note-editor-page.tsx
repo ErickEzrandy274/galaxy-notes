@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Eye } from 'lucide-react';
+import { Eye } from 'lucide-react';
+import { Spinner } from '@/components/primitives';
 import { useSession } from 'next-auth/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNoteEditor } from '../hooks/use-note-editor';
@@ -129,7 +130,7 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
   if (isLoading) {
     return (
       <output className="flex h-full items-center justify-center" aria-busy="true">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Spinner size="xl" />
       </output>
     );
   }

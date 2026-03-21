@@ -1,6 +1,7 @@
 'use client';
 
-import { Check, Loader2, AlertCircle } from 'lucide-react';
+import { Check, AlertCircle } from 'lucide-react';
+import { Spinner } from '@/components/primitives';
 import type { AutosaveStatus } from '../types';
 
 interface NoteAutosaveIndicatorProps {
@@ -28,7 +29,7 @@ export function NoteAutosaveIndicator({
     <output aria-live="polite" className="flex items-center gap-1.5 text-xs">
       {status === 'saving' && (
         <>
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+          <Spinner size="xs" />
           <span className="text-muted-foreground">Saving...</span>
         </>
       )}

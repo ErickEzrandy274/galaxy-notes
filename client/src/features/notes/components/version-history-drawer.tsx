@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { X, Loader2, History, Info, ArrowDown } from 'lucide-react';
+import { X, History, Info, ArrowDown } from 'lucide-react';
+import { Spinner } from '@/components/primitives';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useVersionHistory } from '../hooks/use-version-history';
 import { VersionHistoryItem } from './version-history-item';
@@ -88,7 +89,7 @@ export function VersionHistoryDrawer({
       <nav className="flex-1 overflow-y-auto" aria-label="Version history list">
         {isLoading ? (
           <output className="flex items-center justify-center py-12" aria-busy="true">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <Spinner size="lg" />
           </output>
         ) : versions.length === 0 ? (
           <figure className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center">
@@ -148,7 +149,7 @@ export function VersionHistoryDrawer({
 
             {isFetchingNextPage && (
               <li className="flex items-center justify-center py-3">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <Spinner size="sm" />
               </li>
             )}
 
