@@ -11,6 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PreferencesService } from '../preferences/preferences.service';
 
+const SUPABASE_BUCKET = 'galaxy-notes-staging';
 const MAX_VERSIONS = 30;
 const SNAPSHOT_THROTTLE_MS = 10 * 60 * 1000; // 10 minutes
 const SNAPSHOT_DEDUP_MS = 30 * 1000; // 30 seconds — prevents duplicate versions from autosave + manual save race
@@ -265,11 +266,12 @@ export class NotesService {
     const isShared = note.shares.some((s) => s.userId === userId);
     if (!isOwner && !isShared) throw new ForbiddenException('Access denied');
 
-    return {
-      ...note,
-      content: await this.resolveContentImages(note.content),
-      documentUrl: await this.resolveDocumentUrl(note.document),
-    };
+    const [content, documentUrl] = await Promise.all([
+      this.resolveContentImages(note.content),
+      this.resolveDocumentUrl(note.document),
+    ]);
+
+    return { ...note, content, documentUrl };
   }
 
   async create(
@@ -359,7 +361,7 @@ export class NotesService {
       note.document !== updateData.document
     ) {
       await this.supabase.storage
-        .from('galaxy-notes-staging')
+        .from(SUPABASE_BUCKET)
         .remove([note.document]);
     }
 
@@ -375,7 +377,7 @@ export class NotesService {
       const removed = oldPaths.filter((p) => !newPaths.includes(p));
       if (removed.length > 0) {
         await this.supabase.storage
-          .from('galaxy-notes-staging')
+          .from(SUPABASE_BUCKET)
           .remove(removed);
       }
     }
@@ -467,7 +469,7 @@ export class NotesService {
     const path = `${userId}/${source}/${noteId}/${Date.now()}_${sanitized}`;
 
     const { data, error } = await this.supabase.storage
-      .from('galaxy-notes-staging')
+      .from(SUPABASE_BUCKET)
       .createSignedUploadUrl(path);
 
     if (error) {
@@ -501,7 +503,7 @@ export class NotesService {
     }
 
     const { data } = await this.supabase.storage
-      .from('galaxy-notes-staging')
+      .from(SUPABASE_BUCKET)
       .createSignedUrl(storagePath, 3600);
     return data?.signedUrl ?? null;
   }
@@ -559,7 +561,7 @@ export class NotesService {
     if (!content) return content;
 
     const imgRegex = /<img\s+src="([^"]+)"/g;
-    const replacements: { from: string; to: string }[] = [];
+    const matches: { full: string; src: string }[] = [];
 
     let m;
     while ((m = imgRegex.exec(content)) !== null) {
@@ -571,15 +573,23 @@ export class NotesService {
         !src
       )
         continue;
-      const signedUrl = await this.resolveDocumentUrl(src);
-      if (signedUrl) {
-        replacements.push({ from: m[0], to: `<img src="${signedUrl}"` });
-      }
+      matches.push({ full: m[0], src });
     }
 
+    if (matches.length === 0) return content;
+
+    const signedUrls = await Promise.all(
+      matches.map((match) => this.resolveDocumentUrl(match.src)),
+    );
+
     let result = content;
-    for (const { from, to } of replacements) {
-      result = result.replace(from, to);
+    for (let i = 0; i < matches.length; i++) {
+      if (signedUrls[i]) {
+        result = result.replace(
+          matches[i].full,
+          `<img src="${signedUrls[i]}"`,
+        );
+      }
     }
     return result;
   }
@@ -719,16 +729,24 @@ export class NotesService {
           .join(' ') || 'Unknown'
       : 'Unknown';
 
+    const [content, documentUrl, currentContent, currentDocumentUrl] =
+      await Promise.all([
+        this.resolveContentImages(version.content),
+        this.resolveDocumentUrl(version.document),
+        this.resolveContentImages(note.content),
+        this.resolveDocumentUrl(note.document),
+      ]);
+
     return {
       ...version,
       changedByName,
-      content: await this.resolveContentImages(version.content),
-      documentUrl: await this.resolveDocumentUrl(version.document),
-      currentContent: await this.resolveContentImages(note.content),
+      content,
+      documentUrl,
+      currentContent,
       currentTitle: note.title,
       currentDocument: note.document,
       currentDocumentSize: note.documentSize,
-      currentDocumentUrl: await this.resolveDocumentUrl(note.document),
+      currentDocumentUrl,
       currentVideoUrl: note.videoUrl,
       currentTags: note.tags,
       noteStatus: note.status,
@@ -863,12 +881,12 @@ export class NotesService {
     });
     if (!note) throw new NotFoundException('Note not found in trash');
 
-    return {
-      ...note,
-      content: await this.resolveContentImages(note.content),
-      documentUrl: await this.resolveDocumentUrl(note.document),
-      shares: [],
-    };
+    const [content, documentUrl] = await Promise.all([
+      this.resolveContentImages(note.content),
+      this.resolveDocumentUrl(note.document),
+    ]);
+
+    return { ...note, content, documentUrl, shares: [] };
   }
 
   async findTrashed(
@@ -1058,7 +1076,7 @@ export class NotesService {
 
     if (paths.length > 0) {
       await this.supabase.storage
-        .from('galaxy-notes-staging')
+        .from(SUPABASE_BUCKET)
         .remove(paths);
     }
   }
