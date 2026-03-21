@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertTriangle, RotateCcw, Trash2 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 
 type Variant = 'permanentDelete' | 'emptyTrash' | 'moveToTrash' | 'restore';
 
@@ -72,8 +73,6 @@ export function TrashConfirmDialog({
   onCancel,
   isLoading,
 }: TrashConfirmDialogProps) {
-  if (!open) return null;
-
   const { title, description, confirmLabel, loadingLabel, style, icon } =
     config[variant];
 
@@ -87,54 +86,30 @@ export function TrashConfirmDialog({
     style === 'destructive' ? 'bg-destructive/10' : 'bg-blue-500/10';
   const btnClass =
     style === 'destructive'
-      ? 'bg-destructive hover:bg-destructive/90'
-      : 'bg-blue-600 hover:bg-blue-700';
+      ? 'bg-destructive text-white hover:bg-destructive/90'
+      : 'bg-blue-600 text-white hover:bg-blue-700';
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      role="dialog"
-      aria-modal="true"
+    <ConfirmDialog
+      open={open}
+      icon={iconElement}
+      iconBgClass={iconBg}
+      title={title}
+      description={description(noteTitle)}
+      confirmLabel={confirmLabel}
+      loadingLabel={loadingLabel}
+      confirmClassName={btnClass}
+      isLoading={isLoading}
+      onConfirm={onConfirm}
+      onCancel={onCancel}
     >
-      <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
-      <article className="relative z-10 w-96 rounded-lg border border-border bg-card p-6 shadow-xl">
-        <div className="flex items-start gap-3">
-          <span
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${iconBg}`}
-          >
-            {iconElement}
-          </span>
-          <div>
-            <h4 className="text-left text-sm font-semibold text-foreground">{title}</h4>
-            <p className="mt-1 text-left text-sm text-muted-foreground">
-              {description(noteTitle)}
-            </p>
-            {variant === 'moveToTrash' && !!shareCount && shareCount > 0 && (
-              <p className="mt-2 text-left text-sm font-medium text-amber-500">
-                This note is shared with {shareCount} {shareCount === 1 ? 'collaborator' : 'collaborators'}. They will lose access once it is moved to trash.
-              </p>
-            )}
-          </div>
-        </div>
-        <footer className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isLoading}
-            className="cursor-pointer rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={isLoading}
-            className={`cursor-pointer rounded-md px-4 py-2 text-sm font-medium text-white disabled:opacity-50 ${btnClass}`}
-          >
-            {isLoading ? loadingLabel : confirmLabel}
-          </button>
-        </footer>
-      </article>
-    </div>
+      {variant === 'moveToTrash' && !!shareCount && shareCount > 0 && (
+        <p className="mt-2 text-left text-sm font-medium text-amber-500">
+          This note is shared with {shareCount}{' '}
+          {shareCount === 1 ? 'collaborator' : 'collaborators'}. They will lose
+          access once it is moved to trash.
+        </p>
+      )}
+    </ConfirmDialog>
   );
 }
