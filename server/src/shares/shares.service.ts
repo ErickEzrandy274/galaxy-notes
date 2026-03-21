@@ -98,14 +98,6 @@ export class SharesService {
 
         // Send notification with debouncing
         await this.sendShareNotification(targetUser.id, note, userId);
-
-        // Update note status to shared if currently published
-        if (note.status === 'published') {
-          await this.prisma.note.update({
-            where: { id: dto.noteId },
-            data: { status: 'shared' },
-          });
-        }
       } else {
         // User not found — create invite
         const existingInvite = await this.prisma.noteInvite.findFirst({
@@ -146,6 +138,14 @@ export class SharesService {
           token,
         });
       }
+    }
+
+    // Update note status to shared if new shares were created and note is published
+    if (shared.length > 0 && note.status === 'published') {
+      await this.prisma.note.update({
+        where: { id: dto.noteId },
+        data: { status: 'shared' },
+      });
     }
 
     return { shared, invited };
