@@ -67,9 +67,9 @@ export function VersionHistoryDrawer({
   };
 
   return (
-    <aside className="flex h-full w-96 shrink-0 flex-col border-l border-border bg-card">
+    <aside className="absolute inset-0 z-30 flex flex-col bg-card md:relative md:inset-auto md:z-auto md:h-full md:w-96 md:shrink-0 md:border-l md:border-border">
       <header className="px-4 py-3">
-        <nav className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <hgroup className="flex items-center gap-2">
             <History className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold text-foreground">Version History</h2>
@@ -82,7 +82,7 @@ export function VersionHistoryDrawer({
           >
             <X className="h-4 w-4" />
           </button>
-        </nav>
+        </div>
         <hr className="mt-3 border-border" />
       </header>
 

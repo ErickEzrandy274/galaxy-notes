@@ -60,7 +60,7 @@ export function VersionPreviewPage({
   const versionVideoId = version.videoUrl ? extractYouTubeId(version.videoUrl) : null;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col overflow-y-auto">
       <VersionPreviewBanner
         noteId={noteId}
         versionId={versionId}
@@ -71,7 +71,7 @@ export function VersionPreviewPage({
         onBackToCurrent={onBackToCurrent}
       />
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="p-4 md:p-6">
         {/* Diff view */}
         <section className="mb-8">
           <VersionDiffView
@@ -114,7 +114,7 @@ export function VersionPreviewPage({
           )}
 
           {version.document && (
-            <div className="mt-6">
+            <section className="mt-6">
               <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Paperclip className="h-4 w-4" />
                 Attachment
@@ -148,11 +148,11 @@ export function VersionPreviewPage({
                   </span>
                 )}
               </figure>
-            </div>
+            </section>
           )}
 
           {versionVideoId && (
-            <div className="mt-6">
+            <section className="mt-6">
               <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Video className="h-4 w-4" />
                 Supporting Video
@@ -166,7 +166,7 @@ export function VersionPreviewPage({
                   className="aspect-video w-full"
                 />
               </figure>
-            </div>
+            </section>
           )}
         </section>
       </div>
