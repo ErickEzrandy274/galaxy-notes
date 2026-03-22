@@ -180,21 +180,26 @@ export class NotesService {
       ]);
 
       // Flatten share data for the current user
-      const flatNotes = notes.map((note) => {
-        const myShare = note.shares[0];
-        return {
-          id: note.id,
-          title: note.title,
-          status: note.status,
-          tags: note.tags,
-          createdAt: note.createdAt,
-          updatedAt: note.updatedAt,
-          owner: note.user,
-          shareId: myShare?.id ?? null,
-          permission: myShare?.permission ?? 'READ',
-          sharedOn: myShare?.createdAt ?? note.createdAt,
-        };
-      });
+      const flatNotes = await Promise.all(
+        notes.map(async (note) => {
+          const myShare = note.shares[0];
+          return {
+            id: note.id,
+            title: note.title,
+            status: note.status,
+            tags: note.tags,
+            createdAt: note.createdAt,
+            updatedAt: note.updatedAt,
+            owner: {
+              ...note.user,
+              photo: await this.resolvePhotoUrl(note.user.photo),
+            },
+            shareId: myShare?.id ?? null,
+            permission: myShare?.permission ?? 'READ',
+            sharedOn: myShare?.createdAt ?? note.createdAt,
+          };
+        }),
+      );
 
       return { notes: flatNotes, total, page, limit };
     }
@@ -484,6 +489,25 @@ export class NotesService {
       path,
       downloadUrl,
     };
+  }
+
+  private async resolvePhotoUrl(
+    photo: string | null,
+  ): Promise<string | null> {
+    if (!photo) return null;
+    if (photo.startsWith('http') && !photo.includes('supabase')) return photo;
+
+    let storagePath = photo;
+    if (photo.startsWith('http')) {
+      const match = photo.match(/\/galaxy-notes-staging\/([^?]+)/);
+      if (match) storagePath = decodeURIComponent(match[1]);
+      else return photo;
+    }
+
+    const { data } = await this.supabase.storage
+      .from(SUPABASE_BUCKET)
+      .createSignedUrl(storagePath, 3600);
+    return data?.signedUrl ?? null;
   }
 
   private async resolveDocumentUrl(
