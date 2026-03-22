@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #7C3AED;
+  --primary-foreground: #ffffff;
+  --card: #f5f5f5;
+  --card-foreground: #171717;
+  --muted: #e5e5e5;
+  --muted-foreground: #6b7280;
+  --border: #e5e5e5;
+  --input: #f5f5f5;
+  --ring: #7C3AED;
+  --destructive: #EF4444;
+  --destructive-foreground: #ffffff;
+  --accent: #7C3AED;
+  --accent-foreground: #ffffff;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --primary: #7C3AED;
+  --primary-foreground: #ffffff;
+  --card: #1C1C1C;
+  --card-foreground: #ededed;
+  --muted: #2A2A2A;
+  --muted-foreground: #9CA3AF;
+  --border: #2A2A2A;
+  --input: #1C1C1C;
+  --ring: #7C3AED;
+  --destructive: #EF4444;
+  --destructive-foreground: #ffffff;
+  --accent: #7C3AED;
+  --accent-foreground: #ffffff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+/* Version history tooltip — Radix Portal ignores Tailwind layer specificity */
+.version-history-tooltip {
+  background-color: #52525b;
+  color: #f4f4f5;
+}
+.dark .version-history-tooltip {
+  background-color: #e4e4e7;
+  color: #18181b;
+}
+
+/* Quill Editor — theme overrides */
+.quill {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.ql-toolbar.ql-snow {
+  border: none !important;
+  border-bottom: 1px solid var(--border) !important;
+  background: transparent;
+}
+.ql-container.ql-snow {
+  border: none !important;
+  font-family: inherit;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.ql-editor {
+  min-height: 200px;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  line-height: 1.625;
+}
+.ql-snow .ql-editor img {
+  max-width: 300px;
+  max-height: 300px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+.ql-editor.ql-blank::before {
+  color: var(--muted-foreground);
+  font-style: normal;
+}
+.ql-snow .ql-stroke {
+  stroke: var(--muted-foreground);
+}
+.ql-snow .ql-fill {
+  fill: var(--muted-foreground);
+}
+.ql-snow .ql-picker-label {
+  color: var(--muted-foreground);
+}
+.ql-snow .ql-picker-options {
+  background: var(--card);
+  border-color: var(--border);
+}
+.ql-snow .ql-active .ql-stroke {
+  stroke: var(--primary);
+}
+.ql-snow .ql-active .ql-fill {
+  fill: var(--primary);
+}
+.ql-snow .ql-active {
+  color: var(--primary);
+}
+.ql-snow .ql-picker-item:hover,
+.ql-snow .ql-picker-item.ql-selected {
+  color: var(--primary);
+}
+.ql-snow a {
+  color: var(--primary);
+}
+
+/* Note view page - content typography */
+.note-view-content {
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-height: 1.75;
+  font-size: 0.9375rem;
+}
+.note-view-content img {
+  max-width: 300px;
+  max-height: 300px;
+  object-fit: contain;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.note-view-content p {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+}
+.note-view-content a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+.note-view-content blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1em;
+  color: var(--muted-foreground);
+}
+.note-view-content pre {
+  background: var(--muted);
+  padding: 1em;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+.note-view-content ul,
+.note-view-content ol {
+  padding-left: 1.5em;
+}
+.note-view-content ul {
+  list-style-type: disc;
+}
+.note-view-content ol {
+  list-style-type: decimal;
+}
