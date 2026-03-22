@@ -13,11 +13,17 @@ COPY . .
 RUN pnpm prisma generate
 RUN pnpm build
 
+FROM base AS prod-deps
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 EXPOSE 8080
 ENV PORT=8080
