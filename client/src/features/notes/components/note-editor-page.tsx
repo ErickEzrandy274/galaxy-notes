@@ -156,7 +156,7 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
   return (
     <article className="flex h-full flex-col">
       {isReadOnly && (
-        <div className="flex items-center gap-2 border-b border-amber-500/20 bg-amber-500/5 px-6 py-2 text-sm text-amber-400">
+        <div className="flex items-center gap-2 border-b border-amber-500/20 bg-amber-500/5 px-4 py-2 text-sm text-amber-400 md:px-6">
           <Eye className="h-4 w-4" />
           View-only access — you can read this note but cannot make changes
         </div>
@@ -176,8 +176,8 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
         />
       )}
 
-      <section className="flex flex-1 overflow-hidden">
-        <section className="flex flex-1 flex-col overflow-hidden p-6">
+      <section className="flex flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
+        <section className="flex flex-1 flex-col p-4 md:overflow-hidden md:p-6">
           <NoteEditorContent data={data} updateField={isReadOnly ? (() => {}) as any : updateField} noteId={noteId ?? savedNoteId} blobToPathMap={blobToPathMap} />
         </section>
 

@@ -34,9 +34,9 @@ export function NoteDetailContent({ note }: NoteDetailContentProps) {
   const hasSidebar = note.document || videoId;
 
   return (
-    <section className="flex flex-1 overflow-hidden">
+    <section className="flex flex-1 flex-col overflow-hidden md:flex-row">
       {/* Left: Main content */}
-      <section className="flex-1 overflow-y-auto overflow-x-hidden p-6">
+      <section className={`flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 ${!hasSidebar ? 'pb-20 md:pb-6' : ''}`}>
         <h1 className="wrap-break-word text-2xl font-bold text-foreground">
           {note.title || 'Untitled'}
         </h1>
@@ -78,7 +78,7 @@ export function NoteDetailContent({ note }: NoteDetailContentProps) {
 
       {/* Right: Sidebar with attachment & video */}
       {hasSidebar && (
-        <aside className="w-96 shrink-0 space-y-6 overflow-y-auto border-l border-border p-4">
+        <aside className="shrink-0 space-y-6 overflow-y-auto border-t border-border p-4 pb-20 md:w-96 md:border-l md:border-t-0 md:pb-4">
           {note.document && (
             <section>
               <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
