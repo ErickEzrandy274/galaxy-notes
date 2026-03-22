@@ -11,6 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 
+const SUPABASE_BUCKET = 'galaxy-notes-staging';
 const ALLOWED_MIME_TYPES = ['image/webp', 'image/jpeg', 'image/png'];
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 
@@ -36,8 +37,8 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  searchByEmail(query: string, excludeUserId: string) {
-    return this.prisma.user.findMany({
+  async searchByEmail(query: string, excludeUserId: string) {
+    const users = await this.prisma.user.findMany({
       where: {
         id: { not: excludeUserId },
         OR: [
@@ -55,6 +56,14 @@ export class UsersService {
       },
       take: 10,
     });
+
+    const resolved = await Promise.all(
+      users.map(async (u) => ({
+        ...u,
+        photo: await this.resolvePhotoUrl(u.photo),
+      })),
+    );
+    return resolved;
   }
 
   async getProfile(userId: string) {
@@ -85,7 +94,11 @@ export class UsersService {
         ? { provider: accounts[0].provider, providerEmail: user.email }
         : null;
 
-    return { ...profile, connectedAccount };
+    return {
+      ...profile,
+      photo: await this.resolvePhotoUrl(profile.photo),
+      connectedAccount,
+    };
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
@@ -103,7 +116,7 @@ export class UsersService {
 
     if (dto.bio !== undefined) data.bio = dto.bio;
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data,
       select: {
@@ -118,6 +131,8 @@ export class UsersService {
         createdAt: true,
       },
     });
+
+    return { ...updated, photo: await this.resolvePhotoUrl(updated.photo) };
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto) {
@@ -169,21 +184,17 @@ export class UsersService {
     const path = `${userId}/avatar/${Date.now()}_${sanitized}`;
 
     const { data, error } = await this.supabase.storage
-      .from('galaxy-notes-staging')
+      .from(SUPABASE_BUCKET)
       .createSignedUploadUrl(path);
 
     if (error) {
       throw new BadRequestException(`Upload failed: ${error.message}`);
     }
 
-    const {
-      data: { publicUrl },
-    } = this.supabase.storage.from('galaxy-notes-staging').getPublicUrl(path);
-
-    return { signedUrl: data.signedUrl, token: data.token, path, publicUrl };
+    return { signedUrl: data.signedUrl, token: data.token, path };
   }
 
-  async updatePhoto(userId: string, photoUrl: string) {
+  async updatePhoto(userId: string, photoPath: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { photo: true },
@@ -193,11 +204,13 @@ export class UsersService {
       await this.deleteStorageFile(user.photo);
     }
 
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
-      data: { photo: photoUrl },
+      data: { photo: photoPath },
       select: { photo: true },
     });
+
+    return { photo: await this.resolvePhotoUrl(updated.photo) };
   }
 
   async removePhoto(userId: string) {
@@ -217,15 +230,41 @@ export class UsersService {
     });
   }
 
-  private extractStoragePath(publicUrl: string): string | null {
-    const match = publicUrl.match(/\/galaxy-notes-staging\/(.+)$/);
+  async resolvePhotoUrl(photo: string | null): Promise<string | null> {
+    if (!photo) return null;
+
+    // External OAuth photos (Google, GitHub, Facebook) — return as-is
+    if (photo.startsWith('http') && !photo.includes('supabase')) {
+      return photo;
+    }
+
+    // Old Supabase public URLs — extract storage path
+    let storagePath = photo;
+    if (photo.startsWith('http')) {
+      const match = photo.match(/\/galaxy-notes-staging\/([^?]+)/);
+      if (match) {
+        storagePath = decodeURIComponent(match[1]);
+      } else {
+        return photo;
+      }
+    }
+
+    const { data } = await this.supabase.storage
+      .from(SUPABASE_BUCKET)
+      .createSignedUrl(storagePath, 3600);
+    return data?.signedUrl ?? null;
+  }
+
+  private extractStoragePath(photo: string): string | null {
+    if (!photo.startsWith('http')) return photo;
+    const match = photo.match(/\/galaxy-notes-staging\/([^?]+)/);
     return match ? decodeURIComponent(match[1]) : null;
   }
 
-  private async deleteStorageFile(publicUrl: string) {
-    const path = this.extractStoragePath(publicUrl);
+  private async deleteStorageFile(photo: string) {
+    const path = this.extractStoragePath(photo);
     if (!path) return;
 
-    await this.supabase.storage.from('galaxy-notes-staging').remove([path]);
+    await this.supabase.storage.from(SUPABASE_BUCKET).remove([path]);
   }
 }
