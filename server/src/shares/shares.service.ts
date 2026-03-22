@@ -7,6 +7,7 @@ import {
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
 import { ConfigService } from '@nestjs/config';
 import { BulkAddSharesDto } from './dto/bulk-add-shares.dto';
@@ -21,6 +22,7 @@ export class SharesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
+    private readonly usersService: UsersService,
     private readonly mailService: MailService,
     private readonly configService: ConfigService,
   ) {}
@@ -179,7 +181,17 @@ export class SharesService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return { shares, pendingInvites };
+    const resolvedShares = await Promise.all(
+      shares.map(async (s) => ({
+        ...s,
+        user: {
+          ...s.user,
+          photo: await this.usersService.resolvePhotoUrl(s.user.photo),
+        },
+      })),
+    );
+
+    return { shares: resolvedShares, pendingInvites };
   }
 
   async updatePermission(
