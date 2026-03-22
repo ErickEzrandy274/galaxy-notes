@@ -5,15 +5,11 @@ on:
 
 jobs:
   deploy-backend:
-    name: Redeploy Backend on Koyeb
+    name: Redeploy Backend on Render
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Koyeb CLI
-        run: curl -fsSL https://raw.githubusercontent.com/koyeb/koyeb-cli/master/install.sh | sh
-
-      - name: Trigger redeploy
-        run: koyeb service redeploy ${{ secrets.KOYEB_APP }}/${{ secrets.KOYEB_SERVICE }}
-        env:
-          KOYEB_TOKEN: ${{ secrets.KOYEB_TOKEN }}
+      - name: Trigger deploy
+        run: |
+          curl -X POST "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json"
