@@ -28,13 +28,15 @@ export function SharedNotesSearch({
         icon={User}
         onChange={onOwnerSearchChange}
       />
-      <SearchField
-        label="Tags"
-        placeholder="Filter by tags..."
-        icon={Tag}
-        type="text"
-        onChange={onTagsChange}
-      />
+      <span className="hidden flex-1 md:block">
+        <SearchField
+          label="Tags"
+          placeholder="Filter by tags..."
+          icon={Tag}
+          type="text"
+          onChange={onTagsChange}
+        />
+      </span>
     </fieldset>
   );
 }

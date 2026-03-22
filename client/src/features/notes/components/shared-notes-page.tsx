@@ -49,7 +49,7 @@ export function SharedNotesPage() {
   const isFilteredEmpty = data?.notes?.length === 0 && hasFilters;
 
   return (
-    <section className="flex h-full flex-col p-6">
+    <section className="flex h-full flex-col p-4 md:p-6">
       <PageHeader
         icon={Users}
         iconColorClass="bg-emerald-500/10 text-emerald-500"
@@ -63,7 +63,7 @@ export function SharedNotesPage() {
         />
       </nav>
 
-      <search className="mb-4 flex items-end gap-4">
+      <search className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:gap-4">
         <span className="flex-1">
           <SharedNotesSearch
             onSearchChange={handleSearchChange}
@@ -71,7 +71,9 @@ export function SharedNotesPage() {
             onTagsChange={handleTagsChange}
           />
         </span>
-        <SharedNotesColumnsDropdown columns={columns} onToggle={toggleColumn} />
+        <span className="hidden md:block">
+          <SharedNotesColumnsDropdown columns={columns} onToggle={toggleColumn} />
+        </span>
       </search>
 
       <DataStateHandler

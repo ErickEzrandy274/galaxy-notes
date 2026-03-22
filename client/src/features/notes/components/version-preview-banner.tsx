@@ -9,6 +9,11 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { restoreVersion } from '../api/notes-api';
 import type { NoteStatus } from '../types';
 
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+});
+
 interface VersionPreviewBannerProps {
   noteId: string;
   versionId: string;
@@ -45,18 +50,15 @@ export function VersionPreviewBanner({
     },
   });
 
-  const formattedDate = new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(createdAt));
+  const formattedDate = dateFormatter.format(new Date(createdAt));
 
   const isArchived = noteStatus === 'archived';
 
   return (
     <>
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-amber-500/20 bg-[#F59E0B]/12 px-6 py-3">
-        <p className="flex items-center gap-2 text-sm text-foreground">
-          <Clock className="h-4 w-4 text-[#F59E0B]" />
+      <header className="sticky top-0 z-10 flex flex-col items-center gap-2 border-b border-amber-500/20 bg-amber-50 px-4 py-3 dark:bg-amber-950 md:flex-row md:justify-between md:px-6">
+        <p className="flex items-center gap-2 text-center text-sm text-foreground md:text-left">
+          <Clock className="h-4 w-4 shrink-0 text-[#F59E0B]" />
           <span>
             You are viewing Version {versionNumber} &mdash; saved on {formattedDate} by {changedByName}
           </span>
@@ -75,10 +77,14 @@ export function VersionPreviewBanner({
               Restore This
             </button>
           )}
-          <Button variant="outline-muted" size="sm" onClick={onBackToCurrent}>
+          <button
+            type="button"
+            onClick={onBackToCurrent}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-amber-400/40 px-4 py-1.5 text-sm font-semibold text-foreground hover:bg-amber-100 dark:hover:bg-amber-900/30"
+          >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Current
-          </Button>
+          </button>
         </nav>
       </header>
 

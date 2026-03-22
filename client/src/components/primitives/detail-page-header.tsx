@@ -18,20 +18,20 @@ export function DetailPageHeader({
   actions,
 }: DetailPageHeaderProps) {
   return (
-    <header className="flex items-center justify-between border-b border-border px-6 py-3">
+    <header className="flex flex-col gap-2 border-b border-border px-4 py-3 md:flex-row md:items-center md:justify-between md:px-6">
       <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm">
         <Link
           href={backHref}
-          className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+          className="flex shrink-0 items-center gap-1 whitespace-nowrap text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
           {backLabel}
         </Link>
         <span className="text-muted-foreground">/</span>
-        <span className="font-medium text-foreground">{title}</span>
+        <span className="truncate font-medium text-foreground">{title}</span>
         {titleSuffix}
       </nav>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </header>
   );
 }

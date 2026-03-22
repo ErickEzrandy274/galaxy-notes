@@ -47,10 +47,10 @@ export function Pagination({
   };
 
   return (
-    <nav className="flex items-center justify-between pt-4" aria-label="Pagination">
+    <nav className="flex flex-col items-center gap-3 pt-4 md:flex-row md:justify-between" aria-label="Pagination">
       <span className="flex items-center gap-3">
         <p className="text-sm text-muted-foreground">
-          Showing {start} to {end} of {total} entries
+          <span className="hidden sm:inline">Showing {start} to {end} of </span>{total} entries
         </p>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>

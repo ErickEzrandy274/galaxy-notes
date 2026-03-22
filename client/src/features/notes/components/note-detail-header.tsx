@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Pencil, Share2, History, Archive, RotateCcw, Trash2 } from 'lucide-react';
+import { Pencil, Share2, History, Archive, RotateCcw, Trash2, MoreVertical } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import toast from 'react-hot-toast';
 import { DetailPageHeader, Button } from '@/components/primitives';
 import { updateNote, deleteNote } from '../api/notes-api';
@@ -76,34 +77,103 @@ export function NoteDetailHeader({ noteId, title, status, version, isOwner, shar
         title={title || 'Untitled'}
         actions={
           <>
-            <Button variant="primary" size="sm" onClick={() => router.push(`/notes/${noteId}`)}>
-              <Pencil className="h-3.5 w-3.5" />
-              Edit
-            </Button>
-            {isOwner && (
-              <Button variant="outline-muted" size="sm" onClick={() => setShowShareModal(true)}>
-                <Share2 className="h-3.5 w-3.5" />
-                Share
+            {/* Desktop: all buttons visible */}
+            <span className="hidden items-center gap-2 md:flex">
+              <Button variant="primary" size="sm" onClick={() => router.push(`/notes/${noteId}`)}>
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
               </Button>
-            )}
-            <Button variant="outline-muted" size="sm" onClick={onOpenHistory}>
-              <History className="h-3.5 w-3.5" />
-              History
-            </Button>
-            {isOwner && status !== 'draft' && (
-              <Button variant="outline-muted" size="sm" onClick={() => setShowArchiveDialog(true)}>
-                <Archive className="h-3.5 w-3.5" />
-                Archive
+              {isOwner && (
+                <Button variant="outline-muted" size="sm" onClick={() => setShowShareModal(true)}>
+                  <Share2 className="h-3.5 w-3.5" />
+                  Share
+                </Button>
+              )}
+              <Button variant="outline-muted" size="sm" onClick={onOpenHistory}>
+                <History className="h-3.5 w-3.5" />
+                History
               </Button>
-            )}
-            <Button variant="outline-muted" size="sm" loading={isReverting} onClick={handleRevert}>
-              {!isReverting && <RotateCcw className="h-3.5 w-3.5" />}
-              Revert to Draft
-            </Button>
-            <Button variant="destructive-outline" size="sm" onClick={() => setShowTrashDialog(true)}>
-              <Trash2 className="h-3.5 w-3.5" />
-              Move to Trash
-            </Button>
+              {isOwner && status !== 'draft' && (
+                <Button variant="outline-muted" size="sm" onClick={() => setShowArchiveDialog(true)}>
+                  <Archive className="h-3.5 w-3.5" />
+                  Archive
+                </Button>
+              )}
+              <Button variant="outline-muted" size="sm" loading={isReverting} onClick={handleRevert}>
+                {!isReverting && <RotateCcw className="h-3.5 w-3.5" />}
+                Revert to Draft
+              </Button>
+              <Button variant="destructive-outline" size="sm" onClick={() => setShowTrashDialog(true)}>
+                <Trash2 className="h-3.5 w-3.5" />
+                Move to Trash
+              </Button>
+            </span>
+
+            {/* Mobile: Edit + three-dot menu */}
+            <span className="flex w-full items-center justify-between md:hidden">
+              <Button variant="primary" size="sm" onClick={() => router.push(`/notes/${noteId}`)}>
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </Button>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <button className="flex cursor-pointer items-center rounded-lg border border-border p-2 text-muted-foreground hover:bg-muted" aria-label="More actions">
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    align="end"
+                    sideOffset={4}
+                    className="z-50 min-w-48 overflow-hidden rounded-xl border border-border bg-card shadow-lg"
+                  >
+                    <menu className="p-1">
+                      {isOwner && (
+                        <DropdownMenu.Item
+                          onSelect={() => setShowShareModal(true)}
+                          className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground outline-none hover:bg-muted"
+                        >
+                          <Share2 className="h-4 w-4" />
+                          Share
+                        </DropdownMenu.Item>
+                      )}
+                      <DropdownMenu.Item
+                        onSelect={onOpenHistory}
+                        className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground outline-none hover:bg-muted"
+                      >
+                        <History className="h-4 w-4" />
+                        History
+                      </DropdownMenu.Item>
+                      {isOwner && status !== 'draft' && (
+                        <DropdownMenu.Item
+                          onSelect={() => setShowArchiveDialog(true)}
+                          className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground outline-none hover:bg-muted"
+                        >
+                          <Archive className="h-4 w-4" />
+                          Archive
+                        </DropdownMenu.Item>
+                      )}
+                      <DropdownMenu.Item
+                        onSelect={handleRevert}
+                        disabled={isReverting}
+                        className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground outline-none hover:bg-muted disabled:cursor-default disabled:opacity-50"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        Revert to Draft
+                      </DropdownMenu.Item>
+                      <DropdownMenu.Separator className="mx-1 my-1 h-px bg-border" />
+                      <DropdownMenu.Item
+                        onSelect={() => setShowTrashDialog(true)}
+                        className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-destructive outline-none hover:bg-muted"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Move to Trash
+                      </DropdownMenu.Item>
+                    </menu>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            </span>
           </>
         }
       />

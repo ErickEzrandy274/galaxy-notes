@@ -44,7 +44,7 @@ export function NoteEditorHeader({
             </Button>
           ) : isPublished ? (
             <>
-              <Button variant="ghost" size="sm" loading={isSaving} onClick={onSaveDraft}>
+              <Button variant="outline-muted" size="sm" loading={isSaving} onClick={onSaveDraft}>
                 Make as Draft
               </Button>
               <Button variant="primary" size="sm" loading={isSaving} onClick={onSave}>

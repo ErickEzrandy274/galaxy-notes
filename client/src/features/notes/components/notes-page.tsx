@@ -36,7 +36,7 @@ export function NotesPage() {
   const isFilteredEmpty = data?.notes?.length === 0 && hasFilters;
 
   return (
-    <section className="flex h-full flex-col p-6">
+    <section className="flex h-full flex-col p-4 md:p-6">
       <PageHeader
         icon={FileText}
         iconColorClass="bg-blue-500/10 text-blue-500"
@@ -52,7 +52,7 @@ export function NotesPage() {
         }
       />
 
-      <div className="mb-4">
+      <div className="mb-4 hidden md:block">
         <NotesStats activeFilter={filters.status} onFilterChange={setStatus} />
       </div>
 
@@ -63,14 +63,16 @@ export function NotesPage() {
         />
       </nav>
 
-      <search className="mb-4 flex items-end gap-4">
+      <search className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:gap-4">
         <span className="flex-1">
           <NotesSearch
             onSearchChange={handleSearchChange}
             onTagsChange={handleTagsChange}
           />
         </span>
-        <NotesColumnsDropdown columns={columns} onToggle={toggleColumn} />
+        <span className="hidden md:block">
+          <NotesColumnsDropdown columns={columns} onToggle={toggleColumn} />
+        </span>
       </search>
 
       <DataStateHandler
