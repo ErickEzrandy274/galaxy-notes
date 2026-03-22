@@ -42,7 +42,7 @@ export function TrashPage() {
   const isFilteredEmpty = data?.notes?.length === 0 && hasFilters;
 
   return (
-    <section className="flex h-full flex-col p-6">
+    <section className="flex h-full flex-col p-4 md:p-6">
       <PageHeader
         icon={Trash2}
         iconColorClass="bg-red-500/10 text-red-500"
@@ -58,14 +58,16 @@ export function TrashPage() {
         />
       )}
 
-      <search className="mb-4 flex items-end gap-4">
+      <search className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:gap-4">
         <span className="flex-1">
           <TrashSearch
             onSearchChange={handleSearchChange}
             onTagsChange={handleTagsChange}
           />
         </span>
-        <TrashColumnsDropdown columns={columns} onToggle={toggleColumn} />
+        <span className="hidden md:block">
+          <TrashColumnsDropdown columns={columns} onToggle={toggleColumn} />
+        </span>
       </search>
 
       <DataStateHandler

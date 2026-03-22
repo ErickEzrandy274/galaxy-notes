@@ -28,17 +28,17 @@ export function SharedNotesTable({ notes, columns }: SharedNotesTableProps) {
               </th>
             )}
             {columns.tags && (
-              <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+              <th className="hidden px-4 py-3 text-sm font-medium text-muted-foreground md:table-cell">
                 Tags
               </th>
             )}
             {columns.createdAt && (
-              <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+              <th className="hidden px-4 py-3 text-sm font-medium text-muted-foreground md:table-cell">
                 Created At
               </th>
             )}
             {columns.sharedOn && (
-              <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
+              <th className="hidden px-4 py-3 text-sm font-medium text-muted-foreground md:table-cell">
                 Shared On
               </th>
             )}

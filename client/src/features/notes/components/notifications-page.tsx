@@ -34,7 +34,7 @@ export function NotificationsPage() {
   const hasUnread = (unreadData?.count ?? 0) > 0;
 
   return (
-    <section className="flex h-full flex-col p-6">
+    <section className="flex h-full flex-col p-4 md:p-6">
       <PageHeader
         icon={Bell}
         iconColorClass="bg-orange-500/10 text-orange-500"
