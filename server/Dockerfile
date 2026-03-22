@@ -4,7 +4,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN echo "node-linker=hoisted" > .npmrc && pnpm install --frozen-lockfile
 
 FROM base AS builder
 WORKDIR /app
@@ -16,7 +16,7 @@ RUN pnpm build
 FROM base AS prod-deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod
+RUN echo "node-linker=hoisted" > .npmrc && pnpm install --frozen-lockfile --prod
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 FROM base AS runner
