@@ -1,0 +1,19 @@
+name: Deploy to Production (Manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    name: Redeploy Backend on Koyeb
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Koyeb CLI
+        run: curl -fsSL https://raw.githubusercontent.com/koyeb/koyeb-cli/master/install.sh | sh
+
+      - name: Trigger redeploy
+        run: koyeb service redeploy ${{ secrets.KOYEB_APP }}/${{ secrets.KOYEB_SERVICE }}
+        env:
+          KOYEB_TOKEN: ${{ secrets.KOYEB_TOKEN }}
