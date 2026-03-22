@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Mini Galaxy Notes',
+  title: 'Galaxy Notes',
   description: 'Capture, organize, and share your ideas with ease.',
 };
 
