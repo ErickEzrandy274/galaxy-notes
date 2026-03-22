@@ -10,6 +10,9 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
 RUN pnpm build
 
 FROM base AS runner
