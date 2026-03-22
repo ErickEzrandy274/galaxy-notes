@@ -5,6 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from '../users/users.service';
 import { Subject, Observable } from 'rxjs';
 
 @Injectable()
@@ -12,7 +13,10 @@ export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
   private readonly userStreams = new Map<string, Subject<MessageEvent>>();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly usersService: UsersService,
+  ) {}
 
   // ── SSE Streaming ─────────────────────────────────────────
 
@@ -122,18 +126,28 @@ export class NotificationsService {
       noteStateMap = new Map(notes.map((n) => [n.id, n.isDeleted]));
     }
 
-    const notifications = raw.map((n) => {
-      if (!n.noteId || !stateTypes.includes(n.type)) return n;
+    const notifications = await Promise.all(
+      raw.map(async (n) => {
+        const resolved = {
+          ...n,
+          actor: n.actor
+            ? {
+                ...n.actor,
+                photo: await this.usersService.resolvePhotoUrl(n.actor.photo),
+              }
+            : null,
+        };
 
-      const isDeleted = noteStateMap.get(n.noteId);
-      // Note permanently deleted → unavailable
-      if (isDeleted === undefined) return { ...n, isNoteAvailable: false };
-      // version_cleanup: available only when note IS in trash
-      // restore: available only when note is NOT in trash
-      const isNoteAvailable =
-        n.type === 'version_cleanup' ? isDeleted : !isDeleted;
-      return { ...n, isNoteAvailable };
-    });
+        if (!n.noteId || !stateTypes.includes(n.type)) return resolved;
+
+        const isDeleted = noteStateMap.get(n.noteId);
+        if (isDeleted === undefined)
+          return { ...resolved, isNoteAvailable: false };
+        const isNoteAvailable =
+          n.type === 'version_cleanup' ? isDeleted : !isDeleted;
+        return { ...resolved, isNoteAvailable };
+      }),
+    );
 
     return { notifications, total, page, limit };
   }
@@ -273,6 +287,15 @@ export class NotificationsService {
       },
       orderBy: { createdAt: 'desc' },
     });
-    return mutes;
+
+    return Promise.all(
+      mutes.map(async (m) => ({
+        ...m,
+        mutedUser: {
+          ...m.mutedUser,
+          photo: await this.usersService.resolvePhotoUrl(m.mutedUser.photo),
+        },
+      })),
+    );
   }
 }
