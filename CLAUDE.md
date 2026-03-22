@@ -179,3 +179,22 @@ Detailed feature docs with component trees, API specs, user flows, and design sp
 **Database** (`.env`): `DATABASE_URL`, `DIRECT_URL`.
 
 Template files: `.env.example` in each workspace. Actual values: `.env.local` (gitignored).
+
+## Deployment
+
+| Service | Platform | URL |
+|---------|----------|-----|
+| Frontend | Vercel | `https://galaxy-notes-v2.vercel.app` |
+| Backend | Back4app Containers | `https://galaxynotesapi-c4eaia6u.b4a.run` |
+| Database | Supabase PostgreSQL | `ap-southeast-1` (Singapore) |
+
+- **Frontend (Vercel):** Auto-deploys on push to `main`. Root directory: `client/`. Build command: `prisma generate && next build`. Framework: Next.js (auto-detected). `NEXT_PUBLIC_*` vars must be set in Vercel dashboard (build-time).
+- **Backend (Back4app):** Docker-based deployment from `server/` directory. Uses multi-stage Dockerfile with `node-linker=hoisted` for pnpm compatibility. Port: `8080`. Health check: `GET /api/ping`. Manual redeploy via dashboard Action → "Deploy the latest commit".
+- **Database (Supabase):** Connection pooling via PgBouncer (`DATABASE_URL`). Direct connection for migrations (`DIRECT_URL`).
+- **CI/CD:** GitHub Actions workflow at `.github/workflows/deploy-production-manual.yml` for manual backend redeploy.
+- **Docker:** `docker-compose.yml` for local development. Both `client/` and `server/` have Dockerfiles and `.dockerignore` files.
+
+## Reference Documents
+
+- **PRD:** [Galaxy Notes PRD v2](https://docs.google.com/document/d/1OZDMLZK_VGEyjleiLLGCh3PEed3AAmufZCp72eeQZ4Q)
+- **Figma:** [Note Management Design](https://www.figma.com/design/sy3qiDaLaCL4jDtkVRnWze/Note-Management)

@@ -1,6 +1,6 @@
 {
   "name": "@galaxy-notes/database",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Shared Prisma schema and client for Galaxy Notes",
   "main": "src/client.ts",
   "scripts": {
