@@ -9,10 +9,14 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
-import { NotificationsService } from '../notifications/notifications.service';
+import {
+  NOTIFICATION_SEND,
+  NotificationPayload,
+} from '../notifications/events/notification.events';
 
 @Injectable()
 export class AuthService {
@@ -25,7 +29,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
-    private readonly notificationsService: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async register(dto: {
@@ -37,6 +41,7 @@ export class AuthService {
   }) {
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
+      select: { id: true },
     });
     if (existing) {
       throw new ConflictException('Email already registered');
@@ -50,6 +55,12 @@ export class AuthService {
         firstName: dto.firstName,
         lastName: dto.lastName,
         userType: 'general_user',
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
       },
     });
 
@@ -70,7 +81,16 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        firstName: true,
+        lastName: true,
+      },
+    });
     if (!user || !user.password) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -92,7 +112,17 @@ export class AuthService {
   }
 
   async oauthLogin(email: string, provider?: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        firstName: true,
+        lastName: true,
+        userType: true,
+      },
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -176,7 +206,10 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, userType: true },
+    });
 
     // Always return success to prevent email enumeration
     if (!user || user.userType !== 'general_user') {
@@ -205,6 +238,7 @@ export class AuthService {
   async resetPassword(token: string, newPassword: string) {
     const resetToken = await this.prisma.passwordResetToken.findUnique({
       where: { token },
+      select: { email: true, expiresAt: true },
     });
 
     if (!resetToken || resetToken.expiresAt < new Date()) {
@@ -213,6 +247,7 @@ export class AuthService {
 
     const user = await this.prisma.user.findUnique({
       where: { email: resetToken.email },
+      select: { id: true },
     });
 
     if (!user) {
@@ -242,7 +277,16 @@ export class AuthService {
     try {
       const invite = await this.prisma.noteInvite.findUnique({
         where: { token },
-        include: { note: { select: { id: true, title: true } } },
+        select: {
+          id: true,
+          email: true,
+          noteId: true,
+          permission: true,
+          acceptedAt: true,
+          expiresAt: true,
+          invitedBy: true,
+          note: { select: { id: true, title: true } },
+        },
       });
 
       if (!invite || invite.acceptedAt || invite.expiresAt < new Date()) {
@@ -269,14 +313,14 @@ export class AuthService {
       });
 
       // Notify the inviter
-      await this.notificationsService.create({
+      this.eventEmitter.emit(NOTIFICATION_SEND, {
         userId: invite.invitedBy,
         title: 'Invite Accepted',
         message: `${email} accepted your invite and joined the note '${invite.note.title}'`,
         type: 'share',
         noteId: invite.noteId,
         actorId: userId,
-      });
+      } satisfies NotificationPayload);
 
       // Notify the invitee that a note has been shared with them
       const inviter = await this.prisma.user.findUnique({
@@ -288,14 +332,14 @@ export class AuthService {
           inviter.email
         : 'Someone';
 
-      await this.notificationsService.create({
+      this.eventEmitter.emit(NOTIFICATION_SEND, {
         userId,
         title: 'Note Shared With You',
         message: `${inviterName} shared the note '${invite.note.title}' with you`,
         type: 'share',
         noteId: invite.noteId,
         actorId: invite.invitedBy,
-      });
+      } satisfies NotificationPayload);
     } catch {
       // Don't block registration if invite processing fails
     }

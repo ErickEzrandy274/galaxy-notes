@@ -2,14 +2,14 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  Logger,
 } from '@nestjs/common';
+import { AppLogger } from '../common/logger/app.logger';
 import { PrismaService } from '../prisma/prisma.service';
 import { Subject, Observable } from 'rxjs';
 
 @Injectable()
 export class NotificationsService {
-  private readonly logger = new Logger(NotificationsService.name);
+  private readonly logger = new AppLogger(NotificationsService.name);
   private readonly userStreams = new Map<string, Subject<MessageEvent>>();
 
   constructor(private readonly prisma: PrismaService) {}
@@ -165,6 +165,7 @@ export class NotificationsService {
   async markAsRead(notificationId: string, userId: string) {
     const notification = await this.prisma.notification.findFirst({
       where: { id: notificationId, userId },
+      select: { id: true },
     });
     if (!notification) throw new NotFoundException('Notification not found');
 
@@ -185,6 +186,7 @@ export class NotificationsService {
   async remove(notificationId: string, userId: string) {
     const notification = await this.prisma.notification.findFirst({
       where: { id: notificationId, userId },
+      select: { id: true },
     });
     if (!notification) throw new NotFoundException('Notification not found');
 
@@ -207,6 +209,7 @@ export class NotificationsService {
 
     const existing = await this.prisma.notificationMute.findUnique({
       where: { userId_mutedUserId: { userId, mutedUserId } },
+      select: { id: true },
     });
 
     if (existing) {
@@ -240,6 +243,7 @@ export class NotificationsService {
   async unmuteUser(userId: string, mutedUserId: string) {
     const existing = await this.prisma.notificationMute.findUnique({
       where: { userId_mutedUserId: { userId, mutedUserId } },
+      select: { id: true },
     });
     if (!existing) {
       throw new NotFoundException('Mute not found');

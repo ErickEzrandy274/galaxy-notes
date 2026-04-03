@@ -1,19 +1,24 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { AppLogger } from '../common/logger/app.logger';
 import { Cron } from '@nestjs/schedule';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
 import { NotesService } from '../notes/notes.service';
 import { PreferencesService } from '../preferences/preferences.service';
+import {
+  NOTIFICATION_SEND,
+  NotificationPayload,
+} from '../notifications/events/notification.events';
 
 const DEFAULT_RETENTION_DAYS = 30;
 
 @Injectable()
 export class CleanupService {
-  private readonly logger = new Logger(CleanupService.name);
+  private readonly logger = new AppLogger(CleanupService.name);
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notificationsService: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
     private readonly notesService: NotesService,
     private readonly preferencesService: PreferencesService,
   ) {}
@@ -21,10 +26,14 @@ export class CleanupService {
   @Cron('0 3 * * 0') // Sunday 3:00 AM
   async handleCleanup() {
     this.logger.log('Starting scheduled cleanup...');
+    // purgeStaleNoteVersions must run first (modifies notes)
     await this.purgeStaleNoteVersions();
-    await this.purgeExpiredTokens();
-    await this.purgeExpiredInvites();
-    await this.purgeExpiredMutes();
+    // These three are independent — run in parallel
+    await Promise.all([
+      this.purgeExpiredTokens(),
+      this.purgeExpiredInvites(),
+      this.purgeExpiredMutes(),
+    ]);
     this.logger.log('Scheduled cleanup complete.');
   }
 
@@ -40,14 +49,17 @@ export class CleanupService {
       return;
     }
 
-    // Get unique user IDs and batch-fetch their preferences
+    // Get unique user IDs and batch-fetch their preferences in parallel
     const userIds = [...new Set(trashedNotes.map((n) => n.userId))];
-    const prefsMap = new Map<string, { trashRetentionDays: number; autoDeleteBehavior: string }>();
-
-    for (const userId of userIds) {
-      const prefs = await this.preferencesService.getPreferences(userId);
-      prefsMap.set(userId, prefs);
-    }
+    const prefsEntries = await Promise.all(
+      userIds.map(async (userId) => {
+        const prefs = await this.preferencesService.getPreferences(userId);
+        return [userId, prefs] as const;
+      }),
+    );
+    const prefsMap = new Map<string, { trashRetentionDays: number; autoDeleteBehavior: string }>(
+      prefsEntries,
+    );
 
     let totalVersionsPurged = 0;
     let totalNotesDeleted = 0;
@@ -69,33 +81,30 @@ export class CleanupService {
         await this.prisma.note.delete({ where: { id: note.id } });
         totalNotesDeleted++;
 
-        await this.notificationsService.create({
+        this.eventEmitter.emit(NOTIFICATION_SEND, {
           userId: note.userId,
           title: 'Note Permanently Deleted',
           message: `Note '${note.title}' has been permanently deleted after ${prefs.trashRetentionDays} days in trash`,
           type: 'version_cleanup',
           noteId: note.id,
-        });
+        } satisfies NotificationPayload);
       } else {
         // delete_versions_only — delete versions, keep the note
-        const versionCount = await this.prisma.noteVersion.count({
-          where: { noteId: note.id },
-        });
-
-        if (versionCount === 0) continue;
-
         const { count } = await this.prisma.noteVersion.deleteMany({
           where: { noteId: note.id },
         });
+
+        if (count === 0) continue;
+
         totalVersionsPurged += count;
 
-        await this.notificationsService.create({
+        this.eventEmitter.emit(NOTIFICATION_SEND, {
           userId: note.userId,
           title: 'Version History Deleted',
           message: `The version history of Note '${note.title}' has been permanently deleted`,
           type: 'version_cleanup',
           noteId: note.id,
-        });
+        } satisfies NotificationPayload);
       }
     }
 

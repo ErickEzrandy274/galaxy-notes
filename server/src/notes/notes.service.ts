@@ -7,9 +7,13 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
 import { PreferencesService } from '../preferences/preferences.service';
+import {
+  NOTIFICATION_SEND,
+  NotificationPayload,
+} from '../notifications/events/notification.events';
 
 const MAX_VERSIONS = 30;
 const SNAPSHOT_THROTTLE_MS = 10 * 60 * 1000; // 10 minutes
@@ -26,7 +30,7 @@ export class NotesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
-    private readonly notificationsService: NotificationsService,
+    private readonly eventEmitter: EventEmitter2,
     private readonly preferencesService: PreferencesService,
   ) {
     this.supabase = createClient(
@@ -245,7 +249,11 @@ export class NotesService {
       include: {
         user: { select: { id: true, firstName: true, lastName: true } },
         shares: {
-          include: {
+          select: {
+            id: true,
+            userId: true,
+            permission: true,
+            createdAt: true,
             user: {
               select: {
                 id: true,
@@ -265,10 +273,16 @@ export class NotesService {
     const isShared = note.shares.some((s) => s.userId === userId);
     if (!isOwner && !isShared) throw new ForbiddenException('Access denied');
 
+    // Resolve content images and document URL in parallel
+    const [resolvedContent, documentUrl] = await Promise.all([
+      this.resolveContentImages(note.content),
+      this.resolveDocumentUrl(note.document),
+    ]);
+
     return {
       ...note,
-      content: await this.resolveContentImages(note.content),
-      documentUrl: await this.resolveDocumentUrl(note.document),
+      content: resolvedContent,
+      documentUrl,
     };
   }
 
@@ -336,6 +350,7 @@ export class NotesService {
     if (!isOwner) {
       const share = await this.prisma.noteShare.findUnique({
         where: { noteId_userId: { noteId, userId } },
+        select: { permission: true },
       });
       if (!share || share.permission !== 'WRITE') {
         throw new ForbiddenException('Write access denied');
@@ -559,7 +574,7 @@ export class NotesService {
     if (!content) return content;
 
     const imgRegex = /<img\s+src="([^"]+)"/g;
-    const replacements: { from: string; to: string }[] = [];
+    const matches: { fullMatch: string; src: string }[] = [];
 
     let m;
     while ((m = imgRegex.exec(content)) !== null) {
@@ -571,15 +586,24 @@ export class NotesService {
         !src
       )
         continue;
-      const signedUrl = await this.resolveDocumentUrl(src);
-      if (signedUrl) {
-        replacements.push({ from: m[0], to: `<img src="${signedUrl}"` });
-      }
+      matches.push({ fullMatch: m[0], src });
     }
 
+    if (matches.length === 0) return content;
+
+    // Resolve all signed URLs in parallel instead of sequentially
+    const signedUrls = await Promise.all(
+      matches.map((match) => this.resolveDocumentUrl(match.src)),
+    );
+
     let result = content;
-    for (const { from, to } of replacements) {
-      result = result.replace(from, to);
+    for (let i = 0; i < matches.length; i++) {
+      if (signedUrls[i]) {
+        result = result.replace(
+          matches[i].fullMatch,
+          `<img src="${signedUrls[i]}"`,
+        );
+      }
     }
     return result;
   }
@@ -605,6 +629,7 @@ export class NotesService {
       const oldest = await this.prisma.noteVersion.findFirst({
         where: { noteId },
         orderBy: { version: 'asc' },
+        select: { id: true },
       });
       if (oldest) {
         await this.prisma.noteVersion.delete({ where: { id: oldest.id } });
@@ -635,7 +660,10 @@ export class NotesService {
     // Verify note exists and user has access
     const note = await this.prisma.note.findFirst({
       where: { id: noteId, isDeleted: false },
-      include: { shares: { select: { userId: true } } },
+      select: {
+        userId: true,
+        shares: { select: { userId: true } },
+      },
     });
     if (!note) throw new NotFoundException('Note not found');
 
@@ -643,32 +671,32 @@ export class NotesService {
     const isShared = note.shares.some((s) => s.userId === userId);
     if (!isOwner && !isShared) throw new ForbiddenException('Access denied');
 
-    const totalVersions = await this.prisma.noteVersion.count({
-      where: { noteId },
-    });
-
     const where: any = { noteId };
     if (cursor) {
       where.id = { lt: cursor };
     }
 
-    const versions = await this.prisma.noteVersion.findMany({
-      where,
-      orderBy: { version: 'desc' },
-      take: limit + 1,
-      select: {
-        id: true,
-        version: true,
-        title: true,
-        changedBy: true,
-        createdAt: true,
-      },
-    });
+    // Fetch total count and version page in parallel
+    const [totalVersions, versions] = await Promise.all([
+      this.prisma.noteVersion.count({ where: { noteId } }),
+      this.prisma.noteVersion.findMany({
+        where,
+        orderBy: { version: 'desc' },
+        take: limit + 1,
+        select: {
+          id: true,
+          version: true,
+          title: true,
+          changedBy: true,
+          createdAt: true,
+        },
+      }),
+    ]);
 
     const hasMore = versions.length > limit;
     if (hasMore) versions.pop();
 
-    // Resolve changedBy user IDs to names
+    // Resolve changedBy user IDs to names (batch query)
     const userIds = [...new Set(versions.map((v) => v.changedBy))];
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
@@ -696,7 +724,17 @@ export class NotesService {
     // Verify note exists and user has access
     const note = await this.prisma.note.findFirst({
       where: { id: noteId, isDeleted: false },
-      include: { shares: { select: { userId: true } } },
+      select: {
+        userId: true,
+        content: true,
+        title: true,
+        document: true,
+        documentSize: true,
+        videoUrl: true,
+        tags: true,
+        status: true,
+        shares: { select: { userId: true } },
+      },
     });
     if (!note) throw new NotFoundException('Note not found');
 
@@ -709,10 +747,19 @@ export class NotesService {
     });
     if (!version) throw new NotFoundException('Version not found');
 
-    const changedByUser = await this.prisma.user.findUnique({
-      where: { id: version.changedBy },
-      select: { firstName: true, lastName: true },
-    });
+    // Resolve user name and all signed URLs in parallel
+    const [changedByUser, versionContent, versionDocUrl, currentContent, currentDocUrl] =
+      await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id: version.changedBy },
+          select: { firstName: true, lastName: true },
+        }),
+        this.resolveContentImages(version.content),
+        this.resolveDocumentUrl(version.document),
+        this.resolveContentImages(note.content),
+        this.resolveDocumentUrl(note.document),
+      ]);
+
     const changedByName = changedByUser
       ? [changedByUser.firstName, changedByUser.lastName]
           .filter(Boolean)
@@ -722,13 +769,13 @@ export class NotesService {
     return {
       ...version,
       changedByName,
-      content: await this.resolveContentImages(version.content),
-      documentUrl: await this.resolveDocumentUrl(version.document),
-      currentContent: await this.resolveContentImages(note.content),
+      content: versionContent,
+      documentUrl: versionDocUrl,
+      currentContent,
       currentTitle: note.title,
       currentDocument: note.document,
       currentDocumentSize: note.documentSize,
-      currentDocumentUrl: await this.resolveDocumentUrl(note.document),
+      currentDocumentUrl: currentDocUrl,
       currentVideoUrl: note.videoUrl,
       currentTags: note.tags,
       noteStatus: note.status,
@@ -738,6 +785,18 @@ export class NotesService {
   async restoreVersion(noteId: string, versionId: string, userId: string) {
     const note = await this.prisma.note.findFirst({
       where: { id: noteId, isDeleted: false },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+        version: true,
+        title: true,
+        content: true,
+        document: true,
+        documentSize: true,
+        videoUrl: true,
+        tags: true,
+      },
     });
     if (!note) throw new NotFoundException('Note not found');
 
@@ -752,6 +811,7 @@ export class NotesService {
     if (!isOwner) {
       const share = await this.prisma.noteShare.findUnique({
         where: { noteId_userId: { noteId, userId } },
+        select: { permission: true },
       });
       if (!share || share.permission !== 'WRITE') {
         throw new ForbiddenException('Write access denied');
@@ -784,7 +844,10 @@ export class NotesService {
   async softDelete(noteId: string, userId: string) {
     const note = await this.prisma.note.findFirst({
       where: { id: noteId, userId, isDeleted: false },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        status: true,
         shares: { select: { userId: true } },
       },
     });
@@ -809,32 +872,33 @@ export class NotesService {
       this.prisma.noteShare.deleteMany({ where: { noteId } }),
     ]);
 
-    // Notify collaborators that the shared note was archived
+    // Notify collaborators that the shared note was deleted (non-blocking)
     for (const collaboratorId of collaboratorIds) {
-      await this.notificationsService.create({
+      this.eventEmitter.emit(NOTIFICATION_SEND, {
         userId: collaboratorId,
         title: 'Shared Note Deleted',
         message: `A note '${note.title}' shared with you has been deleted by the owner`,
         type: 'trash',
         noteId,
         actorId: userId,
-      });
+      } satisfies NotificationPayload);
     }
 
     const prefs = await this.preferencesService.getPreferences(userId);
 
-    await this.notificationsService.create({
+    this.eventEmitter.emit(NOTIFICATION_SEND, {
       userId,
       title: 'Version History Scheduled for Deletion',
       message: `The version history of Note '${note.title}' will be permanently deleted after ${prefs.trashRetentionDays} days`,
       type: 'version_cleanup',
       noteId,
-    });
+    } satisfies NotificationPayload);
   }
 
   async restore(noteId: string, userId: string) {
     const note = await this.prisma.note.findFirst({
       where: { id: noteId, userId, isDeleted: true },
+      select: { id: true, title: true },
     });
     if (!note) throw new NotFoundException('Note not found in trash');
 
@@ -843,13 +907,13 @@ export class NotesService {
       data: { isDeleted: false, deletedAt: null, status: 'draft' },
     });
 
-    await this.notificationsService.create({
+    this.eventEmitter.emit(NOTIFICATION_SEND, {
       userId,
       title: 'Note Restored',
       message: `Note '${note.title || 'Untitled'}' has been restored as a draft`,
       type: 'restore',
       noteId,
-    });
+    } satisfies NotificationPayload);
 
     return restored;
   }
@@ -863,10 +927,15 @@ export class NotesService {
     });
     if (!note) throw new NotFoundException('Note not found in trash');
 
+    const [resolvedContent, documentUrl] = await Promise.all([
+      this.resolveContentImages(note.content),
+      this.resolveDocumentUrl(note.document),
+    ]);
+
     return {
       ...note,
-      content: await this.resolveContentImages(note.content),
-      documentUrl: await this.resolveDocumentUrl(note.document),
+      content: resolvedContent,
+      documentUrl,
       shares: [],
     };
   }
@@ -917,6 +986,7 @@ export class NotesService {
   async permanentDelete(noteId: string, userId: string) {
     const note = await this.prisma.note.findFirst({
       where: { id: noteId, userId, isDeleted: true },
+      select: { id: true, content: true, document: true },
     });
     if (!note) throw new NotFoundException('Note not found in trash');
 
@@ -933,9 +1003,9 @@ export class NotesService {
 
     if (trashedNotes.length === 0) return { deleted: 0 };
 
-    for (const note of trashedNotes) {
-      await this.cleanupNoteStorage(note);
-    }
+    await Promise.all(
+      trashedNotes.map((note) => this.cleanupNoteStorage(note)),
+    );
 
     const { count } = await this.prisma.note.deleteMany({
       where: { userId, isDeleted: true },
@@ -947,7 +1017,10 @@ export class NotesService {
   async archive(noteId: string, userId: string) {
     const note = await this.prisma.note.findFirst({
       where: { id: noteId, userId, isDeleted: false },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        status: true,
         shares: { select: { userId: true } },
       },
     });
@@ -976,14 +1049,14 @@ export class NotesService {
     ]);
 
     for (const collaboratorId of collaboratorIds) {
-      await this.notificationsService.create({
+      this.eventEmitter.emit(NOTIFICATION_SEND, {
         userId: collaboratorId,
         title: 'Shared Note Archived',
         message: `A note '${note.title}' shared with you has been archived by the owner`,
         type: 'archive',
         noteId,
         actorId: userId,
-      });
+      } satisfies NotificationPayload);
     }
 
     return updated;
@@ -992,6 +1065,12 @@ export class NotesService {
   async unarchive(noteId: string, userId: string) {
     const note = await this.prisma.note.findFirst({
       where: { id: noteId, userId, isDeleted: false, status: 'archived' },
+      select: {
+        id: true,
+        title: true,
+        previousStatus: true,
+        previousCollaboratorIds: true,
+      },
     });
     if (!note) throw new NotFoundException('Archived note not found');
 
@@ -1010,15 +1089,15 @@ export class NotesService {
       },
     });
 
-    await this.notificationsService.create({
+    this.eventEmitter.emit(NOTIFICATION_SEND, {
       userId,
       title: 'Note Unarchived',
       message: `Note '${note.title || 'Untitled'}' has been restored as ${restoredStatus}`,
       type: 'restore',
       noteId,
-    });
+    } satisfies NotificationPayload);
 
-    // Notify previous collaborators that the note is available again
+    // Notify previous collaborators that the note is available again (non-blocking)
     const ownerName = await this.prisma.user
       .findUnique({
         where: { id: userId },
@@ -1030,14 +1109,14 @@ export class NotesService {
       );
 
     for (const collaboratorId of note.previousCollaboratorIds) {
-      await this.notificationsService.create({
+      this.eventEmitter.emit(NOTIFICATION_SEND, {
         userId: collaboratorId,
         title: 'Note Available Again',
         message: `${ownerName} unarchived the note '${note.title || 'Untitled'}'. The note is now available as read-only. You may request access again.`,
         type: 'restore',
         noteId,
         actorId: userId,
-      });
+      } satisfies NotificationPayload);
     }
 
     return updated;
