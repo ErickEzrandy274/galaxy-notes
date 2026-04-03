@@ -10,6 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { UserType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
@@ -134,11 +135,11 @@ export class AuthService {
         github: 'github_user',
         facebook: 'facebook_user',
       };
-      const userType = providerMap[provider];
+      const userType = providerMap[provider] as UserType | undefined;
       if (userType) {
         await this.prisma.user.update({
           where: { id: user.id },
-          data: { userType: userType as any },
+          data: { userType },
         });
       }
     }
@@ -345,7 +346,7 @@ export class AuthService {
     }
   }
 
-  private generateToken(userId: string, email: string) {
+  generateToken(userId: string, email: string) {
     const payload = { sub: userId, email };
     return {
       accessToken: this.jwtService.sign(payload),

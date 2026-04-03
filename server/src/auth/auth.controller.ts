@@ -9,11 +9,23 @@ import {
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import * as express from 'express';
 import { AuthService } from './auth.service';
+
+interface RefreshTokenData {
+  token: string;
+  userId: string;
+  email: string;
+  isGracePeriodReuse: boolean;
+}
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { LoginThrottleGuard } from './guards/login-throttle.guard';
 import { RegisterDto } from './dto/register.dto';
@@ -39,6 +51,7 @@ export class AuthController {
   ) {
     const result = await this.authService.register(dto);
     this.setRefreshTokenCookie(res, result.refreshToken);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { refreshToken, ...body } = result;
     return body;
   }
@@ -57,6 +70,7 @@ export class AuthController {
       const result = await this.authService.login(dto.email, dto.password);
       this.loginThrottle.clearAttempts(dto.email);
       this.setRefreshTokenCookie(res, result.refreshToken);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { refreshToken, ...body } = result;
       return body;
     } catch (error) {
@@ -91,10 +105,19 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
   @UseGuards(RefreshTokenGuard)
   async refresh(
-    @Req() req: any,
+    @Req() req: express.Request & { refreshTokenData: RefreshTokenData },
     @Res({ passthrough: true }) res: express.Response,
   ) {
-    const { token, userId, email } = req.refreshTokenData;
+    const { token, userId, email, isGracePeriodReuse } = req.refreshTokenData;
+
+    // Grace period reuse: return a new access token using the already-rotated
+    // refresh token without rotating again (prevents duplicate rotation)
+    if (isGracePeriodReuse) {
+      const accessToken = this.authService.generateToken(userId, email);
+      this.setRefreshTokenCookie(res, token);
+      return { ...accessToken, refreshToken: token };
+    }
+
     const result = await this.authService.refreshWithToken(
       token,
       userId,
@@ -121,7 +144,10 @@ export class AuthController {
 
   @Post('forgot-password')
   @ApiOperation({ summary: 'Request a password reset email' })
-  @ApiResponse({ status: 201, description: 'Reset email sent (if account exists)' })
+  @ApiResponse({
+    status: 201,
+    description: 'Reset email sent (if account exists)',
+  })
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
   }
