@@ -55,8 +55,6 @@ export function VersionHistoryDrawer({
     return () => observer.disconnect();
   }, [open, handleIntersect]);
 
-  if (!open) return null;
-
   const handleItemClick = (versionId: string, isCurrent: boolean) => {
     if (isCurrent) {
       onSelectVersion(null);
@@ -66,7 +64,12 @@ export function VersionHistoryDrawer({
   };
 
   return (
-    <aside className="flex h-full w-96 shrink-0 flex-col border-l border-border bg-card">
+    <aside
+      className={`flex h-full shrink-0 flex-col border-l border-border bg-card transition-[width,opacity] duration-300 ease-in-out overflow-hidden ${
+        open ? 'w-96 opacity-100' : 'w-0 opacity-0 border-l-0'
+      }`}
+    >
+      <div className="flex h-full w-96 shrink-0 flex-col">
       <header className="px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -161,6 +164,7 @@ export function VersionHistoryDrawer({
           </ol>
         )}
       </section>
+      </div>
     </aside>
   );
 }
