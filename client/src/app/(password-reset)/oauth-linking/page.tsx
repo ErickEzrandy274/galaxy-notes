@@ -8,7 +8,6 @@ import toast from 'react-hot-toast';
 import { z } from 'zod';
 import {
   AuthCard,
-  AuthIcon,
   AuthHeader,
   AuthSubmitButton,
   PasswordInput,

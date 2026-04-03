@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Camera, X } from 'lucide-react';
 import type { UserProfile } from '../types';
 import { usePhotoUpload } from '../hooks/use-profile';
