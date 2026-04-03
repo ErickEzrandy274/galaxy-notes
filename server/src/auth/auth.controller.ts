@@ -7,24 +7,32 @@ import {
   Res,
   Headers,
   ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import * as express from 'express';
 import { AuthService } from './auth.service';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
+import { LoginThrottleGuard } from './guards/login-throttle.guard';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly loginThrottle: LoginThrottleGuard,
   ) {}
 
   @Post('register')
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiResponse({ status: 201, description: 'User registered successfully' })
+  @ApiResponse({ status: 409, description: 'Email already registered' })
   async register(
     @Body() dto: RegisterDto,
     @Res({ passthrough: true }) res: express.Response,
@@ -36,17 +44,34 @@ export class AuthController {
   }
 
   @Post('login')
+  @ApiOperation({ summary: 'Log in with email and password' })
+  @ApiResponse({ status: 201, description: 'Login successful' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({ status: 429, description: 'Too many login attempts' })
+  @UseGuards(LoginThrottleGuard)
   async login(
     @Body() dto: { email: string; password: string },
     @Res({ passthrough: true }) res: express.Response,
   ) {
-    const result = await this.authService.login(dto.email, dto.password);
-    this.setRefreshTokenCookie(res, result.refreshToken);
-    const { refreshToken, ...body } = result;
-    return body;
+    try {
+      const result = await this.authService.login(dto.email, dto.password);
+      this.loginThrottle.clearAttempts(dto.email);
+      this.setRefreshTokenCookie(res, result.refreshToken);
+      const { refreshToken, ...body } = result;
+      return body;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        this.loginThrottle.recordFailure(dto.email);
+      }
+      throw error;
+    }
   }
 
   @Post('oauth-login')
+  @ApiOperation({ summary: 'OAuth login (server-to-server from NextAuth)' })
+  @ApiResponse({ status: 201, description: 'OAuth login successful' })
+  @ApiResponse({ status: 403, description: 'Invalid internal secret' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async oauthLogin(
     @Body() dto: { email: string; provider?: string },
     @Headers('x-internal-secret') secret: string,
@@ -61,6 +86,9 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token using refresh token cookie' })
+  @ApiResponse({ status: 201, description: 'Tokens refreshed successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
   @UseGuards(RefreshTokenGuard)
   async refresh(
     @Req() req: any,
@@ -77,6 +105,10 @@ export class AuthController {
   }
 
   @Post('logout')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Log out and revoke all refresh tokens' })
+  @ApiResponse({ status: 201, description: 'Logged out successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseGuards(AuthGuard('jwt'))
   async logout(
     @Req() req: { user: { id: string } },
@@ -88,11 +120,16 @@ export class AuthController {
   }
 
   @Post('forgot-password')
+  @ApiOperation({ summary: 'Request a password reset email' })
+  @ApiResponse({ status: 201, description: 'Reset email sent (if account exists)' })
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
   }
 
   @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password with a valid token' })
+  @ApiResponse({ status: 201, description: 'Password reset successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired reset token' })
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto.token, dto.password);
   }
