@@ -114,7 +114,7 @@ server/src/
 
 1. **OAuth** (Google/GitHub/Facebook): NextAuth handles browser auth → `linkAccount` callback sets `userType` → JWT callback calls `POST /api/auth/oauth-login` with `X-Internal-Secret` header → backend issues JWT
 2. **Credentials**: `POST /api/auth/login` → bcrypt compare → JWT issued
-3. **Token lifecycle**: 1-hour JWT, httpOnly cookie refresh tokens with rotation and stolen token detection. Proactive refresh when within 10 min of expiry via axios interceptor + periodic background check (`useTokenRefresh` hook with 5-min interval), 401 retry with refreshed token
+3. **Token lifecycle**: 1-hour JWT, httpOnly cookie refresh tokens with rotation and stolen token detection (30s grace period for multi-tab). Proactive refresh when within 10 min of expiry via axios interceptor + periodic background check (`useTokenRefresh` hook with 5-min interval), 401 retry with refreshed token. Session hydration capped at 3 retry attempts. Absolute max session lifetime: 72 hours (via `loginAt` in NextAuth JWT)
 4. **Password reset**: 32-byte random token, 15-min expiry, sent via Nodemailer (Gmail SMTP)
 
 ### File Uploads (Signed URL Pattern)

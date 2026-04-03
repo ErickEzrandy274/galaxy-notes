@@ -89,6 +89,7 @@ Tokens are cached in module-level variables for synchronous access:
 - `tokenExpiry` — decoded `exp` claim (milliseconds)
 - `authFailed` — flag set on permanent auth failure; blocks all subsequent requests
 - `sessionPromise` — shared promise for initial session hydration (prevents duplicate `getSession()` calls)
+- `sessionHydrationAttempts` — counter for hydration retries (max 3 before setting `authFailed`)
 
 ### Request Interceptor
 
@@ -99,8 +100,11 @@ Request initiated
   │
   ├─ authFailed? → Reject immediately
   │
+  ├─ Hydration retries exceeded (3)? → Set authFailed, reject
+  │
   ├─ No cached token? → Hydrate from NextAuth session (getSession())
   │                     Uses shared sessionPromise to deduplicate
+  │                     Checks session.error for RefreshTokenError/SessionExpired
   │
   ├─ Token expires within 10 min?
   │    └─ Yes → POST /api/auth/refresh (via httpOnly cookie)
@@ -162,9 +166,15 @@ The `useTokenRefresh` hook runs inside `TokenRefreshManager` and keeps tokens fr
 
 `getSession()` triggers the NextAuth JWT callback server-side. The JWT callback checks `accessTokenExpires` and, if expired, calls `POST /api/auth/refresh` using the `X-Refresh-Token` header.
 
+If `session.error` is `RefreshTokenError` or `SessionExpired`, the hook forces sign out via `logout()` + `signOut()` instead of silently failing.
+
 ### Concurrency Guard
 
 A `refreshingRef` prevents overlapping refresh calls from multiple triggers firing simultaneously.
+
+### Absolute Max Session Lifetime
+
+The NextAuth JWT callback tracks `loginAt` (timestamp of initial sign-in). After 72 hours, the callback sets `token.error = 'SessionExpired'` regardless of refresh token validity. This prevents indefinite session extension via rolling refresh windows.
 
 ## NextAuth Configuration (`lib/auth.ts`)
 

@@ -25,13 +25,14 @@ client/src/types/
 
 ### Token Lifecycle
 
-1. **Login**: User logs in via NextAuth Credentials provider → backend returns `accessToken` → stored in NextAuth JWT cookie via `jwt` callback
-2. **Hydration**: On first API call, axios reads the token from NextAuth session (`getSession()`) and caches it in memory
+1. **Login**: User logs in via NextAuth Credentials provider → backend returns `accessToken` → stored in NextAuth JWT cookie via `jwt` callback. `loginAt` timestamp recorded for absolute session limit.
+2. **Hydration**: On first API call, axios reads the token from NextAuth session (`getSession()`) and caches it in memory. Max 3 hydration retries before setting `authFailed`. Checks `session.error` for `RefreshTokenError`/`SessionExpired`.
 3. **Attachment**: Every subsequent request gets `Authorization: Bearer <token>` header automatically
 4. **Proactive Refresh**: Before each request, if the token expires within 10 minutes, the interceptor calls `POST /auth/refresh` to get a new token
-5. **Periodic Background Refresh**: A `useTokenRefresh` hook runs a 5-minute interval that checks `isTokenExpiringSoon()` and calls `getSession()` to trigger a server-side refresh. Also triggers on tab visibility change and window focus events.
+5. **Periodic Background Refresh**: A `useTokenRefresh` hook runs a 5-minute interval that checks `isTokenExpiringSoon()` and calls `getSession()` to trigger a server-side refresh. Also triggers on tab visibility change and window focus events. Forces sign out if `session.error` detected.
 6. **Retry on 401**: If a response returns 401, the interceptor attempts one refresh and retries the original request
 7. **Redirect**: If refresh fails, calls `logout()` (revokes refresh token on backend, resets auth state) then `signOut()` from NextAuth to redirect to `/login`
+8. **Absolute Expiry**: After 72 hours from login (`loginAt`), the NextAuth JWT callback sets `token.error = 'SessionExpired'` — no further refresh attempts, user must re-authenticate
 
 ### Token Storage
 
