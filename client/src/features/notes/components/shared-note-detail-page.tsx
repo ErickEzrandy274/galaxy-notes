@@ -7,7 +7,8 @@ import { useSession } from 'next-auth/react';
 import { fetchNote } from '../api/notes-api';
 import { SharedNoteDetailHeader } from './shared-note-detail-header';
 import { NoteDetailContent } from './note-detail-content';
-import { VersionHistoryDrawer } from './version-history-drawer';
+import dynamic from 'next/dynamic';
+const VersionHistoryDrawer = dynamic(() => import('./version-history-drawer').then(m => m.VersionHistoryDrawer));
 import { VersionPreviewPage } from './version-preview-page';
 
 interface SharedNoteDetailPageProps {
@@ -78,16 +79,14 @@ export function SharedNoteDetailPage({ noteId }: SharedNoteDetailPageProps) {
         )}
       </div>
 
-      {historyOpen && (
-        <VersionHistoryDrawer
-          noteId={noteId}
-          currentUserId={session?.user?.id ?? ''}
-          open={historyOpen}
-          viewingVersionId={viewingVersionId}
-          onSelectVersion={setViewingVersionId}
-          onClose={handleCloseHistory}
-        />
-      )}
+      <VersionHistoryDrawer
+        noteId={noteId}
+        currentUserId={session?.user?.id ?? ''}
+        open={historyOpen}
+        viewingVersionId={viewingVersionId}
+        onSelectVersion={setViewingVersionId}
+        onClose={handleCloseHistory}
+      />
     </article>
   );
 }

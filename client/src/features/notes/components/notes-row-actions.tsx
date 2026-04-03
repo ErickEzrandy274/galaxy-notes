@@ -8,7 +8,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { deleteNote } from '../api/notes-api';
 import { useArchiveNote } from '../hooks/use-archive-mutations';
-import { ShareModal } from './share-modal';
+import dynamic from 'next/dynamic';
+const ShareModal = dynamic(() => import('./share-modal').then(m => m.ShareModal));
 import { ArchiveConfirmDialog } from './archive-confirm-dialog';
 import { TrashConfirmDialog } from '@/features/trash/components/trash-confirm-dialog';
 

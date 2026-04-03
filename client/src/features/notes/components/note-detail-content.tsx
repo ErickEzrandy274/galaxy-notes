@@ -8,7 +8,8 @@ import { StatusBadge } from './status-badge';
 import { TagList } from './tag-badge';
 import { formatDateTime } from '../utils/format-date';
 import { extractYouTubeId, getYouTubeEmbedUrl } from '../utils/youtube';
-import { ImageLightbox } from './image-lightbox';
+import dynamic from 'next/dynamic';
+const ImageLightbox = dynamic(() => import('./image-lightbox').then(m => m.ImageLightbox));
 
 interface NoteDetailContentProps {
   note: NoteDetail;

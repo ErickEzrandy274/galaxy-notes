@@ -10,7 +10,8 @@ import toast from 'react-hot-toast';
 import { updateNote, deleteNote } from '../api/notes-api';
 import { useArchiveNote } from '../hooks/use-archive-mutations';
 import { RevertAsDraftDialog } from './revert-as-draft-dialog';
-import { ShareModal } from './share-modal';
+import dynamic from 'next/dynamic';
+const ShareModal = dynamic(() => import('./share-modal').then(m => m.ShareModal));
 import { TrashConfirmDialog } from '@/features/trash/components/trash-confirm-dialog';
 import { ArchiveConfirmDialog } from './archive-confirm-dialog';
 

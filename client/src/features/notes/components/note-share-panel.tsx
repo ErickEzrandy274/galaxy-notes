@@ -3,7 +3,8 @@
 import { Users, Settings } from 'lucide-react';
 import { useState } from 'react';
 import type { NoteStatus } from '../types';
-import { ShareModal } from './share-modal';
+import dynamic from 'next/dynamic';
+const ShareModal = dynamic(() => import('./share-modal').then(m => m.ShareModal));
 
 interface NoteSharePanelProps {
   noteId?: string;
