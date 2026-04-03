@@ -6,7 +6,7 @@ import { getTagColor } from '../utils/tag-colors';
 export function TagBadge({ tag }: { tag: string }) {
   return (
     <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getTagColor(tag)}`}
+      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${getTagColor(tag)}`}
     >
       #{tag}
     </span>
@@ -35,7 +35,7 @@ export function TagList({ tags, max = 3 }: { tags: string[]; max?: number }) {
                 <Tooltip.Content
                   side="bottom"
                   sideOffset={6}
-                  className="z-50 rounded-lg border border-border bg-muted px-3 py-2 shadow-lg w-sm"
+                  className="z-50 rounded-lg border border-border bg-card px-3 py-2 shadow-lg w-sm"
                 >
                   <ul className="flex flex-wrap gap-1">
                     {remaining.map((tag) => (

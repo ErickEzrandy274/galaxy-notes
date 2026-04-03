@@ -13,7 +13,7 @@ export function PermissionBadge({ permission }: PermissionBadgeProps) {
   const { label, className } = config[permission];
   return (
     <mark
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${className}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${className}`}
     >
       {label}
     </mark>
