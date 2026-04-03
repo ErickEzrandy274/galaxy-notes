@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { getSession } from 'next-auth/react';
-import { isTokenExpiringSoon, setAccessToken } from '@/lib/axios';
+import { getSession, signOut } from 'next-auth/react';
+import { isTokenExpiringSoon, setAccessToken, logout } from '@/lib/axios';
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -18,6 +18,14 @@ export function useTokenRefresh() {
       // getSession() triggers the NextAuth JWT callback server-side,
       // which performs the actual refresh via X-Refresh-Token header
       const session = await getSession();
+
+      if (session?.error === 'RefreshTokenError' || session?.error === 'SessionExpired') {
+        // NextAuth refresh failed — session is stale, force sign out
+        await logout();
+        signOut({ callbackUrl: '/login' });
+        return;
+      }
+
       if (session?.accessToken) {
         setAccessToken(session.accessToken);
       }
