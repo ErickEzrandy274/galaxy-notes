@@ -36,8 +36,8 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  searchByEmail(query: string, excludeUserId: string) {
-    return this.prisma.user.findMany({
+  async searchByEmail(query: string, excludeUserId: string) {
+    const users = await this.prisma.user.findMany({
       where: {
         id: { not: excludeUserId },
         OR: [
@@ -55,6 +55,13 @@ export class UsersService {
       },
       take: 10,
     });
+
+    return Promise.all(
+      users.map(async (u) => ({
+        ...u,
+        photo: await this.resolvePhotoUrl(u.photo),
+      })),
+    );
   }
 
   async getProfile(userId: string) {
@@ -85,11 +92,16 @@ export class UsersService {
         ? { provider: accounts[0].provider, providerEmail: user.email }
         : null;
 
-    return { ...profile, connectedAccount };
+    const photo = await this.resolvePhotoUrl(profile.photo);
+
+    return { ...profile, photo, connectedAccount };
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, userType: true },
+    });
     if (!user) throw new NotFoundException('User not found');
 
     const data: Record<string, string | null> = {};
@@ -125,7 +137,10 @@ export class UsersService {
       throw new BadRequestException('Passwords do not match');
     }
 
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, userType: true, password: true },
+    });
     if (!user) throw new NotFoundException('User not found');
 
     if (user.userType !== 'general_user') {
@@ -176,14 +191,10 @@ export class UsersService {
       throw new BadRequestException(`Upload failed: ${error.message}`);
     }
 
-    const {
-      data: { publicUrl },
-    } = this.supabase.storage.from('galaxy-notes-staging').getPublicUrl(path);
-
-    return { signedUrl: data.signedUrl, token: data.token, path, publicUrl };
+    return { signedUrl: data.signedUrl, token: data.token, path };
   }
 
-  async updatePhoto(userId: string, photoUrl: string) {
+  async updatePhoto(userId: string, photoPath: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { photo: true },
@@ -193,11 +204,16 @@ export class UsersService {
       await this.deleteStorageFile(user.photo);
     }
 
-    return this.prisma.user.update({
+    // Store the path, not the full URL
+    const storagePath = this.toStoragePath(photoPath);
+
+    const updated = await this.prisma.user.update({
       where: { id: userId },
-      data: { photo: photoUrl },
+      data: { photo: storagePath },
       select: { photo: true },
     });
+
+    return { photo: await this.resolvePhotoUrl(updated.photo) };
   }
 
   async removePhoto(userId: string) {
@@ -217,13 +233,32 @@ export class UsersService {
     });
   }
 
-  private extractStoragePath(publicUrl: string): string | null {
-    const match = publicUrl.match(/\/galaxy-notes-staging\/(.+)$/);
-    return match ? decodeURIComponent(match[1]) : null;
+  /** Convert a public URL or path to a plain storage path. */
+  private toStoragePath(input: string): string {
+    if (input.startsWith('http')) {
+      const match = input.match(/\/galaxy-notes-staging\/([^?]+)/);
+      return match ? decodeURIComponent(match[1]) : input;
+    }
+    return input;
   }
 
-  private async deleteStorageFile(publicUrl: string) {
-    const path = this.extractStoragePath(publicUrl);
+  /** Resolve a stored photo value (path or legacy URL) to a signed URL. */
+  private async resolvePhotoUrl(
+    photo: string | null,
+  ): Promise<string | null> {
+    if (!photo) return null;
+
+    const storagePath = this.toStoragePath(photo);
+
+    const { data } = await this.supabase.storage
+      .from('galaxy-notes-staging')
+      .createSignedUrl(storagePath, 3600);
+
+    return data?.signedUrl ?? null;
+  }
+
+  private async deleteStorageFile(stored: string) {
+    const path = this.toStoragePath(stored);
     if (!path) return;
 
     await this.supabase.storage.from('galaxy-notes-staging').remove([path]);

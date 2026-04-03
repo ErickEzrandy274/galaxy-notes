@@ -26,5 +26,4 @@ export interface SignedUploadUrlResponse {
   signedUrl: string;
   token: string;
   path: string;
-  publicUrl: string;
 }

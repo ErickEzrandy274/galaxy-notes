@@ -15,7 +15,7 @@ import {
 export function useProfile() {
   return useQuery({
     queryKey: ['profile'],
-    queryFn: fetchProfile,
+    queryFn: ({ signal }) => fetchProfile(signal),
   });
 }
 
@@ -47,7 +47,7 @@ export function usePhotoUpload() {
   const upload = async (file: File) => {
     setUploading(true);
     try {
-      const { signedUrl, token, publicUrl } = await createPhotoUploadUrl(
+      const { signedUrl, token, path } = await createPhotoUploadUrl(
         file.name,
         file.type,
         file.size,
@@ -64,7 +64,7 @@ export function usePhotoUpload() {
 
       if (!res.ok) throw new Error('Upload failed');
 
-      await updatePhoto(publicUrl);
+      await updatePhoto(path);
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success('Photo updated successfully');
     } catch (err: unknown) {
