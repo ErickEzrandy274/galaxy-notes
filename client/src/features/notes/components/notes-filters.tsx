@@ -1,8 +1,6 @@
 'use client';
 
-import type { NoteStatus } from '../types';
-
-const tabs: { label: string; value?: NoteStatus }[] = [
+const tabs: { label: string; value?: string }[] = [
   { label: 'All' },
   { label: 'Published', value: 'published' },
   { label: 'Draft', value: 'draft' },

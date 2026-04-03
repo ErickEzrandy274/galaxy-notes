@@ -6,6 +6,7 @@ import Credentials from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import axios from 'axios';
 import { prisma } from './prisma';
+import type { UserType } from '@prisma/client';
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
@@ -87,7 +88,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Use updateMany to avoid throwing when no record matches
         await prisma.user.updateMany({
           where: { id: user.id, userType: 'general_user' },
-          data: { userType: userType as string },
+          data: { userType: userType as UserType },
         });
       }
     },
