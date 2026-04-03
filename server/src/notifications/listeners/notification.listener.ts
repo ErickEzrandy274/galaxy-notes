@@ -17,10 +17,11 @@ export class NotificationListener {
   async handleNotification(payload: NotificationPayload) {
     try {
       await this.notificationsService.create(payload);
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as Error;
       this.logger.error(
-        `Failed to send notification [${payload.type}] to user ${payload.userId}: ${error.message}`,
-        error.stack,
+        `Failed to send notification [${payload.type}] to user ${payload.userId}: ${err.message}`,
+        err.stack,
       );
     }
   }

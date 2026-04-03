@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { AppLogger } from '../common/logger/app.logger';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { Subject, Observable } from 'rxjs';
 
@@ -47,12 +48,7 @@ export class NotificationsService {
     return notification;
   }
 
-  async findAllByUser(
-    userId: string,
-    page = 1,
-    limit = 10,
-    filter?: string,
-  ) {
+  async findAllByUser(userId: string, page = 1, limit = 10, filter?: string) {
     const skip = (page - 1) * limit;
 
     // Get active (non-expired) muted user IDs
@@ -65,14 +61,11 @@ export class NotificationsService {
     });
     const mutedUserIds = mutes.map((m) => m.mutedUserId);
 
-    const where: any = { userId };
+    const where: Prisma.NotificationWhereInput = { userId };
 
     // Exclude notifications from muted users
     if (mutedUserIds.length > 0) {
-      where.OR = [
-        { actorId: null },
-        { actorId: { notIn: mutedUserIds } },
-      ];
+      where.OR = [{ actorId: null }, { actorId: { notIn: mutedUserIds } }];
     }
 
     // Apply filter
@@ -149,13 +142,10 @@ export class NotificationsService {
     });
     const mutedUserIds = mutes.map((m) => m.mutedUserId);
 
-    const where: any = { userId, isRead: false };
+    const where: Prisma.NotificationWhereInput = { userId, isRead: false };
 
     if (mutedUserIds.length > 0) {
-      where.OR = [
-        { actorId: null },
-        { actorId: { notIn: mutedUserIds } },
-      ];
+      where.OR = [{ actorId: null }, { actorId: { notIn: mutedUserIds } }];
     }
 
     const count = await this.prisma.notification.count({ where });

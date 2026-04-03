@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomBytes } from 'crypto';
+import { Permission } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { ConfigService } from '@nestjs/config';
@@ -69,21 +70,31 @@ export class SharesService {
         noteId: dto.noteId,
         userId: { in: existingUsers.map((u) => u.id) },
       },
-      select: { id: true, userId: true, permission: true, noteId: true, createdAt: true, lastNotifiedAt: true },
+      select: {
+        id: true,
+        userId: true,
+        permission: true,
+        noteId: true,
+        createdAt: true,
+        lastNotifiedAt: true,
+      },
     });
     const shareByUserId = new Map(existingShares.map((s) => [s.userId, s]));
 
     // Batch-fetch existing pending invites for unregistered emails (eliminates N+1)
-    const unregisteredEmails = recipientEmails.filter((e) => !userByEmail.has(e));
-    const existingInvites = unregisteredEmails.length > 0
-      ? await this.prisma.noteInvite.findMany({
-          where: {
-            noteId: dto.noteId,
-            email: { in: unregisteredEmails },
-            acceptedAt: null,
-          },
-        })
-      : [];
+    const unregisteredEmails = recipientEmails.filter(
+      (e) => !userByEmail.has(e),
+    );
+    const existingInvites =
+      unregisteredEmails.length > 0
+        ? await this.prisma.noteInvite.findMany({
+            where: {
+              noteId: dto.noteId,
+              email: { in: unregisteredEmails },
+              acceptedAt: null,
+            },
+          })
+        : [];
     const inviteByEmail = new Map(existingInvites.map((i) => [i.email, i]));
 
     const shared: any[] = [];
@@ -103,11 +114,11 @@ export class SharesService {
           // Update permission if different
           if (
             recipient.permission &&
-            existing.permission !== recipient.permission
+            existing.permission !== (recipient.permission as Permission)
           ) {
             await this.prisma.noteShare.update({
               where: { id: existing.id },
-              data: { permission: recipient.permission as any },
+              data: { permission: recipient.permission as Permission },
             });
           }
           shared.push({ ...existing, user: targetUser });
@@ -118,7 +129,7 @@ export class SharesService {
           data: {
             noteId: dto.noteId,
             userId: targetUser.id,
-            permission: (recipient.permission as any) || 'READ',
+            permission: (recipient.permission as Permission) || 'READ',
           },
           select: {
             id: true,
@@ -164,7 +175,7 @@ export class SharesService {
             token,
             email: recipient.email,
             noteId: dto.noteId,
-            permission: (recipient.permission as any) || 'READ',
+            permission: (recipient.permission as Permission) || 'READ',
             invitedBy: userId,
             expiresAt: new Date(Date.now() + INVITE_EXPIRY_MS),
           },
@@ -246,10 +257,10 @@ export class SharesService {
 
     const updated = await this.prisma.noteShare.update({
       where: { id: shareId },
-      data: { permission: dto.permission as any },
+      data: { permission: dto.permission as Permission },
     });
 
-    if (oldPermission !== dto.permission) {
+    if (oldPermission !== (dto.permission as Permission)) {
       await this.sendPermissionChangeNotification(
         share.userId,
         share.note,
@@ -276,27 +287,18 @@ export class SharesService {
 
     const isOwner = share.note.userId === userId;
     const isRecipient = share.userId === userId;
-    if (!isOwner && !isRecipient)
-      throw new ForbiddenException('Access denied');
+    if (!isOwner && !isRecipient) throw new ForbiddenException('Access denied');
 
     await this.prisma.noteShare.delete({ where: { id: shareId } });
 
     // Notify the removed user when the owner revokes access
     if (isOwner) {
-      await this.sendRevokeNotification(
-        share.userId,
-        share.note,
-        userId,
-      );
+      await this.sendRevokeNotification(share.userId, share.note, userId);
     }
 
     // Notify the owner when a recipient leaves
     if (isRecipient) {
-      await this.sendLeaveNotification(
-        share.note.userId,
-        share.note,
-        userId,
-      );
+      await this.sendLeaveNotification(share.note.userId, share.note, userId);
     }
 
     // Check if any shares remain; if not, revert status from shared to published
@@ -404,8 +406,7 @@ export class SharesService {
       where: { noteId_userId: { noteId, userId: requesterId } },
       select: { id: true },
     });
-    if (existingShare)
-      throw new BadRequestException('User already has access');
+    if (existingShare) throw new BadRequestException('User already has access');
 
     await this.prisma.noteShare.create({
       data: { noteId, userId: requesterId, permission },
@@ -593,8 +594,7 @@ export class SharesService {
       select: { firstName: true, lastName: true, email: true },
     });
     const userName = user
-      ? [user.firstName, user.lastName].filter(Boolean).join(' ') ||
-        user.email
+      ? [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email
       : 'Someone';
 
     this.eventEmitter.emit(NOTIFICATION_SEND, {

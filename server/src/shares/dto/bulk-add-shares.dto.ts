@@ -15,11 +15,18 @@ enum Permission {
 }
 
 class RecipientDto {
-  @ApiProperty({ example: 'collaborator@example.com', description: 'Recipient email' })
+  @ApiProperty({
+    example: 'collaborator@example.com',
+    description: 'Recipient email',
+  })
   @IsEmail()
   email: string;
 
-  @ApiPropertyOptional({ example: 'READ', description: 'Permission level', enum: Permission })
+  @ApiPropertyOptional({
+    example: 'READ',
+    description: 'Permission level',
+    enum: Permission,
+  })
   @IsOptional()
   @IsEnum(Permission)
   permission?: Permission;
@@ -30,7 +37,10 @@ export class BulkAddSharesDto {
   @IsString()
   noteId: string;
 
-  @ApiProperty({ type: [RecipientDto], description: 'List of recipients to share with' })
+  @ApiProperty({
+    type: [RecipientDto],
+    description: 'List of recipients to share with',
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RecipientDto)

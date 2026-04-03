@@ -10,7 +10,14 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { SharesService } from './shares.service';
 import { BulkAddSharesDto } from './dto/bulk-add-shares.dto';
@@ -25,7 +32,10 @@ export class SharesController {
 
   @Post()
   @ApiOperation({ summary: 'Share a note with one or more recipients' })
-  @ApiResponse({ status: 201, description: 'Shares created and/or invites sent' })
+  @ApiResponse({
+    status: 201,
+    description: 'Shares created and/or invites sent',
+  })
   @ApiResponse({ status: 404, description: 'Note not found' })
   @ApiResponse({ status: 403, description: 'Only the note owner can share' })
   @ApiResponse({ status: 400, description: 'Note is draft or archived' })
@@ -54,7 +64,10 @@ export class SharesController {
   @ApiParam({ name: 'shareId', description: 'Share ID' })
   @ApiResponse({ status: 200, description: 'Permission updated' })
   @ApiResponse({ status: 404, description: 'Share not found' })
-  @ApiResponse({ status: 403, description: 'Only the note owner can update permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Only the note owner can update permissions',
+  })
   updatePermission(
     @Req() req: { user: { id: string } },
     @Param('shareId') shareId: string,
@@ -80,7 +93,10 @@ export class SharesController {
   @ApiOperation({ summary: 'Request access to a shared note' })
   @ApiParam({ name: 'noteId', description: 'Note ID' })
   @ApiResponse({ status: 201, description: 'Access request sent' })
-  @ApiResponse({ status: 400, description: 'Already has access or request already sent' })
+  @ApiResponse({
+    status: 400,
+    description: 'Already has access or request already sent',
+  })
   @ApiResponse({ status: 404, description: 'Note not found' })
   requestAccess(
     @Req() req: { user: { id: string } },
@@ -93,10 +109,18 @@ export class SharesController {
   @ApiOperation({ summary: 'Grant access to a requesting user' })
   @ApiParam({ name: 'noteId', description: 'Note ID' })
   @ApiParam({ name: 'userId', description: 'Requesting user ID' })
-  @ApiQuery({ name: 'permission', required: false, enum: ['READ', 'WRITE'], description: 'Permission to grant' })
+  @ApiQuery({
+    name: 'permission',
+    required: false,
+    enum: ['READ', 'WRITE'],
+    description: 'Permission to grant',
+  })
   @ApiResponse({ status: 201, description: 'Access granted' })
   @ApiResponse({ status: 404, description: 'Note not found' })
-  @ApiResponse({ status: 400, description: 'User already has access or note is archived' })
+  @ApiResponse({
+    status: 400,
+    description: 'User already has access or note is archived',
+  })
   grantAccess(
     @Req() req: { user: { id: string } },
     @Param('noteId') noteId: string,
@@ -130,7 +154,10 @@ export class SharesController {
   @ApiParam({ name: 'inviteId', description: 'Invite ID' })
   @ApiResponse({ status: 200, description: 'Invite removed' })
   @ApiResponse({ status: 404, description: 'Invite not found' })
-  @ApiResponse({ status: 403, description: 'Only the note owner can remove invites' })
+  @ApiResponse({
+    status: 403,
+    description: 'Only the note owner can remove invites',
+  })
   removeInvite(
     @Req() req: { user: { id: string } },
     @Param('inviteId') inviteId: string,

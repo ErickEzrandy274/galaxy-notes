@@ -12,7 +12,14 @@ import {
   Sse,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { AppLogger } from '../common/logger/app.logger';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
@@ -38,7 +45,10 @@ export class NotificationsController {
 
   @Sse('stream')
   @ApiOperation({ summary: 'Subscribe to real-time notifications via SSE' })
-  @ApiQuery({ name: 'token', description: 'JWT access token (EventSource cannot use headers)' })
+  @ApiQuery({
+    name: 'token',
+    description: 'JWT access token (EventSource cannot use headers)',
+  })
   @ApiResponse({ status: 200, description: 'SSE stream opened' })
   @ApiResponse({ status: 401, description: 'Invalid or missing token' })
   stream(
@@ -80,7 +90,11 @@ export class NotificationsController {
   @ApiOperation({ summary: 'List notifications with pagination and filter' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
-  @ApiQuery({ name: 'filter', required: false, description: 'Filter (unread, shared)' })
+  @ApiQuery({
+    name: 'filter',
+    required: false,
+    description: 'Filter (unread, shared)',
+  })
   @ApiResponse({ status: 200, description: 'Paginated list of notifications' })
   findAll(
     @Req() req: { user: { id: string } },

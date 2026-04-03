@@ -41,7 +41,14 @@ export class CleanupService {
     // Get distinct user IDs with trashed notes
     const trashedNotes = await this.prisma.note.findMany({
       where: { isDeleted: true },
-      select: { id: true, title: true, userId: true, deletedAt: true, content: true, document: true },
+      select: {
+        id: true,
+        title: true,
+        userId: true,
+        deletedAt: true,
+        content: true,
+        document: true,
+      },
     });
 
     if (trashedNotes.length === 0) {
@@ -57,9 +64,10 @@ export class CleanupService {
         return [userId, prefs] as const;
       }),
     );
-    const prefsMap = new Map<string, { trashRetentionDays: number; autoDeleteBehavior: string }>(
-      prefsEntries,
-    );
+    const prefsMap = new Map<
+      string,
+      { trashRetentionDays: number; autoDeleteBehavior: string }
+    >(prefsEntries);
 
     let totalVersionsPurged = 0;
     let totalNotesDeleted = 0;

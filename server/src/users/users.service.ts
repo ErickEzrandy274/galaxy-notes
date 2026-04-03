@@ -22,6 +22,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.supabase = createClient(
       this.config.get<string>('SUPABASE_URL')!,
       this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -243,9 +244,7 @@ export class UsersService {
   }
 
   /** Resolve a stored photo value (path or legacy URL) to a signed URL. */
-  private async resolvePhotoUrl(
-    photo: string | null,
-  ): Promise<string | null> {
+  private async resolvePhotoUrl(photo: string | null): Promise<string | null> {
     if (!photo) return null;
 
     const storagePath = this.toStoragePath(photo);

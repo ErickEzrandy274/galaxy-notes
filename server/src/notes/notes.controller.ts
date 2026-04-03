@@ -10,7 +10,14 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+  ApiParam,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { NotesService } from './notes.service';
 import { CreateSignedUploadUrlDto } from './dto/create-signed-upload-url.dto';
@@ -30,11 +37,28 @@ export class NotesController {
   @ApiOperation({ summary: 'List notes with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
-  @ApiQuery({ name: 'status', required: false, description: 'Filter by status (draft, published, shared, archived, has_shares)' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description:
+      'Filter by status (draft, published, shared, archived, has_shares)',
+  })
   @ApiQuery({ name: 'search', required: false, description: 'Search by title' })
-  @ApiQuery({ name: 'tags', required: false, description: 'Comma-separated tag filter' })
-  @ApiQuery({ name: 'permission', required: false, description: 'Filter shared notes by permission (READ, WRITE)' })
-  @ApiQuery({ name: 'ownerSearch', required: false, description: 'Filter shared notes by owner name' })
+  @ApiQuery({
+    name: 'tags',
+    required: false,
+    description: 'Comma-separated tag filter',
+  })
+  @ApiQuery({
+    name: 'permission',
+    required: false,
+    description: 'Filter shared notes by permission (READ, WRITE)',
+  })
+  @ApiQuery({
+    name: 'ownerSearch',
+    required: false,
+    description: 'Filter shared notes by owner name',
+  })
   @ApiResponse({ status: 200, description: 'Paginated list of notes' })
   findAll(
     @Request() req: { user: { id: string } },
@@ -70,7 +94,9 @@ export class NotesController {
   }
 
   @Post('upload-url')
-  @ApiOperation({ summary: 'Create a signed upload URL for note images or attachments' })
+  @ApiOperation({
+    summary: 'Create a signed upload URL for note images or attachments',
+  })
   @ApiResponse({ status: 201, description: 'Signed upload URL created' })
   @ApiResponse({ status: 400, description: 'Invalid file type or size' })
   createSignedUploadUrl(
@@ -154,7 +180,10 @@ export class NotesController {
   @ApiOperation({ summary: 'Get a specific version of a note' })
   @ApiParam({ name: 'id', description: 'Note ID' })
   @ApiParam({ name: 'versionId', description: 'Version ID' })
-  @ApiResponse({ status: 200, description: 'Version details with diff context' })
+  @ApiResponse({
+    status: 200,
+    description: 'Version details with diff context',
+  })
   @ApiResponse({ status: 404, description: 'Note or version not found' })
   getVersionById(
     @Param('id') id: string,
@@ -247,10 +276,7 @@ export class NotesController {
   @ApiParam({ name: 'id', description: 'Note ID' })
   @ApiResponse({ status: 201, description: 'Note unarchived' })
   @ApiResponse({ status: 404, description: 'Archived note not found' })
-  unarchive(
-    @Param('id') id: string,
-    @Request() req: { user: { id: string } },
-  ) {
+  unarchive(@Param('id') id: string, @Request() req: { user: { id: string } }) {
     return this.notesService.unarchive(id, req.user.id);
   }
 }

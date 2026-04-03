@@ -7,7 +7,11 @@ enum Permission {
 }
 
 export class UpdateSharePermissionDto {
-  @ApiProperty({ example: 'WRITE', description: 'New permission level', enum: Permission })
+  @ApiProperty({
+    example: 'WRITE',
+    description: 'New permission level',
+    enum: Permission,
+  })
   @IsEnum(Permission)
   permission: Permission;
 }

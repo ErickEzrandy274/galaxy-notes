@@ -9,7 +9,13 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -24,7 +30,11 @@ export class UsersController {
 
   @Get('search')
   @ApiOperation({ summary: 'Search users by email or name' })
-  @ApiQuery({ name: 'email', description: 'Search query (email or name)', required: true })
+  @ApiQuery({
+    name: 'email',
+    description: 'Search query (email or name)',
+    required: true,
+  })
   @ApiResponse({ status: 200, description: 'List of matching users' })
   searchByEmail(
     @Query('email') email: string,
@@ -55,7 +65,10 @@ export class UsersController {
   @Patch('me/password')
   @ApiOperation({ summary: 'Change current user password' })
   @ApiResponse({ status: 200, description: 'Password changed successfully' })
-  @ApiResponse({ status: 400, description: 'Passwords do not match or OAuth user' })
+  @ApiResponse({
+    status: 400,
+    description: 'Passwords do not match or OAuth user',
+  })
   @ApiResponse({ status: 401, description: 'Current password is incorrect' })
   changePassword(
     @Request() req: { user: { id: string } },

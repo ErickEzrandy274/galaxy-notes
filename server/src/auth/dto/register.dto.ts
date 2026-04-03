@@ -19,13 +19,17 @@ export class RegisterDto {
   @IsNotEmpty({ message: 'Last name is required' })
   lastName: string;
 
-  @ApiProperty({ example: 'john@example.com', description: 'User email address' })
+  @ApiProperty({
+    example: 'john@example.com',
+    description: 'User email address',
+  })
   @IsEmail({}, { message: 'Invalid email address' })
   email: string;
 
   @ApiProperty({
     example: 'SecurePass123!',
-    description: 'Password (min 12 chars, must include uppercase, lowercase, number, special char)',
+    description:
+      'Password (min 12 chars, must include uppercase, lowercase, number, special char)',
     minLength: 12,
   })
   @IsString()

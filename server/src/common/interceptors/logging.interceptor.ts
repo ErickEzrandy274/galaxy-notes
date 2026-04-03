@@ -19,7 +19,8 @@ export class LoggingInterceptor implements NestInterceptor {
 
     const method = req.method;
     const url = req.originalUrl;
-    const userId = (req as any).user?.id || 'anonymous';
+    const userId =
+      (req as Request & { user?: { id: string } }).user?.id || 'anonymous';
     const start = Date.now();
 
     return next.handle().pipe(
@@ -30,9 +31,9 @@ export class LoggingInterceptor implements NestInterceptor {
             `${method} ${url} userId=${userId} → ${res.statusCode} (${duration}ms)`,
           );
         },
-        error: (error) => {
+        error: (error: unknown) => {
           const duration = Date.now() - start;
-          const status = error?.status || 500;
+          const status = (error as { status?: number })?.status || 500;
           this.logger.warn(
             `${method} ${url} userId=${userId} → ${status} (${duration}ms)`,
           );

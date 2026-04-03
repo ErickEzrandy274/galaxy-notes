@@ -8,7 +8,13 @@ export class GetVersionsDto {
   @IsString()
   cursor?: string;
 
-  @ApiPropertyOptional({ example: 10, description: 'Number of versions per page', minimum: 1, maximum: 50, default: 10 })
+  @ApiPropertyOptional({
+    example: 10,
+    description: 'Number of versions per page',
+    minimum: 1,
+    maximum: 50,
+    default: 10,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber()

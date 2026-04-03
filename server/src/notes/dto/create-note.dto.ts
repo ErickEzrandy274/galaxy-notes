@@ -11,18 +11,28 @@ export class CreateNoteDto {
   @IsString()
   content?: string;
 
-  @ApiPropertyOptional({ example: 'draft', description: 'Note status', enum: ['draft', 'published'] })
+  @ApiPropertyOptional({
+    example: 'draft',
+    description: 'Note status',
+    enum: ['draft', 'published'],
+  })
   @IsOptional()
   @IsString()
   status?: string;
 
-  @ApiPropertyOptional({ example: ['react', 'typescript'], description: 'Tags for the note' })
+  @ApiPropertyOptional({
+    example: ['react', 'typescript'],
+    description: 'Tags for the note',
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
 
-  @ApiPropertyOptional({ example: 'https://youtube.com/watch?v=...', description: 'Embedded video URL' })
+  @ApiPropertyOptional({
+    example: 'https://youtube.com/watch?v=...',
+    description: 'Embedded video URL',
+  })
   @IsOptional()
   @IsString()
   videoUrl?: string;

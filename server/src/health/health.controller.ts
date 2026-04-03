@@ -5,7 +5,7 @@ import { join } from 'path';
 
 const pkg = JSON.parse(
   readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'),
-);
+) as { name: string; version: string };
 
 @ApiTags('Health')
 @Controller()

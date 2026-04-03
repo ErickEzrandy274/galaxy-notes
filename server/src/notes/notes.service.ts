@@ -8,6 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NoteStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PreferencesService } from '../preferences/preferences.service';
 import {
@@ -33,6 +34,7 @@ export class NotesService {
     private readonly eventEmitter: EventEmitter2,
     private readonly preferencesService: PreferencesService,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.supabase = createClient(
       this.config.get<string>('SUPABASE_URL')!,
       this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -111,12 +113,15 @@ export class NotesService {
 
     // Special filter: show notes shared with current user (not owned by them)
     if (filters?.status === 'shared') {
-      const shareFilter: any = { userId };
+      const shareFilter: Prisma.NoteShareListRelationFilter['some'] = {
+        userId,
+      };
       if (filters?.permission) {
-        shareFilter.permission = filters.permission;
+        shareFilter.permission =
+          filters.permission as Prisma.EnumPermissionFilter;
       }
 
-      const sharedWhere: any = {
+      const sharedWhere: Prisma.NoteWhereInput = {
         isDeleted: false,
         shares: { some: shareFilter },
         NOT: { userId },
@@ -202,11 +207,15 @@ export class NotesService {
       return { notes: flatNotes, total, page, limit };
     }
 
-    const where: any = { userId, isDeleted: false, status: { not: 'archived' } };
+    const where: Prisma.NoteWhereInput = {
+      userId,
+      isDeleted: false,
+      status: { not: 'archived' },
+    };
     if (filters?.status === 'has_shares') {
       where.shares = { some: {} };
     } else if (filters?.status) {
-      where.status = filters.status;
+      where.status = filters.status as NoteStatus;
     }
     if (filters?.search) {
       where.title = { contains: filters.search, mode: 'insensitive' };
@@ -305,7 +314,7 @@ export class NotesService {
     return this.prisma.note.create({
       data: {
         ...sanitizedDto,
-        status: (dto.status as any) || 'draft',
+        status: (dto.status as NoteStatus) || 'draft',
         userId,
       },
     });
@@ -357,6 +366,7 @@ export class NotesService {
       }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { version, snapshot, ...updateData } = dto;
 
     // Sanitize document: extract storage path if a full URL was sent
@@ -424,7 +434,7 @@ export class NotesService {
       where: { id: noteId },
       data: {
         ...updateData,
-        status: dto.status as any,
+        status: dto.status as NoteStatus,
         version: note.version + 1,
       },
     });
@@ -558,7 +568,7 @@ export class NotesService {
 
     return content.replace(
       /<img\s+src="(https?:\/\/[^"]*\/galaxy-notes-staging\/[^"]+)"/g,
-      (match, url) => {
+      (match, url: string) => {
         const pathMatch = url.match(/\/galaxy-notes-staging\/([^?]+)/);
         if (pathMatch) {
           return `<img src="${decodeURIComponent(pathMatch[1])}"`;
@@ -671,7 +681,7 @@ export class NotesService {
     const isShared = note.shares.some((s) => s.userId === userId);
     if (!isOwner && !isShared) throw new ForbiddenException('Access denied');
 
-    const where: any = { noteId };
+    const where: Prisma.NoteVersionWhereInput = { noteId };
     if (cursor) {
       where.id = { lt: cursor };
     }
@@ -748,17 +758,22 @@ export class NotesService {
     if (!version) throw new NotFoundException('Version not found');
 
     // Resolve user name and all signed URLs in parallel
-    const [changedByUser, versionContent, versionDocUrl, currentContent, currentDocUrl] =
-      await Promise.all([
-        this.prisma.user.findUnique({
-          where: { id: version.changedBy },
-          select: { firstName: true, lastName: true },
-        }),
-        this.resolveContentImages(version.content),
-        this.resolveDocumentUrl(version.document),
-        this.resolveContentImages(note.content),
-        this.resolveDocumentUrl(note.document),
-      ]);
+    const [
+      changedByUser,
+      versionContent,
+      versionDocUrl,
+      currentContent,
+      currentDocUrl,
+    ] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: version.changedBy },
+        select: { firstName: true, lastName: true },
+      }),
+      this.resolveContentImages(version.content),
+      this.resolveDocumentUrl(version.document),
+      this.resolveContentImages(note.content),
+      this.resolveDocumentUrl(note.document),
+    ]);
 
     const changedByName = changedByUser
       ? [changedByUser.firstName, changedByUser.lastName]
@@ -948,7 +963,7 @@ export class NotesService {
   ) {
     const skip = (page - 1) * limit;
 
-    const where: any = { userId, isDeleted: true };
+    const where: Prisma.NoteWhereInput = { userId, isDeleted: true };
     if (filters?.search) {
       where.title = { contains: filters.search, mode: 'insensitive' };
     }
@@ -1136,9 +1151,7 @@ export class NotesService {
     paths.push(...contentPaths);
 
     if (paths.length > 0) {
-      await this.supabase.storage
-        .from('galaxy-notes-staging')
-        .remove(paths);
+      await this.supabase.storage.from('galaxy-notes-staging').remove(paths);
     }
   }
 }
