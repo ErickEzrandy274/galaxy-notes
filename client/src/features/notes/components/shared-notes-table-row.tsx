@@ -68,19 +68,19 @@ export function SharedNotesTableRow({
       )}
 
       {columns.tags && (
-        <td className="px-4 py-3">
+        <td className="hidden px-4 py-3 md:table-cell">
           <TagList tags={note.tags} max={3} />
         </td>
       )}
 
       {columns.createdAt && (
-        <td className="px-4 py-3 text-sm text-muted-foreground">
+        <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
           <time>{formatDate(note.createdAt)}</time>
         </td>
       )}
 
       {columns.sharedOn && (
-        <td className="px-4 py-3 text-sm text-muted-foreground">
+        <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
           <time>{formatDate(note.sharedOn)}</time>
         </td>
       )}

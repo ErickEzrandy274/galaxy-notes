@@ -43,7 +43,7 @@ export function NoteDetailPage({ noteId }: NoteDetailPageProps) {
   }
 
   return (
-    <article className="flex h-full">
+    <article className="flex h-full flex-col md:flex-row">
       {/* Main content area */}
       <div className="flex min-w-0 flex-1 flex-col">
         {!viewingVersionId && (

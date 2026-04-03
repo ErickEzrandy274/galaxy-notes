@@ -132,8 +132,8 @@ export function NoteEditorContent({
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-4">
       {/* Title row */}
-      <label className="flex items-center gap-4">
-        <strong className="w-16 shrink-0 text-sm font-medium text-muted-foreground">
+      <label className="flex flex-col gap-1.5 md:flex-row md:items-center md:gap-4">
+        <strong className="text-sm font-medium text-muted-foreground md:w-16 md:shrink-0">
           Title
         </strong>
         <input
@@ -147,11 +147,11 @@ export function NoteEditorContent({
       </label>
 
       {/* Tags row */}
-      <fieldset className="flex items-center gap-4">
+      <fieldset className="flex flex-col gap-1.5 md:flex-row md:items-center md:gap-4">
         <legend className="sr-only">Tags</legend>
         <label
           id="tags-label"
-          className="w-16 shrink-0 text-sm font-medium text-muted-foreground"
+          className="text-sm font-medium text-muted-foreground md:w-16 md:shrink-0"
           aria-hidden="true"
         >
           Tags
@@ -163,11 +163,11 @@ export function NoteEditorContent({
       </fieldset>
 
       {/* Content section */}
-      <fieldset className="flex min-h-0 flex-1 gap-4">
+      <fieldset className="flex min-h-0 flex-1 flex-col gap-1.5 md:flex-row md:gap-4">
         <legend className="sr-only">Content</legend>
         <label
           id="content-label"
-          className="w-16 shrink-0 self-start pt-2 text-sm font-medium text-muted-foreground"
+          className="text-sm font-medium text-muted-foreground md:w-16 md:shrink-0 md:self-start md:pt-2"
           aria-hidden="true"
         >
           Content

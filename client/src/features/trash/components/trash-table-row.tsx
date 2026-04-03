@@ -28,22 +28,22 @@ export function TrashTableRow({ note, columns, retentionDays }: TrashTableRowPro
         </td>
       )}
       {columns.tags && (
-        <td className="px-4 py-3">
+        <td className="hidden px-4 py-3 md:table-cell">
           <TagList tags={note.tags} />
         </td>
       )}
       {columns.createdAt && (
-        <td className="px-4 py-3 text-sm text-muted-foreground">
+        <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
           {formatDate(note.createdAt)}
         </td>
       )}
       {columns.deletedOn && (
-        <td className="px-4 py-3 text-sm text-muted-foreground">
+        <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
           {formatDate(note.deletedAt)}
         </td>
       )}
       {columns.daysLeft && (
-        <td className="px-4 py-3">
+        <td className="hidden px-4 py-3 md:table-cell">
           <DaysLeftBadge deletedAt={note.deletedAt} retentionDays={retentionDays} />
         </td>
       )}

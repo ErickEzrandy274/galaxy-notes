@@ -23,7 +23,7 @@ export function NotificationFilterTabs({
   if (isLoading) {
     return (
       <nav aria-label="Notification filters">
-        <menu className="flex gap-2">
+        <menu className="flex gap-2 overflow-x-auto">
           {tabs.map(({ value, label }) => (
             <li key={value}>
               <span className="inline-block h-8 animate-pulse rounded-full bg-muted" style={{ width: `${label.length * 10 + 32}px` }} />
@@ -36,12 +36,12 @@ export function NotificationFilterTabs({
 
   return (
     <nav aria-label="Notification filters">
-      <menu className="flex gap-2">
+      <menu className="flex gap-2 overflow-x-auto">
         {tabs.map(({ value, label }) => (
           <li key={value}>
             <button
               onClick={() => onChange(value)}
-              className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`cursor-pointer whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
                 active === value
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'

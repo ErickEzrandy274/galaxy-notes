@@ -21,7 +21,7 @@ export function ArchivedNotesPage() {
   const isEmpty = !isLoading && data?.notes.length === 0;
 
   return (
-    <section className="flex h-full flex-col p-6">
+    <section className="flex h-full flex-col p-4 md:p-6">
       <header className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
@@ -31,7 +31,7 @@ export function ArchivedNotesPage() {
         </div>
       </header>
 
-      <section className="mb-4" aria-label="Archive statistics">
+      <section className="mb-4 hidden md:block" aria-label="Archive statistics">
         {statsLoading ? (
           <div className="h-[72px] w-48 animate-pulse rounded-lg border border-border/50 bg-card" />
         ) : (
@@ -47,14 +47,16 @@ export function ArchivedNotesPage() {
         )}
       </section>
 
-      <search className="mb-4 flex items-end gap-4">
+      <search className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:gap-4">
         <div className="flex-1">
           <ArchivedNotesSearch
             onSearchChange={setSearch}
             onTagsChange={setTags}
           />
         </div>
-        <ArchivedNotesColumnsDropdown columns={columns} onToggle={toggle} />
+        <span className="hidden md:block">
+          <ArchivedNotesColumnsDropdown columns={columns} onToggle={toggle} />
+        </span>
       </search>
 
       {isLoading ? (
