@@ -1,5 +1,3 @@
-import { Badge } from '@/components/shared/badge';
-
 interface DaysLeftBadgeProps {
   deletedAt: string;
   retentionDays: number;
@@ -14,10 +12,16 @@ export function DaysLeftBadge({ deletedAt, retentionDays }: DaysLeftBadgeProps) 
   const daysLeft = retentionDays - elapsed;
 
   if (daysLeft <= 0) {
-    return <Badge className="bg-red-500/20 text-red-400">expired</Badge>;
+    return (
+      <span className="inline-flex rounded-full bg-red-500/20 px-2.5 py-0.5 text-xs font-medium text-red-400">
+        expired
+      </span>
+    );
   }
 
   return (
-    <Badge className="bg-green-500/20 text-green-400">{daysLeft}d left</Badge>
+    <span className="inline-flex rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs font-medium text-green-400">
+      {daysLeft}d left
+    </span>
   );
 }

@@ -65,9 +65,21 @@ Defined in `lib/query-client.ts`:
 - **retry**: Max 1 retry, except never retry 401/403, auth failures, or canceled requests
 - **refetchOnWindowFocus**: disabled
 
+## State Management (Zustand)
+
+Persisted UI preferences use Zustand stores with the `persist` middleware (auto-synced to `localStorage`):
+
+| Store | File | Key | State |
+|-------|------|-----|-------|
+| `useSidebarStore` | `stores/sidebar-store.ts` | `galaxy-notes-sidebar-collapsed` | `collapsed`, `toggle()` |
+| `useColumnVisibilityStore` | `stores/column-visibility-store.ts` | `galaxy-notes-column-visibility` | `columns`, `toggleColumn()` |
+| `useSharedColumnVisibilityStore` | `stores/column-visibility-store.ts` | `galaxy-notes-shared-column-visibility` | `columns`, `toggleColumn()` |
+
+Hooks (`use-column-visibility.ts`, `use-shared-column-visibility.ts`) are thin wrappers around the stores for backward-compatible imports.
+
 ## Axios Interceptor (`lib/axios.ts`)
 
-The axios instance manages JWT tokens automatically with request and response interceptors.
+The axios instance manages JWT tokens automatically with request and response interceptors. Supports AbortController for request cancellation (see below).
 
 ### Token Cache
 
@@ -77,6 +89,7 @@ Tokens are cached in module-level variables for synchronous access:
 - `tokenExpiry` — decoded `exp` claim (milliseconds)
 - `authFailed` — flag set on permanent auth failure; blocks all subsequent requests
 - `sessionPromise` — shared promise for initial session hydration (prevents duplicate `getSession()` calls)
+- `sessionHydrationAttempts` — counter for hydration retries (max 3 before setting `authFailed`)
 
 ### Request Interceptor
 
@@ -87,8 +100,11 @@ Request initiated
   │
   ├─ authFailed? → Reject immediately
   │
+  ├─ Hydration retries exceeded (3)? → Set authFailed, reject
+  │
   ├─ No cached token? → Hydrate from NextAuth session (getSession())
   │                     Uses shared sessionPromise to deduplicate
+  │                     Checks session.error for RefreshTokenError/SessionExpired
   │
   ├─ Token expires within 10 min?
   │    └─ Yes → POST /api/auth/refresh (via httpOnly cookie)
@@ -99,10 +115,12 @@ Request initiated
 
 ### Response Interceptor
 
-Handles 401 retry and error toasts:
+Handles cancelled requests, 401 retry, and error toasts:
 
 ```
 Error received
+  │
+  ├─ Cancelled (AbortController)? → Silently reject (no toast)
   │
   ├─ authFailed? → Reject (no processing)
   │
@@ -124,7 +142,19 @@ Error received
 | `isTokenExpiringSoon()` | `true` if token expires within 10 minutes |
 | `resetAuthState()` | Clear all cached state (token, promises, flags) |
 | `logout()` | POST to `/auth/logout` to revoke refresh token, then reset state |
+| `getAccessToken()` | Return the current in-memory access token (for EventSource, etc.) |
 | `default` (api) | The configured axios instance |
+
+## Request Cancellation (AbortController)
+
+All GET API functions accept an optional `signal?: AbortSignal` parameter. TanStack Query's `queryFn` context provides the signal automatically:
+
+```
+queryFn: ({ signal }) => fetchNotes(filters, signal)
+  → api.get('/notes', { signal })
+```
+
+Requests are automatically cancelled when components unmount or query keys change. The response interceptor uses `isCancel(error)` to skip error toasts for cancelled requests. Mutations do not use AbortController.
 
 ## Periodic Token Refresh (`use-token-refresh.ts`)
 
@@ -136,9 +166,15 @@ The `useTokenRefresh` hook runs inside `TokenRefreshManager` and keeps tokens fr
 
 `getSession()` triggers the NextAuth JWT callback server-side. The JWT callback checks `accessTokenExpires` and, if expired, calls `POST /api/auth/refresh` using the `X-Refresh-Token` header.
 
+If `session.error` is `RefreshTokenError` or `SessionExpired`, the hook forces sign out via `logout()` + `signOut()` instead of silently failing.
+
 ### Concurrency Guard
 
 A `refreshingRef` prevents overlapping refresh calls from multiple triggers firing simultaneously.
+
+### Absolute Max Session Lifetime
+
+The NextAuth JWT callback tracks `loginAt` (timestamp of initial sign-in). After 72 hours, the callback sets `token.error = 'SessionExpired'` regardless of refresh token validity. This prevents indefinite session extension via rolling refresh windows.
 
 ## NextAuth Configuration (`lib/auth.ts`)
 
@@ -245,6 +281,18 @@ The `fileSize` is stored as `documentSize` on the note for display in version di
 - Accepts PDF files only (max 3 MB)
 - `onChange(url, fileSize)` callback updates both `document` and `documentSize` fields
 - Shows filename, preview button, and remove button when a file is attached
+
+## Sidebar Collapse Animation
+
+The sidebar uses smooth CSS transitions (`transition-[width] duration-300 ease-in-out`) for the width change. Inner content (labels, version text, user info) uses `opacity` + `width` transitions instead of conditional rendering to avoid layout shifts. The collapsed state is managed via `useSidebarStore` (Zustand with `persist` middleware).
+
+## Loading Skeleton States
+
+All filter section components accept an `isLoading` prop and render `animate-pulse` skeleton placeholders:
+- **Filter chips** (NotesFilters, SharedNotesFilters, NotificationFilterTabs) — rounded pill skeletons sized proportionally to label text
+- **Search inputs** (NotesSearch, SharedNotesSearch) — label + input box skeletons
+- **Column dropdowns** (NotesColumnsDropdown, SharedNotesColumnsDropdown) — single button skeleton
+- **Stats cards** (NotesStats) — 4 skeleton cards matching stat card height
 
 ## Error Toast Pattern
 

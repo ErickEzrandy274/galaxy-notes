@@ -15,12 +15,12 @@ export function TrashTableRow({ note, columns, retentionDays }: TrashTableRowPro
   return (
     <tr className="border-b border-border transition-colors hover:bg-muted/50">
       <td className="max-w-64 px-4 py-3">
-        <span
+        <p
           className="block truncate text-sm font-medium text-foreground"
           title={note.title}
         >
           {note.title}
-        </span>
+        </p>
       </td>
       {columns.originalStatus && (
         <td className="px-4 py-3">
@@ -28,22 +28,22 @@ export function TrashTableRow({ note, columns, retentionDays }: TrashTableRowPro
         </td>
       )}
       {columns.tags && (
-        <td className="hidden px-4 py-3 md:table-cell">
+        <td className="px-4 py-3">
           <TagList tags={note.tags} />
         </td>
       )}
       {columns.createdAt && (
-        <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
+        <td className="px-4 py-3 text-sm text-muted-foreground">
           {formatDate(note.createdAt)}
         </td>
       )}
       {columns.deletedOn && (
-        <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
+        <td className="px-4 py-3 text-sm text-muted-foreground">
           {formatDate(note.deletedAt)}
         </td>
       )}
       {columns.daysLeft && (
-        <td className="hidden px-4 py-3 md:table-cell">
+        <td className="px-4 py-3">
           <DaysLeftBadge deletedAt={note.deletedAt} retentionDays={retentionDays} />
         </td>
       )}

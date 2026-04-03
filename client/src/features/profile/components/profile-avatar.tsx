@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Camera, X } from 'lucide-react';
 import type { UserProfile } from '../types';
 import { usePhotoUpload } from '../hooks/use-profile';
@@ -28,7 +28,9 @@ export function ProfileAvatar({ profile }: ProfileAvatarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { upload, uploading } = usePhotoUpload();
   const [showPreview, setShowPreview] = useState(false);
-  const isOAuth = profile.userType !== 'general_user';
+  const [imgError, setImgError] = useState(false);
+  const isOAuth =
+    profile.userType !== 'general_user' && profile.connectedAccount !== null;
   const provider = profile.connectedAccount?.provider;
   const providerLabel = provider ? providerLabels[provider] ?? provider : '';
 
@@ -70,7 +72,7 @@ export function ProfileAvatar({ profile }: ProfileAvatarProps) {
   return (
     <figure className="flex flex-col items-center gap-3">
       <span className="relative block">
-        {profile.photo ? (
+        {profile.photo && !imgError ? (
           <button
             type="button"
             onClick={() => setShowPreview(true)}
@@ -80,6 +82,7 @@ export function ProfileAvatar({ profile }: ProfileAvatarProps) {
               src={profile.photo}
               alt="Profile"
               className="h-24 w-24 rounded-full object-cover"
+              onError={() => setImgError(true)}
             />
           </button>
         ) : (
@@ -138,11 +141,13 @@ export function ProfileAvatar({ profile }: ProfileAvatarProps) {
 
       {/* Photo preview modal */}
       {showPreview && profile.photo && (
-        <section
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          role="dialog"
+          aria-modal="true"
           onClick={() => setShowPreview(false)}
         >
-          <section
+          <div
             className="relative"
             onClick={(e) => e.stopPropagation()}
           >
@@ -158,8 +163,8 @@ export function ProfileAvatar({ profile }: ProfileAvatarProps) {
               alt="Profile"
               className="max-h-[50vh] max-w-[50vw] rounded-lg object-cover"
             />
-          </section>
-        </section>
+          </div>
+        </div>
       )}
     </figure>
   );

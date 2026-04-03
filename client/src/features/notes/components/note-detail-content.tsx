@@ -8,7 +8,8 @@ import { StatusBadge } from './status-badge';
 import { TagList } from './tag-badge';
 import { formatDateTime } from '../utils/format-date';
 import { extractYouTubeId, getYouTubeEmbedUrl } from '../utils/youtube';
-import { ImageLightbox } from './image-lightbox';
+import dynamic from 'next/dynamic';
+const ImageLightbox = dynamic(() => import('./image-lightbox').then(m => m.ImageLightbox));
 
 interface NoteDetailContentProps {
   note: NoteDetail;
@@ -34,19 +35,19 @@ export function NoteDetailContent({ note }: NoteDetailContentProps) {
   const hasSidebar = note.document || videoId;
 
   return (
-    <section className="flex flex-1 flex-col overflow-hidden md:flex-row">
+    <section className="flex flex-1 overflow-hidden">
       {/* Left: Main content */}
-      <section className={`flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 ${!hasSidebar ? 'pb-20 md:pb-6' : ''}`}>
+      <section className="flex-1 overflow-y-auto overflow-x-hidden p-6">
         <h1 className="wrap-break-word text-2xl font-bold text-foreground">
           {note.title || 'Untitled'}
         </h1>
 
-        <section className="mt-3 flex items-center gap-3">
+        <div className="mt-3 flex items-center gap-3">
           <StatusBadge status={note.status} />
-          <span className="text-sm text-muted-foreground">
+          <time className="text-sm text-muted-foreground" dateTime={note.updatedAt}>
             Last edited: {formatDateTime(note.updatedAt)}
-          </span>
-        </section>
+          </time>
+        </div>
 
         {note.tags.length > 0 && (
           <section className="mt-4">
@@ -78,14 +79,14 @@ export function NoteDetailContent({ note }: NoteDetailContentProps) {
 
       {/* Right: Sidebar with attachment & video */}
       {hasSidebar && (
-        <aside className="shrink-0 space-y-6 overflow-y-auto border-t border-border p-4 pb-20 md:w-96 md:border-l md:border-t-0 md:pb-4">
+        <aside className="w-96 shrink-0 space-y-6 overflow-y-auto border-l border-border p-4">
           {note.document && (
             <section>
               <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Paperclip className="h-4 w-4" />
                 Attachment
               </h2>
-              <figure className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2.5">
                 <span className="flex min-w-0 items-center gap-2">
                   <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="truncate text-sm text-foreground" title={fileName ?? undefined}>
@@ -122,7 +123,7 @@ export function NoteDetailContent({ note }: NoteDetailContentProps) {
                     </button>
                   </span>
                 )}
-              </figure>
+              </div>
             </section>
           )}
 

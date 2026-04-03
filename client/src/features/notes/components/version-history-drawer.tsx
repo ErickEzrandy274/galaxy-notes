@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { X, History, Info, ArrowDown } from 'lucide-react';
-import { Spinner } from '@/components/primitives';
+import { X, Loader2, History, Info, ArrowDown } from 'lucide-react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { useVersionHistory } from '../hooks/use-version-history';
 import { VersionHistoryItem } from './version-history-item';
@@ -56,8 +55,6 @@ export function VersionHistoryDrawer({
     return () => observer.disconnect();
   }, [open, handleIntersect]);
 
-  if (!open) return null;
-
   const handleItemClick = (versionId: string, isCurrent: boolean) => {
     if (isCurrent) {
       onSelectVersion(null);
@@ -67,13 +64,18 @@ export function VersionHistoryDrawer({
   };
 
   return (
-    <aside className="absolute inset-0 z-30 flex flex-col bg-card md:relative md:inset-auto md:z-auto md:h-full md:w-96 md:shrink-0 md:border-l md:border-border">
+    <aside
+      className={`flex h-full shrink-0 flex-col border-l border-border bg-card transition-[width,opacity] duration-300 ease-in-out overflow-hidden ${
+        open ? 'w-96 opacity-100' : 'w-0 opacity-0 border-l-0'
+      }`}
+    >
+      <div className="flex h-full w-96 shrink-0 flex-col">
       <header className="px-4 py-3">
         <div className="flex items-center justify-between">
-          <hgroup className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <History className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold text-foreground">Version History</h2>
-          </hgroup>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -86,10 +88,10 @@ export function VersionHistoryDrawer({
         <hr className="mt-3 border-border" />
       </header>
 
-      <nav className="flex-1 overflow-y-auto" aria-label="Version history list">
+      <section className="flex-1 overflow-y-auto" aria-label="Version history list">
         {isLoading ? (
           <output className="flex items-center justify-center py-12" aria-busy="true">
-            <Spinner size="lg" />
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </output>
         ) : versions.length === 0 ? (
           <figure className="flex flex-col items-center justify-center gap-2 px-4 py-12 text-center">
@@ -149,7 +151,7 @@ export function VersionHistoryDrawer({
 
             {isFetchingNextPage && (
               <li className="flex items-center justify-center py-3">
-                <Spinner size="sm" />
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </li>
             )}
 
@@ -161,7 +163,8 @@ export function VersionHistoryDrawer({
             )}
           </ol>
         )}
-      </nav>
+      </section>
+      </div>
     </aside>
   );
 }

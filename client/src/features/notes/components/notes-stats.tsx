@@ -58,10 +58,10 @@ export function NotesStats({ activeFilter, onFilterChange }: NotesStatsProps) {
           >
             <Icon size={30} className={color} />
             <span className="flex flex-col">
-              <span className="text-lg font-semibold leading-tight text-foreground">
+              <strong className="text-lg font-semibold leading-tight text-foreground">
                 {data?.[key] ?? '—'}
-              </span>
-              <span className="text-xs text-muted-foreground">{label}</span>
+              </strong>
+              <small className="text-xs text-muted-foreground">{label}</small>
             </span>
           </button>
         );

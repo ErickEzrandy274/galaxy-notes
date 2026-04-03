@@ -20,13 +20,14 @@ import {
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { signOut, useSession } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import { useQueryClient, useIsFetching } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import packageJson from "../../../package.json";
 import { useProfile } from "@/features/profile/hooks/use-profile";
 import { useUnreadNotificationCount } from "@/features/notes/hooks/use-notifications";
-import { getInitials } from "@/lib/get-initials";
+import { useNotificationStream } from "@/features/notes/hooks/use-notification-stream";
+import { useSidebarStore } from "@/stores/sidebar-store";
 
 const navItems = [
 	{ href: "/notes", icon: FileText, label: "My Notes" },
@@ -39,75 +40,64 @@ const navItems = [
 export function Sidebar() {
 	const pathname = usePathname();
 	const { data: session } = useSession();
-	const [collapsed, setCollapsed] = useState(() => {
-		if (typeof window === "undefined") return false;
-		try {
-			return localStorage.getItem("galaxy-notes-sidebar-collapsed") === "true";
-		} catch {
-			return false;
-		}
-	});
-	const [mounted, setMounted] = useState(false);
+	const { collapsed, toggle: toggleCollapsed } = useSidebarStore();
+	const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
 	const { theme, setTheme } = useTheme();
 	const queryClient = useQueryClient();
 	const isFetching = useIsFetching();
 	const { data: profile } = useProfile();
 
-	useEffect(() => setMounted(true), []);
-
 	const isDark = theme === "dark";
 	const userPhoto = profile?.photo ?? null;
-	const userInitials = getInitials(session?.user?.name);
+	const userInitials =
+		session?.user?.name
+			?.split(/\s+/)
+			.slice(0, 3)
+			.map((w) => w.charAt(0))
+			.join("")
+			.toUpperCase() || "U";
 
 	const { data: unreadData } = useUnreadNotificationCount();
 	const notificationCount = unreadData?.count ?? 0;
 
-	// SSE moved to NotificationStreamProvider in dashboard layout
+	// SSE: push-based real-time notification updates
+	useNotificationStream();
 
 	return (
 		<Tooltip.Provider delayDuration={200}>
 		<aside
-			className={`relative hidden h-screen flex-col border-r border-border bg-card transition-all md:flex ${
+			className={`relative flex h-screen flex-col border-r border-border bg-card transition-[width] duration-300 ease-in-out ${
 				collapsed ? "w-16" : "w-60"
 			}`}
 		>
 			{/* Collapse toggle — edge chevron */}
 			<button
-				onClick={() => {
-					const next = !collapsed;
-					setCollapsed(next);
-					try {
-						localStorage.setItem("galaxy-notes-sidebar-collapsed", String(next));
-					} catch {}
-				}}
+				onClick={toggleCollapsed}
 				className="absolute -right-4 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:text-foreground"
 			>
 				{collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
 			</button>
 
 			{/* Zone 1: Identity */}
-			<header className="flex flex-col items-center border-b border-border p-4">
+			<header className="flex flex-col items-center overflow-hidden border-b border-border p-4">
 				<Link
 					href="/notes"
-					className="cursor-pointer text-2xl font-bold flex gap-2"
+					className={`cursor-pointer text-2xl font-bold flex whitespace-nowrap ${collapsed ? "justify-center" : "gap-2"}`}
 				>
-					<p className="mx-auto text-yellow-400">✦</p>
-					{!collapsed && (
-						<>
-							<p className="text-foreground">Galaxy</p>
-							<p className="text-purple-700">Notes</p>
-						</>
-					)}
+					<p className="text-yellow-400 transition-all duration-300">✦</p>
+					<span className={`flex gap-2 overflow-hidden transition-all duration-300 ${collapsed ? "w-0 opacity-0" : "w-auto opacity-100"}`}>
+						<p className="text-foreground">Galaxy</p>
+						<p className="text-purple-700">Notes</p>
+					</span>
 				</Link>
-				{!collapsed && (
-					<p className="text-xs font-semibold text-muted-foreground">
-						v{packageJson.version}
-					</p>
-				)}
+				<p className={`text-xs font-semibold text-muted-foreground whitespace-nowrap overflow-hidden transition-all duration-300 ${collapsed ? "h-0 opacity-0" : "h-auto opacity-100"}`}>
+					v{packageJson.version}
+				</p>
 			</header>
 
 			{/* Zone 2: Navigation */}
-			<nav className="flex-1 space-y-1 p-2">
+			<nav className="flex flex-1 flex-col gap-1 overflow-hidden p-2">
+				<ul className="flex flex-col gap-1">
 				{navItems.map(({ href, icon: Icon, label }) => {
 					const isActive = pathname.startsWith(href);
 					const isNotifications = href === "/notifications";
@@ -116,11 +106,11 @@ export function Sidebar() {
 						<Link
 							key={href}
 							href={href}
-							className={`relative flex cursor-pointer items-center gap-3 p-3 text-sm transition-colors ${
+							className={`relative flex cursor-pointer items-center p-3 text-sm transition-colors ${
 								isActive
 									? "bg-primary/10 text-primary"
 									: "text-muted-foreground hover:bg-muted hover:text-foreground"
-							} ${collapsed ? "justify-center rounded-full aspect-square" : "rounded-lg"}`}
+							} ${collapsed ? "justify-center rounded-full aspect-square" : "gap-3 rounded-lg"}`}
 						>
 							{isActive && (
 								<span className="absolute -left-2 top-1/2 h-full w-0.5 -translate-y-1/2 rounded-full bg-primary" />
@@ -133,23 +123,22 @@ export function Sidebar() {
 									</span>
 								)}
 							</span>
-							{!collapsed && (
-								<>
-									<span className="flex-1">{label}</span>
-									{isNotifications && notificationCount > 0 && (
-										<span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
-											{notificationCount > 99 ? "99+" : notificationCount}
-										</span>
-									)}
-								</>
-							)}
+							<span className={`flex items-center gap-2 overflow-hidden whitespace-nowrap transition-all duration-300 ${collapsed ? "w-0 flex-none opacity-0" : "w-auto flex-1 opacity-100"}`}>
+								<span className="flex-1">{label}</span>
+								{isNotifications && notificationCount > 0 && (
+									<span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
+										{notificationCount > 99 ? "99+" : notificationCount}
+									</span>
+								)}
+							</span>
 						</Link>
 					);
 
-					if (!collapsed) return <span key={href}>{link}</span>;
+					if (!collapsed) return <li key={href}>{link}</li>;
 
 					return (
-						<Tooltip.Root key={href}>
+						<li key={href}>
+						<Tooltip.Root>
 							<Tooltip.Trigger asChild>{link}</Tooltip.Trigger>
 							<Tooltip.Portal>
 								<Tooltip.Content
@@ -162,145 +151,110 @@ export function Sidebar() {
 								</Tooltip.Content>
 							</Tooltip.Portal>
 						</Tooltip.Root>
+						</li>
 					);
 				})}
+				</ul>
 			</nav>
 
 			{/* Zone 3: Refresh + Dark Mode toggle */}
-			<section className="flex flex-col gap-1 border-t border-border p-3">
-				{collapsed ? (
-					<Tooltip.Root>
-						<Tooltip.Trigger asChild>
-							<button
-								onClick={() => queryClient.invalidateQueries()}
-								disabled={isFetching > 0}
-								className="flex w-full cursor-pointer items-center justify-center p-2 text-muted-foreground disabled:cursor-default"
-							>
-								<RefreshCw size={18} className={isFetching > 0 ? "animate-spin" : ""} />
-							</button>
-						</Tooltip.Trigger>
+			<div className={`flex flex-col gap-1 overflow-hidden border-t border-border p-3 ${collapsed ? "items-center" : ""}`}>
+				<Tooltip.Root>
+					<Tooltip.Trigger asChild>
+						<button
+							onClick={() => queryClient.invalidateQueries()}
+							disabled={isFetching > 0}
+							className={`flex cursor-pointer items-center text-muted-foreground disabled:cursor-default ${collapsed ? "h-8 w-8 justify-center rounded-full" : "w-full gap-3 p-2"}`}
+						>
+							<RefreshCw size={18} className={`shrink-0 ${isFetching > 0 ? "animate-spin" : ""}`} />
+							<span className={`text-left text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ${collapsed ? "w-0 flex-none opacity-0" : "w-auto flex-1 opacity-100"}`}>
+								{isFetching > 0 ? "Refreshing..." : "Refresh"}
+							</span>
+						</button>
+					</Tooltip.Trigger>
+					{collapsed && (
 						<Tooltip.Portal>
 							<Tooltip.Content
 								side="right"
-								sideOffset={12}
+								sideOffset={20}
 								className="z-50 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-lg"
 							>
 								{isFetching > 0 ? "Refreshing..." : "Refresh"}
 								<Tooltip.Arrow className="fill-border" />
 							</Tooltip.Content>
 						</Tooltip.Portal>
-					</Tooltip.Root>
-				) : (
-					<button
-						onClick={() => queryClient.invalidateQueries()}
-						disabled={isFetching > 0}
-						className="flex w-full cursor-pointer items-center gap-3 p-2 text-muted-foreground disabled:cursor-default"
-					>
-						<RefreshCw size={18} className={isFetching > 0 ? "animate-spin" : ""} />
-						<span className="flex-1 text-left text-sm">
-							{isFetching > 0 ? "Refreshing..." : "Refresh"}
-						</span>
-					</button>
-				)}
-				<hr className="border-border -mx-3" />
-				{collapsed ? (
-					<Tooltip.Root>
-						<Tooltip.Trigger asChild>
-							<button
-								onClick={() => setTheme(isDark ? "light" : "dark")}
-								className="flex w-full cursor-pointer items-center justify-center p-2"
-							>
-								{mounted ? (
-									isDark ? (
-										<Moon size={18} className="text-yellow-400" />
-									) : (
-										<Sun size={18} className="text-amber-500" />
-									)
+					)}
+				</Tooltip.Root>
+				{collapsed && <hr className="border-border -mx-3" />}
+				<Tooltip.Root>
+					<Tooltip.Trigger asChild>
+						<button
+							onClick={() => setTheme(isDark ? "light" : "dark")}
+							className={`flex cursor-pointer items-center ${collapsed ? "h-8 w-8 justify-center rounded-full" : "w-full gap-3 p-2"}`}
+						>
+							{mounted ? (
+								isDark ? (
+									<Moon size={18} className="shrink-0 text-yellow-400" />
 								) : (
-									<span className="h-4.5 w-4.5" />
-								)}
-							</button>
-						</Tooltip.Trigger>
+									<Sun size={18} className="shrink-0 text-amber-500" />
+								)
+							) : (
+								<span className="h-4.5 w-4.5 shrink-0" />
+							)}
+							<span className={`flex items-center gap-2 overflow-hidden whitespace-nowrap transition-all duration-300 ${collapsed ? "w-0 flex-none opacity-0" : "w-auto flex-1 opacity-100"}`}>
+								<span className="flex-1 text-left text-sm text-muted-foreground">
+									{mounted ? (isDark ? "Dark Mode" : "Light Mode") : "\u00A0"}
+								</span>
+								<span
+									className={`h-5 w-9 shrink-0 rounded-full p-0.5 transition-colors ${
+										mounted && isDark ? "bg-primary" : "bg-muted-foreground/30"
+									}`}
+								>
+									<span
+										className={`block h-4 w-4 rounded-full bg-white transition-transform ${
+											mounted && isDark ? "translate-x-4" : "translate-x-0"
+										}`}
+									/>
+								</span>
+							</span>
+						</button>
+					</Tooltip.Trigger>
+					{collapsed && (
 						<Tooltip.Portal>
 							<Tooltip.Content
 								side="right"
-								sideOffset={12}
+								sideOffset={20}
 								className="z-50 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-lg"
 							>
 								{mounted ? (isDark ? "Dark Mode" : "Light Mode") : "Theme"}
 								<Tooltip.Arrow className="fill-border" />
 							</Tooltip.Content>
 						</Tooltip.Portal>
-					</Tooltip.Root>
-				) : (
-					<button
-						onClick={() => setTheme(isDark ? "light" : "dark")}
-						className="flex w-full cursor-pointer items-center gap-3 p-2"
-					>
-						{mounted ? (
-							isDark ? (
-								<Moon size={18} className="text-yellow-400" />
-							) : (
-								<Sun size={18} className="text-amber-500" />
-							)
-						) : (
-							<span className="h-4.5 w-4.5" />
-						)}
-						<span className="flex-1 text-left text-sm text-muted-foreground">
-							{mounted ? (isDark ? "Dark Mode" : "Light Mode") : "\u00A0"}
-						</span>
-						<span
-							className={`h-5 w-9 rounded-full p-0.5 transition-colors ${
-								mounted && isDark ? "bg-primary" : "bg-muted-foreground/30"
-							}`}
-						>
-							<span
-								className={`block h-4 w-4 rounded-full bg-white transition-transform ${
-									mounted && isDark ? "translate-x-4" : "translate-x-0"
-								}`}
-							/>
-						</span>
-					</button>
-				)}
-			</section>
+					)}
+				</Tooltip.Root>
+			</div>
 
 			{/* Zone 4: User info with dropdown */}
 			{session?.user && (
-				<footer className="border-t border-border p-3">
+				<footer className="overflow-hidden border-t border-border p-3">
 					<span
 						className={`flex items-center ${collapsed ? "justify-center" : "gap-3"}`}
 					>
 						<DropdownMenu.Root>
 							<DropdownMenu.Trigger asChild>
-								{collapsed ? (
-									<button
-										className="cursor-pointer"
-									>
-										{userPhoto ? (
-											<img
-												src={userPhoto}
-												alt=""
-												className="h-8 w-8 rounded-full object-cover"
-											/>
-										) : (
-											<span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-												{userInitials}
-											</span>
-										)}
-									</button>
-								) : (
-									<button className="flex w-full cursor-pointer items-center gap-3 text-left">
-										{userPhoto ? (
-											<img
-												src={userPhoto}
-												alt=""
-												className="h-8 w-8 shrink-0 rounded-full object-cover"
-											/>
-										) : (
-											<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-												{userInitials}
-											</span>
-										)}
+								<button className={`flex w-full cursor-pointer items-center text-left ${collapsed ? "justify-center" : "gap-3"}`}>
+									{userPhoto ? (
+										<img
+											src={userPhoto}
+											alt=""
+											className="h-8 w-8 shrink-0 rounded-full object-cover"
+										/>
+									) : (
+										<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+											{userInitials}
+										</span>
+									)}
+									<span className={`flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap transition-all duration-300 ${collapsed ? "w-0 flex-none opacity-0" : "w-auto flex-1 opacity-100"}`}>
 										<span className="min-w-0 flex-1">
 											<p className="truncate text-sm font-medium">
 												{session.user.name}
@@ -313,8 +267,8 @@ export function Sidebar() {
 											size={16}
 											className="shrink-0 text-muted-foreground"
 										/>
-									</button>
-								)}
+									</span>
+								</button>
 							</DropdownMenu.Trigger>
 							<DropdownMenu.Portal>
 								<DropdownMenu.Content

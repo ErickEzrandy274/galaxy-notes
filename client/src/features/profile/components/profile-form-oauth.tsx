@@ -94,7 +94,7 @@ export function ProfileFormOAuth({ profile }: ProfileFormOAuthProps) {
         />
       </label>
 
-      <section className="flex gap-3">
+      <div className="flex gap-3">
         <button
           type="submit"
           disabled={isPending || !isDirty}
@@ -110,7 +110,7 @@ export function ProfileFormOAuth({ profile }: ProfileFormOAuthProps) {
         >
           Cancel
         </button>
-      </section>
+      </div>
     </form>
   );
 }

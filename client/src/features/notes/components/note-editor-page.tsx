@@ -2,8 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye } from 'lucide-react';
-import { Spinner } from '@/components/primitives';
+import { Loader2, Eye } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNoteEditor } from '../hooks/use-note-editor';
@@ -42,7 +41,7 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
   // Check read-only access: user has READ permission but not WRITE, and is not owner
   const { data: noteDetail } = useQuery({
     queryKey: ['note', noteId],
-    queryFn: () => fetchNote(noteId!),
+    queryFn: ({ signal }) => fetchNote(noteId!, signal),
     enabled: !!noteId,
   });
 
@@ -130,7 +129,7 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
   if (isLoading) {
     return (
       <output className="flex h-full items-center justify-center" aria-busy="true">
-        <Spinner size="xl" />
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </output>
     );
   }
@@ -156,10 +155,10 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
   return (
     <article className="flex h-full flex-col">
       {isReadOnly && (
-        <div className="flex items-center gap-2 border-b border-amber-500/20 bg-amber-500/5 px-4 py-2 text-sm text-amber-400 md:px-6">
+        <aside className="flex items-center gap-2 border-b border-amber-500/20 bg-amber-500/5 px-6 py-2 text-sm text-amber-400">
           <Eye className="h-4 w-4" />
           View-only access — you can read this note but cannot make changes
-        </div>
+        </aside>
       )}
       {!isReadOnly && (
         <NoteEditorHeader
@@ -176,9 +175,9 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
         />
       )}
 
-      <section className="flex flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
-        <section className="flex flex-1 flex-col p-4 md:overflow-hidden md:p-6">
-          <NoteEditorContent data={data} updateField={isReadOnly ? (() => {}) as any : updateField} noteId={noteId ?? savedNoteId} blobToPathMap={blobToPathMap} />
+      <div className="flex flex-1 overflow-hidden">
+        <section className="flex flex-1 flex-col overflow-hidden p-6">
+          <NoteEditorContent data={data} updateField={isReadOnly ? () => {} : updateField} noteId={noteId ?? savedNoteId} blobToPathMap={blobToPathMap} />
         </section>
 
         {!isReadOnly && (
@@ -192,7 +191,7 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
             isOwner={isOwner ?? true}
           />
         )}
-      </section>
+      </div>
       <UnsavedChangesDialog
         open={showLeaveDialog}
         onLeave={confirmLeave}

@@ -26,21 +26,21 @@ export function ConnectedAccount({ account }: ConnectedAccountProps) {
         Connected Account
       </h2>
       <article className="flex items-center justify-between rounded-lg border border-border bg-card p-4">
-        <span className="flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <span
             className={`flex h-10 w-10 items-center justify-center rounded-full bg-muted text-lg font-bold ${config.color}`}
           >
             {config.icon}
           </span>
-          <span>
+          <div>
             <p className="text-sm font-medium text-foreground">
               {config.label}
             </p>
             <p className="text-xs text-muted-foreground">
               {account.providerEmail}
             </p>
-          </span>
-        </span>
+          </div>
+        </div>
         <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-3 py-1 text-xs font-medium text-green-500">
           <Check size={14} />
           Connected

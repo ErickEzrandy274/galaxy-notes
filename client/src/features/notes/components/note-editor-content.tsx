@@ -44,6 +44,7 @@ export function NoteEditorContent({
   const { upload } = useNoteUpload(noteId ?? '', 'rich-text-editor');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef(data.content);
+  // eslint-disable-next-line react-hooks/refs -- intentional: keep ref in sync for stable callbacks without re-renders
   contentRef.current = data.content;
 
   // Revoke all blob URLs on unmount
@@ -131,8 +132,8 @@ export function NoteEditorContent({
   return (
     <section className="flex min-h-0 flex-1 flex-col gap-4">
       {/* Title row */}
-      <label className="flex flex-col gap-1.5 md:flex-row md:items-center md:gap-4">
-        <strong className="text-sm font-medium text-muted-foreground md:w-16 md:shrink-0">
+      <label className="flex items-center gap-4">
+        <strong className="w-16 shrink-0 text-sm font-medium text-muted-foreground">
           Title
         </strong>
         <input
@@ -146,11 +147,11 @@ export function NoteEditorContent({
       </label>
 
       {/* Tags row */}
-      <fieldset className="flex flex-col gap-1.5 md:flex-row md:items-center md:gap-4">
+      <fieldset className="flex items-center gap-4">
         <legend className="sr-only">Tags</legend>
         <label
           id="tags-label"
-          className="text-sm font-medium text-muted-foreground md:w-16 md:shrink-0"
+          className="w-16 shrink-0 text-sm font-medium text-muted-foreground"
           aria-hidden="true"
         >
           Tags
@@ -162,11 +163,11 @@ export function NoteEditorContent({
       </fieldset>
 
       {/* Content section */}
-      <fieldset className="flex min-h-0 flex-1 flex-col gap-1.5 md:flex-row md:gap-4">
+      <fieldset className="flex min-h-0 flex-1 gap-4">
         <legend className="sr-only">Content</legend>
         <label
           id="content-label"
-          className="text-sm font-medium text-muted-foreground md:w-16 md:shrink-0 md:self-start md:pt-2"
+          className="w-16 shrink-0 self-start pt-2 text-sm font-medium text-muted-foreground"
           aria-hidden="true"
         >
           Content

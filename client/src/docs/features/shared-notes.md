@@ -24,7 +24,7 @@ client/src/features/notes/
 │   └── permission-badge.tsx                 # READ/WRITE permission pill
 ├── hooks/
 │   ├── use-shared-notes.ts                  # React Query hook for shared notes
-│   ├── use-shared-column-visibility.ts      # localStorage-backed column toggle
+│   ├── use-shared-column-visibility.ts      # Zustand-backed column toggle (persisted to localStorage)
 │   └── use-shares.ts                        # Share CRUD mutations (add, remove, update, request access)
 └── types/index.ts                           # SharedNote, SharedNotesResponse, etc.
 ```
@@ -73,7 +73,14 @@ interface SharedNote {
 
 Toggleable columns: Owner, Permission, Tags, Created At, Shared On. Title and Actions are always visible.
 
-Stored in `localStorage` under key `galaxy-notes-shared-column-visibility`.
+Managed by Zustand store (`useSharedColumnVisibilityStore`) with `persist` middleware. Stored in `localStorage` under key `galaxy-notes-shared-column-visibility`.
+
+## Loading States
+
+All filter section components show skeleton loading states (`animate-pulse`) while data is being fetched:
+- **SharedNotesFilters** — rounded pill skeletons matching chip widths
+- **SharedNotesSearch** — label + input placeholder skeletons for Title, Owner & Tags
+- **SharedNotesColumnsDropdown** — single button skeleton
 
 ## Row Actions
 
@@ -105,3 +112,4 @@ When the recipient leaves, the server sends a `leave` notification to the note o
 | `@radix-ui/react-dropdown-menu` | Column visibility + row actions dropdowns |
 | `lucide-react` | Icons (Eye, Pencil, LogOut, MoreHorizontal) |
 | `react-hot-toast` | Leave success/error notifications |
+| `zustand` | State management for persisted column visibility |

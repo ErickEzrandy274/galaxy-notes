@@ -1,8 +1,8 @@
 import api from '@/lib/axios';
 import type { UserProfile, SignedUploadUrlResponse } from '../types';
 
-export async function fetchProfile(): Promise<UserProfile> {
-  const response = await api.get<UserProfile>('/users/me');
+export async function fetchProfile(signal?: AbortSignal): Promise<UserProfile> {
+  const response = await api.get<UserProfile>('/users/me', { signal });
   return response.data;
 }
 
@@ -41,10 +41,10 @@ export async function createPhotoUploadUrl(
 }
 
 export async function updatePhoto(
-  photoUrl: string,
+  photoPath: string,
 ): Promise<{ photo: string }> {
   const response = await api.patch<{ photo: string }>('/users/me/photo', {
-    photoUrl,
+    photoUrl: photoPath,
   });
   return response.data;
 }

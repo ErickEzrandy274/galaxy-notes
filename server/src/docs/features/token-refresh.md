@@ -58,16 +58,18 @@ The endpoint uses `@UseGuards(RefreshTokenGuard)` (not `AuthGuard('jwt')`):
 2. Looks up token in database (`prisma.refreshToken.findUnique`)
 3. Validates token is not revoked (`revokedAt` is null)
 4. Checks token has not expired (`expiresAt` > now)
-5. **Stolen token detection**: If a revoked token is reused, all tokens for that user are revoked (token family invalidation)
-6. Attaches `{ id, email }` to `request.user`
+5. **Stolen token detection with grace period**: If a revoked token is reused within 30 seconds (`ROTATION_GRACE_MS`), it's treated as a multi-tab race condition — the guard looks up the replacement token via `replacedByToken` and returns it with `isGracePeriodReuse: true`. Outside the grace period, all tokens for that user are revoked (token family invalidation).
+6. Attaches `{ token, userId, email, isGracePeriodReuse }` to `req.refreshTokenData`
 
 ## Token Rotation
 
-Each refresh performs a full rotation:
+Each refresh performs a full rotation (unless grace period reuse):
 1. Current refresh token is revoked (`revokedAt` set)
 2. New refresh token is created, linked to old via `replacedByToken`
 3. New token set as httpOnly cookie
 4. New JWT access token signed and returned
+
+**Grace period reuse**: If `isGracePeriodReuse` is true, the controller skips rotation and issues a new access token using the already-rotated replacement token. This prevents duplicate rotation chains when multiple tabs refresh simultaneously.
 
 ## Token Details
 
@@ -98,9 +100,12 @@ The frontend calls this endpoint through three mechanisms:
 
 - Refresh tokens are stored in the database with expiry and revocation tracking
 - Token rotation prevents replay attacks — each refresh token is single-use
-- Stolen token detection: if a revoked token is reused, all tokens for the user are invalidated
+- Stolen token detection with 30-second grace period for multi-tab scenarios
 - Refresh tokens are delivered via httpOnly cookies (not accessible to JavaScript)
 - Database lookups are performed on every refresh to validate token state
+- Client enforces 72-hour absolute max session lifetime (via `loginAt` in NextAuth JWT)
+- Session hydration capped at 3 retries to prevent infinite loops
+- `useTokenRefresh` hook forces sign out on `session.error` detection
 
 ## Dependencies
 

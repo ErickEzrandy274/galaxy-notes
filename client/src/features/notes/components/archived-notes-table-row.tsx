@@ -18,17 +18,17 @@ export function ArchivedNotesTableRow({
         {note.title || 'Untitled'}
       </td>
       {columns.tags && (
-        <td className="hidden px-4 py-3 md:table-cell">
+        <td className="px-4 py-3">
           <TagList tags={note.tags} />
         </td>
       )}
       {columns.createdAt && (
-        <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
+        <td className="px-4 py-3 text-sm text-muted-foreground">
           <time>{formatDate(note.createdAt)}</time>
         </td>
       )}
       {columns.updatedAt && (
-        <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
+        <td className="px-4 py-3 text-sm text-muted-foreground">
           <time>{formatDate(note.updatedAt)}</time>
         </td>
       )}

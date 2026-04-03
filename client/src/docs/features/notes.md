@@ -62,15 +62,15 @@ client/src/features/notes/
 ├── hooks/
 │   ├── use-notes.ts                  # React Query hook for notes
 │   ├── use-notes-filters.ts          # Filter/search/page state management
-│   ├── use-column-visibility.ts      # localStorage-backed column toggle
+│   ├── use-column-visibility.ts      # Zustand-backed column toggle (persisted to localStorage)
 │   ├── use-note-stats.ts             # Note stats hook
 │   ├── use-note-tags.ts              # User tags hook
 │   ├── use-shared-notes.ts           # React Query hook for shared notes
-│   ├── use-shared-column-visibility.ts # Column toggle for shared notes table
+│   ├── use-shared-column-visibility.ts # Zustand-backed column toggle for shared notes table
 │   ├── use-shares.ts                 # Share CRUD mutations + request access
 │   ├── use-archive-mutations.ts      # Archive/unarchive mutations
 │   ├── use-archived-notes.ts         # React Query hook for archived notes
-│   ├── use-archived-column-visibility.ts # Column toggle for archived table
+│   ├── use-archived-column-visibility.ts # Zustand-backed column toggle for archived table
 │   ├── use-notifications.ts          # Notification CRUD hooks
 │   └── use-notification-stream.tsx   # SSE stream + toast notifications
 ├── types/index.ts                    # TypeScript interfaces
@@ -110,7 +110,7 @@ All filter changes reset pagination to page 1.
 
 Toggleable columns: Status, Tags, Created At, Last Modified, Shared. Title and Actions are always visible.
 
-Stored in `localStorage` under key `galaxy-notes-column-visibility`.
+Managed by Zustand store (`useColumnVisibilityStore`) with `persist` middleware. Stored in `localStorage` under key `galaxy-notes-column-visibility`.
 
 ## Empty States
 
@@ -144,7 +144,16 @@ Note: Archived notes are excluded from the main notes list and appear on the ded
 | `@radix-ui/react-dropdown-menu` | Column visibility + row actions dropdowns |
 | `lucide-react` | Icons |
 | `react-hot-toast` | Delete success/error notifications |
-| `axios` (via `@/lib/axios`) | HTTP client with JWT interceptor |
+| `axios` (via `@/lib/axios`) | HTTP client with JWT interceptor + AbortController |
+| `zustand` | State management for persisted UI preferences (column visibility) |
+
+## Loading States
+
+All filter section components show skeleton loading states (`animate-pulse`) while data is being fetched:
+- **NotesFilters** — rounded pill skeletons matching chip widths
+- **NotesSearch** — label + input placeholder skeletons for Title & Tags
+- **NotesColumnsDropdown** — single button skeleton
+- **NotesStats** — 4 skeleton cards matching stat card dimensions
 
 ## Sidebar Updates
 
@@ -153,3 +162,4 @@ The sidebar (`client/src/components/layout/sidebar.tsx`) was updated to match th
 - Dark Mode toggle with moon icon and switch (visual placeholder)
 - User three-dot dropdown menu with Settings + Log Out
 - Edge chevron collapse/expand toggle
+- Smooth 300ms width transition with fade animations on text content (Zustand-managed collapsed state via `useSidebarStore`)

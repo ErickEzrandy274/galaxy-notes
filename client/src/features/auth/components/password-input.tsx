@@ -13,8 +13,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
     const [showPassword, setShowPassword] = useState(false);
 
     return (
-      <span className="block">
-        <span className="relative block">
+      <div className="block">
+        <div className="relative block">
           <input
             ref={ref}
             type={showPassword ? 'text' : 'password'}
@@ -29,9 +29,9 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
           >
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
-        </span>
+        </div>
         {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
-      </span>
+      </div>
     );
   },
 );

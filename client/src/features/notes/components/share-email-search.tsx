@@ -310,14 +310,14 @@ export function ShareEmailSearch({
                         {(user.firstName?.[0] ?? user.email[0]).toUpperCase()}
                       </span>
                     )}
-                    <span className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1">
                       <span className="block truncate text-foreground">
                         {[user.firstName, user.lastName].filter(Boolean).join(' ') || user.email}
                       </span>
-                      <span className="block truncate text-xs text-muted-foreground">
+                      <small className="block truncate text-xs text-muted-foreground">
                         {user.email}
-                      </span>
-                    </span>
+                      </small>
+                    </div>
                     {isServer && (
                       <span className="text-xs text-muted-foreground">Already shared</span>
                     )}
@@ -336,12 +336,12 @@ export function ShareEmailSearch({
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-500/10 text-orange-500">
                   <UserPlus className="h-3.5 w-3.5" />
                 </span>
-                <span>
+                <div>
                   <span className="block text-foreground">Send invite to {query}</span>
-                  <span className="block text-xs text-muted-foreground">
+                  <small className="block text-xs text-muted-foreground">
                     User will be invited via email
-                  </span>
-                </span>
+                  </small>
+                </div>
               </button>
             )}
           </div>

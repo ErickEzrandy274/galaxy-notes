@@ -32,17 +32,17 @@ export function SharedNotesTableRow({
   return (
     <tr className="border-b border-border transition-colors hover:bg-muted/50">
       <td className="px-4 py-3">
-        <span
+        <strong
           className="text-sm font-medium text-foreground"
           title={note.title}
         >
           <span className="line-clamp-1">{note.title || 'Untitled'}</span>
-        </span>
+        </strong>
       </td>
 
       {columns.owner && (
         <td className="px-4 py-3">
-          <span className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             {note.owner.photo ? (
               <img
                 src={note.owner.photo}
@@ -50,14 +50,14 @@ export function SharedNotesTableRow({
                 className="h-6 w-6 rounded-full object-cover"
               />
             ) : (
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+              <abbr className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground" title={ownerName(note.owner)}>
                 {ownerInitials(note.owner)}
-              </span>
+              </abbr>
             )}
             <span className="text-sm text-foreground">
               {ownerName(note.owner)}
             </span>
-          </span>
+          </div>
         </td>
       )}
 
@@ -68,20 +68,20 @@ export function SharedNotesTableRow({
       )}
 
       {columns.tags && (
-        <td className="hidden px-4 py-3 md:table-cell">
+        <td className="px-4 py-3">
           <TagList tags={note.tags} max={3} />
         </td>
       )}
 
       {columns.createdAt && (
-        <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-          {formatDate(note.createdAt)}
+        <td className="px-4 py-3 text-sm text-muted-foreground">
+          <time>{formatDate(note.createdAt)}</time>
         </td>
       )}
 
       {columns.sharedOn && (
-        <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-          {formatDate(note.sharedOn)}
+        <td className="px-4 py-3 text-sm text-muted-foreground">
+          <time>{formatDate(note.sharedOn)}</time>
         </td>
       )}
 

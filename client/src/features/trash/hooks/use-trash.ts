@@ -5,6 +5,6 @@ import type { TrashFilters } from '../types';
 export function useTrash(filters: TrashFilters) {
   return useQuery({
     queryKey: ['notes', 'trash', filters],
-    queryFn: () => fetchTrashedNotes(filters),
+    queryFn: ({ signal }) => fetchTrashedNotes(filters, signal),
   });
 }

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { isCancel } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 import { getSession, signOut } from 'next-auth/react';
 import toast from 'react-hot-toast';
@@ -18,6 +18,8 @@ let tokenExpiry = 0;
 let refreshPromise: Promise<string | null> | null = null;
 let authFailed = false;
 let sessionPromise: Promise<void> | null = null;
+let sessionHydrationAttempts = 0;
+const MAX_SESSION_HYDRATION_ATTEMPTS = 3;
 
 function decodeTokenExpiry(token: string): number {
   try {
@@ -50,6 +52,7 @@ export function resetAuthState() {
   authFailed = false;
   sessionPromise = null;
   refreshPromise = null;
+  sessionHydrationAttempts = 0;
 }
 
 export async function logout() {
@@ -109,19 +112,30 @@ api.interceptors.request.use(
 
     // Hydrate from NextAuth session once per page lifecycle (shared promise)
     if (!cachedToken && typeof window !== 'undefined') {
+      if (sessionHydrationAttempts >= MAX_SESSION_HYDRATION_ATTEMPTS) {
+        authFailed = true;
+        return Promise.reject(
+          Object.assign(new Error('Session hydration failed after retries'), {
+            _authFailed: true,
+          }),
+        );
+      }
       if (!sessionPromise) {
+        sessionHydrationAttempts++;
         sessionPromise = getSession()
           .then((session) => {
             if (session?.accessToken) {
               setAccessToken(session.accessToken);
+              sessionHydrationAttempts = 0; // Reset on success
+            } else if (session?.error === 'RefreshTokenError' || session?.error === 'SessionExpired') {
+              // NextAuth refresh failed or session expired — don't retry
+              authFailed = true;
             } else {
-              // Session empty — allow retry on next request
-              sessionPromise = null;
+              sessionPromise = null; // Allow retry
             }
           })
           .catch(() => {
-            // Session not available — allow retry on next request
-            sessionPromise = null;
+            sessionPromise = null; // Allow retry
           });
       }
       await sessionPromise;
@@ -151,6 +165,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Silently reject cancelled requests (AbortController)
+    if (isCancel(error)) {
+      return Promise.reject(error);
+    }
+
     // Skip processing once auth has permanently failed
     if (error._authFailed || authFailed) {
       return Promise.reject(error);

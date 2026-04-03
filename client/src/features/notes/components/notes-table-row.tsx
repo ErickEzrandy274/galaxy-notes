@@ -14,12 +14,12 @@ export function NotesTableRow({ note, columns }: NotesTableRowProps) {
   return (
     <tr className="border-b border-border transition-colors hover:bg-muted/50">
       <td className="max-w-64 px-4 py-3">
-        <span
+        <strong
           className="block truncate text-sm font-medium text-foreground"
           title={note.title}
         >
           {note.title}
-        </span>
+        </strong>
       </td>
       {columns.status && (
         <td className="px-4 py-3">
@@ -27,22 +27,22 @@ export function NotesTableRow({ note, columns }: NotesTableRowProps) {
         </td>
       )}
       {columns.tags && (
-        <td className="hidden px-4 py-3 md:table-cell">
+        <td className="px-4 py-3">
           <TagList tags={note.tags} />
         </td>
       )}
       {columns.createdAt && (
-        <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-          {formatDate(note.createdAt)}
+        <td className="px-4 py-3 text-sm text-muted-foreground">
+          <time>{formatDate(note.createdAt)}</time>
         </td>
       )}
       {columns.lastModified && (
-        <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
-          {formatDate(note.updatedAt)}
+        <td className="px-4 py-3 text-sm text-muted-foreground">
+          <time>{formatDate(note.updatedAt)}</time>
         </td>
       )}
       {columns.shared && (
-        <td className="hidden px-4 py-3 md:table-cell">
+        <td className="px-4 py-3">
           {note._count.shares > 0 ? (
             <Link2 size={16} className="text-muted-foreground" />
           ) : (

@@ -2,21 +2,18 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  Logger,
 } from '@nestjs/common';
+import { AppLogger } from '../common/logger/app.logger';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { UsersService } from '../users/users.service';
 import { Subject, Observable } from 'rxjs';
 
 @Injectable()
 export class NotificationsService {
-  private readonly logger = new Logger(NotificationsService.name);
+  private readonly logger = new AppLogger(NotificationsService.name);
   private readonly userStreams = new Map<string, Subject<MessageEvent>>();
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly usersService: UsersService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   // ── SSE Streaming ─────────────────────────────────────────
 
@@ -51,12 +48,7 @@ export class NotificationsService {
     return notification;
   }
 
-  async findAllByUser(
-    userId: string,
-    page = 1,
-    limit = 10,
-    filter?: string,
-  ) {
+  async findAllByUser(userId: string, page = 1, limit = 10, filter?: string) {
     const skip = (page - 1) * limit;
 
     // Get active (non-expired) muted user IDs
@@ -69,14 +61,11 @@ export class NotificationsService {
     });
     const mutedUserIds = mutes.map((m) => m.mutedUserId);
 
-    const where: any = { userId };
+    const where: Prisma.NotificationWhereInput = { userId };
 
     // Exclude notifications from muted users
     if (mutedUserIds.length > 0) {
-      where.OR = [
-        { actorId: null },
-        { actorId: { notIn: mutedUserIds } },
-      ];
+      where.OR = [{ actorId: null }, { actorId: { notIn: mutedUserIds } }];
     }
 
     // Apply filter
@@ -126,28 +115,18 @@ export class NotificationsService {
       noteStateMap = new Map(notes.map((n) => [n.id, n.isDeleted]));
     }
 
-    const notifications = await Promise.all(
-      raw.map(async (n) => {
-        const resolved = {
-          ...n,
-          actor: n.actor
-            ? {
-                ...n.actor,
-                photo: await this.usersService.resolvePhotoUrl(n.actor.photo),
-              }
-            : null,
-        };
+    const notifications = raw.map((n) => {
+      if (!n.noteId || !stateTypes.includes(n.type)) return n;
 
-        if (!n.noteId || !stateTypes.includes(n.type)) return resolved;
-
-        const isDeleted = noteStateMap.get(n.noteId);
-        if (isDeleted === undefined)
-          return { ...resolved, isNoteAvailable: false };
-        const isNoteAvailable =
-          n.type === 'version_cleanup' ? isDeleted : !isDeleted;
-        return { ...resolved, isNoteAvailable };
-      }),
-    );
+      const isDeleted = noteStateMap.get(n.noteId);
+      // Note permanently deleted → unavailable
+      if (isDeleted === undefined) return { ...n, isNoteAvailable: false };
+      // version_cleanup: available only when note IS in trash
+      // restore: available only when note is NOT in trash
+      const isNoteAvailable =
+        n.type === 'version_cleanup' ? isDeleted : !isDeleted;
+      return { ...n, isNoteAvailable };
+    });
 
     return { notifications, total, page, limit };
   }
@@ -163,13 +142,10 @@ export class NotificationsService {
     });
     const mutedUserIds = mutes.map((m) => m.mutedUserId);
 
-    const where: any = { userId, isRead: false };
+    const where: Prisma.NotificationWhereInput = { userId, isRead: false };
 
     if (mutedUserIds.length > 0) {
-      where.OR = [
-        { actorId: null },
-        { actorId: { notIn: mutedUserIds } },
-      ];
+      where.OR = [{ actorId: null }, { actorId: { notIn: mutedUserIds } }];
     }
 
     const count = await this.prisma.notification.count({ where });
@@ -179,6 +155,7 @@ export class NotificationsService {
   async markAsRead(notificationId: string, userId: string) {
     const notification = await this.prisma.notification.findFirst({
       where: { id: notificationId, userId },
+      select: { id: true },
     });
     if (!notification) throw new NotFoundException('Notification not found');
 
@@ -199,6 +176,7 @@ export class NotificationsService {
   async remove(notificationId: string, userId: string) {
     const notification = await this.prisma.notification.findFirst({
       where: { id: notificationId, userId },
+      select: { id: true },
     });
     if (!notification) throw new NotFoundException('Notification not found');
 
@@ -221,6 +199,7 @@ export class NotificationsService {
 
     const existing = await this.prisma.notificationMute.findUnique({
       where: { userId_mutedUserId: { userId, mutedUserId } },
+      select: { id: true },
     });
 
     if (existing) {
@@ -254,6 +233,7 @@ export class NotificationsService {
   async unmuteUser(userId: string, mutedUserId: string) {
     const existing = await this.prisma.notificationMute.findUnique({
       where: { userId_mutedUserId: { userId, mutedUserId } },
+      select: { id: true },
     });
     if (!existing) {
       throw new NotFoundException('Mute not found');
@@ -287,15 +267,6 @@ export class NotificationsService {
       },
       orderBy: { createdAt: 'desc' },
     });
-
-    return Promise.all(
-      mutes.map(async (m) => ({
-        ...m,
-        mutedUser: {
-          ...m.mutedUser,
-          photo: await this.usersService.resolvePhotoUrl(m.mutedUser.photo),
-        },
-      })),
-    );
+    return mutes;
   }
 }

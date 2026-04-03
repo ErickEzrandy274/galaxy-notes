@@ -4,15 +4,8 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, RotateCcw, Loader2, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button } from '@/components/primitives';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { restoreVersion } from '../api/notes-api';
 import type { NoteStatus } from '../types';
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-});
 
 interface VersionPreviewBannerProps {
   noteId: string;
@@ -50,15 +43,18 @@ export function VersionPreviewBanner({
     },
   });
 
-  const formattedDate = dateFormatter.format(new Date(createdAt));
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(createdAt));
 
   const isArchived = noteStatus === 'archived';
 
   return (
     <>
-      <header className="sticky top-0 z-10 flex flex-col items-center gap-2 border-b border-amber-500/20 bg-amber-50 px-4 py-3 dark:bg-amber-950 md:flex-row md:justify-between md:px-6">
-        <p className="flex items-center gap-2 text-center text-sm text-foreground md:text-left">
-          <Clock className="h-4 w-4 shrink-0 text-[#F59E0B]" />
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-amber-500/20 bg-[#F59E0B]/12 px-6 py-3">
+        <p className="flex items-center gap-2 text-sm text-foreground">
+          <Clock className="h-4 w-4 text-[#F59E0B]" />
           <span>
             You are viewing Version {versionNumber} &mdash; saved on {formattedDate} by {changedByName}
           </span>
@@ -80,7 +76,7 @@ export function VersionPreviewBanner({
           <button
             type="button"
             onClick={onBackToCurrent}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-amber-400/40 px-4 py-1.5 text-sm font-semibold text-foreground hover:bg-amber-100 dark:hover:bg-amber-900/30"
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Current
@@ -88,20 +84,51 @@ export function VersionPreviewBanner({
         </nav>
       </header>
 
-      <ConfirmDialog
-        open={showRestoreDialog}
-        icon={<RotateCcw className="h-5 w-5 text-purple-600" />}
-        iconBgClass="bg-purple-500/10"
-        title="Restore this version?"
-        description="The current note content will be saved as a new version before restoring. You won't lose any data."
-        confirmLabel="Restore Version"
-        confirmClassName="bg-purple-600 text-white hover:bg-purple-700"
-        onConfirm={() => {
-          setShowRestoreDialog(false);
-          restoreMutation.mutate();
-        }}
-        onCancel={() => setShowRestoreDialog(false)}
-      />
+      {/* Restore confirmation dialog */}
+      {showRestoreDialog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
+          <article className="relative z-10 w-96 rounded-lg border border-border bg-card p-6 shadow-xl">
+            <header className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-500/10">
+                <RotateCcw className="h-5 w-5 text-purple-600" />
+              </span>
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  Restore this version?
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  The current note content will be saved as a new version before
+                  restoring. You won&apos;t lose any data.
+                </p>
+              </div>
+            </header>
+            <footer className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowRestoreDialog(false)}
+                className="cursor-pointer rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRestoreDialog(false);
+                  restoreMutation.mutate();
+                }}
+                className="cursor-pointer rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
+              >
+                Restore Version
+              </button>
+            </footer>
+          </article>
+        </div>
+      )}
     </>
   );
 }

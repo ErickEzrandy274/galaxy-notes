@@ -25,7 +25,7 @@ export function useNoteEditor(noteId?: string) {
 
   const { isLoading } = useQuery({
     queryKey: ['note', noteId],
-    queryFn: () => fetchNote(noteId!),
+    queryFn: ({ signal }) => fetchNote(noteId!, signal),
     enabled: !!noteId,
     select: (note) => {
       if (!initializedRef.current) {

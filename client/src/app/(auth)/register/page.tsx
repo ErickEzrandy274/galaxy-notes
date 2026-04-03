@@ -3,7 +3,7 @@ import { AuthBranding, RegisterForm } from '@/features/auth';
 import type { AuthBrandingConfig } from '@/features/auth';
 
 export const metadata: Metadata = {
-  title: 'Create Account - Galaxy Notes',
+  title: 'Create Account',
   description: 'Create your Galaxy Notes account',
 };
 

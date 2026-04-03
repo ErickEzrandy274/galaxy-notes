@@ -6,7 +6,7 @@ import type { AutoDeleteBehavior } from '../types';
 export function usePreferences() {
   return useQuery({
     queryKey: ['preferences'],
-    queryFn: fetchPreferences,
+    queryFn: ({ signal }) => fetchPreferences(signal),
   });
 }
 

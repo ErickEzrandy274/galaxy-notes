@@ -6,6 +6,7 @@ import Credentials from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import axios from 'axios';
 import { prisma } from './prisma';
+import type { UserType } from '@prisma/client';
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
@@ -87,17 +88,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Use updateMany to avoid throwing when no record matches
         await prisma.user.updateMany({
           where: { id: user.id, userType: 'general_user' },
-          data: { userType: userType as any },
+          data: { userType: userType as UserType },
         });
       }
     },
   },
   callbacks: {
     async jwt({ token, user, account }) {
+      // Absolute max session lifetime: 72 hours from initial login.
+      // After this, the user must re-authenticate regardless of activity.
+      const MAX_SESSION_LIFETIME_MS = 72 * 60 * 60 * 1000;
+
+      if (token.loginAt && Date.now() - token.loginAt > MAX_SESSION_LIFETIME_MS) {
+        token.error = 'SessionExpired';
+        return token;
+      }
+
       // Initial sign-in
       if (user && account) {
         token.id = user.id;
         token.provider = account.provider;
+        token.loginAt = Date.now(); // Track absolute session start
 
         if (account.provider === 'credentials') {
           // Credentials login — backend returned accessToken, refreshToken from cookie

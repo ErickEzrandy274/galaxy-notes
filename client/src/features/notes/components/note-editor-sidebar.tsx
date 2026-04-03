@@ -31,7 +31,7 @@ export function NoteEditorSidebar({
   isOwner = true,
 }: NoteEditorSidebarProps) {
   return (
-    <aside className="shrink-0 space-y-6 overflow-y-auto border-t border-border p-4 md:w-96 md:border-l md:border-t-0">
+    <aside className="w-96 shrink-0 overflow-y-auto space-y-6 border-l border-border p-4">
       <NoteAttachmentUpload
         document={data.document}
         onChange={(url, fileSize) => {

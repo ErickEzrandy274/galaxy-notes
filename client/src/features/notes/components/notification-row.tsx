@@ -146,10 +146,8 @@ export function NotificationRow({ notification }: NotificationRowProps) {
     }
   };
 
-  const Tag = isReadOnly ? 'section' : 'article';
-
   return (
-    <Tag
+    <article
       onClick={isReadOnly ? undefined : handleClick}
       className={`group flex items-start gap-3 rounded-lg px-4 py-3 transition-colors ${
         isReadOnly
@@ -172,17 +170,17 @@ export function NotificationRow({ notification }: NotificationRowProps) {
       </span>
 
       {/* Content */}
-      <span className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-foreground">
           {notification.title}
         </p>
         <p className="mt-0.5 text-xs text-muted-foreground">
           {notification.message}
         </p>
-      </span>
+      </div>
 
       {/* Timestamp + menu */}
-      <span
+      <div
         className="flex shrink-0 items-center gap-2"
         onClick={(e) => e.stopPropagation()}
       >
@@ -194,7 +192,7 @@ export function NotificationRow({ notification }: NotificationRowProps) {
             <MoreHorizontal size={16} />
           </button>
         </NotificationContextMenu>
-      </span>
-    </Tag>
+      </div>
+    </article>
   );
 }

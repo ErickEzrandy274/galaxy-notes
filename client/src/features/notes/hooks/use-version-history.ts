@@ -4,7 +4,7 @@ import { fetchVersionHistory } from '../api/notes-api';
 export function useVersionHistory(noteId: string, enabled = true) {
   const query = useInfiniteQuery({
     queryKey: ['note-versions', noteId],
-    queryFn: ({ pageParam }) => fetchVersionHistory(noteId, pageParam),
+    queryFn: ({ pageParam, signal }) => fetchVersionHistory(noteId, pageParam, signal),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? lastPage.nextCursor ?? undefined : undefined,

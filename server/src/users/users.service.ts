@@ -11,7 +11,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 
-const SUPABASE_BUCKET = 'galaxy-notes-staging';
 const ALLOWED_MIME_TYPES = ['image/webp', 'image/jpeg', 'image/png'];
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
 
@@ -23,6 +22,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
   ) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     this.supabase = createClient(
       this.config.get<string>('SUPABASE_URL')!,
       this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -57,13 +57,12 @@ export class UsersService {
       take: 10,
     });
 
-    const resolved = await Promise.all(
+    return Promise.all(
       users.map(async (u) => ({
         ...u,
         photo: await this.resolvePhotoUrl(u.photo),
       })),
     );
-    return resolved;
   }
 
   async getProfile(userId: string) {
@@ -94,15 +93,16 @@ export class UsersService {
         ? { provider: accounts[0].provider, providerEmail: user.email }
         : null;
 
-    return {
-      ...profile,
-      photo: await this.resolvePhotoUrl(profile.photo),
-      connectedAccount,
-    };
+    const photo = await this.resolvePhotoUrl(profile.photo);
+
+    return { ...profile, photo, connectedAccount };
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, userType: true },
+    });
     if (!user) throw new NotFoundException('User not found');
 
     const data: Record<string, string | null> = {};
@@ -116,7 +116,7 @@ export class UsersService {
 
     if (dto.bio !== undefined) data.bio = dto.bio;
 
-    const updated = await this.prisma.user.update({
+    return this.prisma.user.update({
       where: { id: userId },
       data,
       select: {
@@ -131,8 +131,6 @@ export class UsersService {
         createdAt: true,
       },
     });
-
-    return { ...updated, photo: await this.resolvePhotoUrl(updated.photo) };
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto) {
@@ -140,7 +138,10 @@ export class UsersService {
       throw new BadRequestException('Passwords do not match');
     }
 
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, userType: true, password: true },
+    });
     if (!user) throw new NotFoundException('User not found');
 
     if (user.userType !== 'general_user') {
@@ -184,7 +185,7 @@ export class UsersService {
     const path = `${userId}/avatar/${Date.now()}_${sanitized}`;
 
     const { data, error } = await this.supabase.storage
-      .from(SUPABASE_BUCKET)
+      .from('galaxy-notes-staging')
       .createSignedUploadUrl(path);
 
     if (error) {
@@ -204,9 +205,12 @@ export class UsersService {
       await this.deleteStorageFile(user.photo);
     }
 
+    // Store the path, not the full URL
+    const storagePath = this.toStoragePath(photoPath);
+
     const updated = await this.prisma.user.update({
       where: { id: userId },
-      data: { photo: photoPath },
+      data: { photo: storagePath },
       select: { photo: true },
     });
 
@@ -230,41 +234,32 @@ export class UsersService {
     });
   }
 
-  async resolvePhotoUrl(photo: string | null): Promise<string | null> {
+  /** Convert a public URL or path to a plain storage path. */
+  private toStoragePath(input: string): string {
+    if (input.startsWith('http')) {
+      const match = input.match(/\/galaxy-notes-staging\/([^?]+)/);
+      return match ? decodeURIComponent(match[1]) : input;
+    }
+    return input;
+  }
+
+  /** Resolve a stored photo value (path or legacy URL) to a signed URL. */
+  private async resolvePhotoUrl(photo: string | null): Promise<string | null> {
     if (!photo) return null;
 
-    // External OAuth photos (Google, GitHub, Facebook) — return as-is
-    if (photo.startsWith('http') && !photo.includes('supabase')) {
-      return photo;
-    }
-
-    // Old Supabase public URLs — extract storage path
-    let storagePath = photo;
-    if (photo.startsWith('http')) {
-      const match = photo.match(/\/galaxy-notes-staging\/([^?]+)/);
-      if (match) {
-        storagePath = decodeURIComponent(match[1]);
-      } else {
-        return photo;
-      }
-    }
+    const storagePath = this.toStoragePath(photo);
 
     const { data } = await this.supabase.storage
-      .from(SUPABASE_BUCKET)
+      .from('galaxy-notes-staging')
       .createSignedUrl(storagePath, 3600);
+
     return data?.signedUrl ?? null;
   }
 
-  private extractStoragePath(photo: string): string | null {
-    if (!photo.startsWith('http')) return photo;
-    const match = photo.match(/\/galaxy-notes-staging\/([^?]+)/);
-    return match ? decodeURIComponent(match[1]) : null;
-  }
-
-  private async deleteStorageFile(photo: string) {
-    const path = this.extractStoragePath(photo);
+  private async deleteStorageFile(stored: string) {
+    const path = this.toStoragePath(stored);
     if (!path) return;
 
-    await this.supabase.storage.from(SUPABASE_BUCKET).remove([path]);
+    await this.supabase.storage.from('galaxy-notes-staging').remove([path]);
   }
 }

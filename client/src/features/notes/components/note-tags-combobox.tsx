@@ -121,7 +121,7 @@ export function NoteTagsCombobox({
           <div className="max-h-52 overflow-y-auto">
             {/* Empty state - no tags exist at all */}
             {hasNoTags && !search.trim() && (
-              <div className="flex flex-col items-center gap-1 px-4 py-6 text-center">
+              <section className="flex flex-col items-center gap-1 px-4 py-6 text-center">
                 <Tag className="mb-1 h-8 w-8 text-amber-400/80" />
                 <p className="text-sm font-medium text-foreground">
                   No previous tags
@@ -129,7 +129,7 @@ export function NoteTagsCombobox({
                 <p className="text-xs text-muted-foreground">
                   Start typing to create your first tag
                 </p>
-              </div>
+              </section>
             )}
 
             {/* Tag options list */}

@@ -15,7 +15,7 @@ import {
 export function useProfile() {
   return useQuery({
     queryKey: ['profile'],
-    queryFn: fetchProfile,
+    queryFn: ({ signal }) => fetchProfile(signal),
   });
 }
 

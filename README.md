@@ -42,6 +42,8 @@ NestJS 11 backend REST API handling business logic, authentication, and database
 | Prisma | ORM & database access |
 | class-validator | Request validation |
 | Supabase JS | Supabase service integration |
+| @nestjs/event-emitter | Async event-driven notifications |
+| @nestjs/swagger | API docs (dev only, `/api/docs`) |
 
 ### Database
 
@@ -143,7 +145,7 @@ cd server
 pnpm start:dev
 ```
 
-The server runs on `http://localhost:8080` by default.
+The server runs on `http://localhost:8080` by default. Swagger API docs are available at `http://localhost:8080/api/docs` in development.
 
 ### 4. Start the client
 

@@ -202,8 +202,8 @@ Used on `POST /api/auth/refresh` instead of `AuthGuard('jwt')`:
 2. Looks up token in database (`prisma.refreshToken.findUnique`)
 3. Validates token is not revoked (`revokedAt` is null)
 4. Checks token has not expired (`expiresAt > now`)
-5. **Stolen token detection**: If a revoked token is reused, revoke ALL tokens for that user
-6. Attaches `{ token, userId, email }` to `req.refreshTokenData`
+5. **Stolen token detection with grace period**: If a revoked token is reused within 30 seconds (`ROTATION_GRACE_MS`), the guard treats it as a legitimate multi-tab race condition — it looks up the replacement token via `replacedByToken` and returns it with `isGracePeriodReuse: true`. Outside the grace period, ALL tokens for that user are revoked.
+6. Attaches `{ token, userId, email, isGracePeriodReuse }` to `req.refreshTokenData`
 
 The `x-refresh-token` header fallback exists for server-to-server calls (NextAuth JWT callback) where browser cookies are not available.
 
@@ -211,12 +211,15 @@ The `x-refresh-token` header fallback exists for server-to-server calls (NextAut
 
 ```
 1. RefreshTokenGuard validates the incoming token
-2. AuthService.refreshWithToken():
+2. If grace period reuse:
+   a. Controller issues new access token using replacement refresh token
+   b. Sets replacement token as httpOnly cookie (no rotation)
+3. Normal flow — AuthService.refreshWithToken():
    a. Revoke current token (set revokedAt)
    b. Create new refresh token (replacedByToken = old token)
    c. Sign new JWT access token (1h expiry)
    d. Set new refresh token as httpOnly cookie
-3. Return { accessToken, refreshToken } to client
+4. Return { accessToken, refreshToken } to client
 ```
 
 ### Refresh Token Cookie Settings

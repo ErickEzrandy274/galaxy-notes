@@ -14,6 +14,7 @@ export class PreferencesService {
   async getPreferences(userId: string) {
     const pref = await this.prisma.userPreference.findUnique({
       where: { userId },
+      select: { trashRetentionDays: true, autoDeleteBehavior: true },
     });
 
     if (!pref) {
@@ -34,8 +35,10 @@ export class PreferencesService {
       where: { userId },
       create: {
         userId,
-        trashRetentionDays: dto.trashRetentionDays ?? DEFAULTS.trashRetentionDays,
-        autoDeleteBehavior: dto.autoDeleteBehavior ?? DEFAULTS.autoDeleteBehavior,
+        trashRetentionDays:
+          dto.trashRetentionDays ?? DEFAULTS.trashRetentionDays,
+        autoDeleteBehavior:
+          dto.autoDeleteBehavior ?? DEFAULTS.autoDeleteBehavior,
       },
       update: {
         ...(dto.trashRetentionDays !== undefined && {

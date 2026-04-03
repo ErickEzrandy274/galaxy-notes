@@ -1,22 +1,13 @@
-'use client';
+import type { Metadata } from 'next';
+import { VersionPreviewClient } from './version-preview-client';
 
-import { useRouter } from 'next/navigation';
-import { use } from 'react';
-import { VersionPreviewPage } from '@/features/notes';
+export const metadata: Metadata = { title: 'Version Preview' };
 
-export default function ViewVersionPage({
+export default async function ViewVersionPage({
   params,
 }: {
   params: Promise<{ id: string; versionId: string }>;
 }) {
-  const { id, versionId } = use(params);
-  const router = useRouter();
-
-  return (
-    <VersionPreviewPage
-      noteId={id}
-      versionId={versionId}
-      onBackToCurrent={() => router.push(`/notes/${id}/view`)}
-    />
-  );
+  const { id, versionId } = await params;
+  return <VersionPreviewClient noteId={id} versionId={versionId} />;
 }

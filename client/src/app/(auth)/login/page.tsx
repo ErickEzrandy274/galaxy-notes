@@ -3,7 +3,7 @@ import { AuthBranding, LoginForm } from '@/features/auth';
 import type { AuthBrandingConfig } from '@/features/auth';
 
 export const metadata: Metadata = {
-  title: 'Sign In - Galaxy Notes',
+  title: 'Sign In',
   description: 'Sign in to your Galaxy Notes account',
 };
 

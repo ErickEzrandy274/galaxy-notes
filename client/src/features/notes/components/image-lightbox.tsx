@@ -20,7 +20,7 @@ export function ImageLightbox({ open, src, alt, onClose }: ImageLightboxProps) {
 		>
 			<div className="fixed inset-0 bg-black/70" aria-hidden="true" />
 
-			<div className="relative z-10">
+			<figure className="relative z-10">
 				<button
 					type="button"
 					onClick={onClose}
@@ -35,7 +35,7 @@ export function ImageLightbox({ open, src, alt, onClose }: ImageLightboxProps) {
 					alt={alt}
 					className="max-h-[60vh] max-w-[60vw] object-contain"
 				/>
-			</div>
+			</figure>
 		</div>
 	);
 }

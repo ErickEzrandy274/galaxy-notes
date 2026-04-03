@@ -10,7 +10,7 @@ interface SharedNotesTableProps {
 
 export function SharedNotesTable({ notes, columns }: SharedNotesTableProps) {
   return (
-    <div className="overflow-x-auto">
+    <section className="overflow-x-auto">
       <table className="w-full">
         <thead>
           <tr className="border-b border-border text-left">
@@ -28,17 +28,17 @@ export function SharedNotesTable({ notes, columns }: SharedNotesTableProps) {
               </th>
             )}
             {columns.tags && (
-              <th className="hidden px-4 py-3 text-sm font-medium text-muted-foreground md:table-cell">
+              <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
                 Tags
               </th>
             )}
             {columns.createdAt && (
-              <th className="hidden px-4 py-3 text-sm font-medium text-muted-foreground md:table-cell">
+              <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
                 Created At
               </th>
             )}
             {columns.sharedOn && (
-              <th className="hidden px-4 py-3 text-sm font-medium text-muted-foreground md:table-cell">
+              <th className="px-4 py-3 text-sm font-medium text-muted-foreground">
                 Shared On
               </th>
             )}
@@ -53,6 +53,6 @@ export function SharedNotesTable({ notes, columns }: SharedNotesTableProps) {
           ))}
         </tbody>
       </table>
-    </div>
+    </section>
   );
 }

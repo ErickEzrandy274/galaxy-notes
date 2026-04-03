@@ -48,7 +48,7 @@ export function LoginForm() {
 
         {/* Password */}
         <fieldset>
-          <span className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
             <label
               htmlFor="password"
               className="block text-sm font-medium text-zinc-300"
@@ -61,7 +61,7 @@ export function LoginForm() {
             >
               Forgot password?
             </Link>
-          </span>
+          </div>
           <PasswordInput
             id="password"
             placeholder="Enter your password"
@@ -81,11 +81,11 @@ export function LoginForm() {
       </form>
 
       {/* Divider */}
-      <span className="my-6 flex items-center gap-3" role="separator">
+      <div className="my-6 flex items-center gap-3" role="separator">
         <hr className="flex-1 border-zinc-700" />
         <span className="text-sm text-zinc-500">OR</span>
         <hr className="flex-1 border-zinc-700" />
-      </span>
+      </div>
 
       <OAuthButtons />
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { Spinner } from '@/components/primitives';
+import { Loader2 } from 'lucide-react';
 import { NotificationRow } from './notification-row';
 import type { NotificationItem } from '../types';
 
@@ -83,9 +83,13 @@ export function NotificationList({
           <h3 className="sticky top-0 z-10 bg-background/80 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur-sm">
             {label}
           </h3>
-          {items.map((notif) => (
-            <NotificationRow key={notif.id} notification={notif} />
-          ))}
+          <ul>
+            {items.map((notif) => (
+              <li key={notif.id}>
+                <NotificationRow notification={notif} />
+              </li>
+            ))}
+          </ul>
         </section>
       ))}
 
@@ -94,7 +98,7 @@ export function NotificationList({
 
       {isFetchingNextPage && (
         <output className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
-          <Spinner size="sm" />
+          <Loader2 size={16} className="animate-spin" />
           Loading more...
         </output>
       )}

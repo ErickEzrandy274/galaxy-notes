@@ -1,10 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Trash2 } from 'lucide-react';
-import { PageHeader } from '@/components/shared/page-header';
-import { DataStateHandler } from '@/components/shared/data-state-handler';
-import { Pagination } from '@/components/shared/pagination';
+import { Loader2, Trash2 } from 'lucide-react';
+import { NotesPagination } from '@/features/notes/components/notes-pagination';
 import { useTrash } from '../hooks/use-trash';
 import { useTrashFilters } from '../hooks/use-trash-filters';
 import { useTrashColumnVisibility } from '../hooks/use-trash-column-visibility';
@@ -42,13 +40,16 @@ export function TrashPage() {
   const isFilteredEmpty = data?.notes?.length === 0 && hasFilters;
 
   return (
-    <section className="flex h-full flex-col p-4 md:p-6">
-      <PageHeader
-        icon={Trash2}
-        iconColorClass="bg-red-500/10 text-red-500"
-        title="Trash"
-        action={<TrashSettingsPopover />}
-      />
+    <section className="flex h-full flex-col p-6">
+      <header className="mb-6 flex items-center justify-between">
+        <hgroup className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10">
+            <Trash2 className="h-5 w-5 text-red-500" />
+          </span>
+          <h1 className="text-xl font-bold text-foreground">Trash</h1>
+        </hgroup>
+        <TrashSettingsPopover />
+      </header>
 
       {!isEmpty && !isLoading && (
         <TrashWarningBanner
@@ -58,41 +59,48 @@ export function TrashPage() {
         />
       )}
 
-      <search className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:gap-4">
-        <span className="flex-1">
+      <search className="mb-4 flex items-end gap-4">
+        <div className="flex-1">
           <TrashSearch
             onSearchChange={handleSearchChange}
             onTagsChange={handleTagsChange}
           />
-        </span>
-        <span className="hidden md:block">
-          <TrashColumnsDropdown columns={columns} onToggle={toggleColumn} />
-        </span>
+        </div>
+        <TrashColumnsDropdown columns={columns} onToggle={toggleColumn} />
       </search>
 
-      <DataStateHandler
-        isLoading={isLoading}
-        isError={isError || !data}
-        isEmpty={isEmpty}
-        isFilteredEmpty={isFilteredEmpty}
-        entityName="trash"
-        emptyState={<TrashEmptyState retentionDays={retentionDays} />}
-      >
-        <section className="flex-1 overflow-auto">
-          <TrashTable
-            notes={data?.notes ?? []}
-            columns={columns}
-            retentionDays={retentionDays}
+      {isLoading ? (
+        <output className="flex flex-1 items-center justify-center" aria-busy="true">
+          <Loader2 size={32} className="animate-spin text-muted-foreground" />
+        </output>
+      ) : isError || !data ? (
+        <p className="flex flex-1 items-center justify-center text-lg text-muted-foreground">
+          Failed to load trash. Please try again later.
+        </p>
+      ) : isEmpty ? (
+        <TrashEmptyState retentionDays={retentionDays} />
+      ) : isFilteredEmpty ? (
+        <p className="flex flex-1 items-center justify-center text-lg text-muted-foreground">
+          No trashed notes match your filters.
+        </p>
+      ) : (
+        <>
+          <section className="flex-1 overflow-auto">
+            <TrashTable
+              notes={data!.notes}
+              columns={columns}
+              retentionDays={retentionDays}
+            />
+          </section>
+          <NotesPagination
+            page={data!.page}
+            limit={data!.limit}
+            total={data!.total}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
           />
-        </section>
-        <Pagination
-          page={data?.page ?? 1}
-          limit={data?.limit ?? 10}
-          total={data?.total ?? 0}
-          onPageChange={setPage}
-          onLimitChange={setLimit}
-        />
-      </DataStateHandler>
+        </>
+      )}
 
       <TrashConfirmDialog
         open={showEmptyDialog}

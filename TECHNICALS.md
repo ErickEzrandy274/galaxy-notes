@@ -324,13 +324,39 @@ User                           Client                      NestJS Backend       
 
 ## Error Handling & Observability
 
-Request ID tracing flows end-to-end:
+### Request-ID Tracing (AsyncLocalStorage)
 
-1. `RequestIdMiddleware` assigns UUID → sets `X-Request-ID` response header
-2. `LoggingInterceptor` logs: `[requestId] METHOD /url userId → status (durationMs)`
-3. CORS exposes `X-Request-ID` to the browser
-4. Axios response interceptor attaches `error.requestId` to failed requests
-5. Error toasts display: `"Something went wrong (Ref: abc-123)"`
+Request ID tracing flows end-to-end via `AsyncLocalStorage`, making the request ID available in any async context without manual passing:
+
+1. `RequestIdMiddleware` assigns UUID → sets `X-Request-ID` response header → wraps request in `requestContext.run({ requestId })`
+2. `AppLogger` (custom `ConsoleLogger`) reads request ID from `AsyncLocalStorage` and auto-prefixes all logs: `[requestId] message`
+3. `LoggingInterceptor` uses `AppLogger` to log: `[requestId] METHOD /url userId → status (durationMs)`
+4. All services using `AppLogger` automatically include the request ID — no manual passing needed
+5. CORS exposes `X-Request-ID` to the browser
+6. Axios response interceptor attaches `error.requestId` to failed requests
+7. Error toasts display: `"Something went wrong (Ref: abc-123)"`
+
+**Key files:**
+- `server/src/common/context/request-context.ts` — `AsyncLocalStorage<{ requestId }>` singleton
+- `server/src/common/logger/app.logger.ts` — `AppLogger` extends `ConsoleLogger`, reads from `AsyncLocalStorage`
+- `server/src/common/middleware/request-id.middleware.ts` — generates request ID and enters `AsyncLocalStorage` context
+
+### Swagger / API Documentation
+
+Swagger UI is available at `/api/docs` in development only (`NODE_ENV !== 'production'`). Configured in `main.ts` with Bearer auth support. Uses the version from `package.json`.
+
+### Login Rate Limiting
+
+`LoginThrottleGuard` on `POST /api/auth/login` enforces escalating cooldowns per email after failed attempts:
+
+| Batch | After N failures | Cooldown |
+|-------|-----------------|----------|
+| 1st | 5 | 15s |
+| 2nd | 5 more | 30s |
+| 3rd | 5 more | 60s |
+| 4th+ | 5 more | 2m (cap) |
+
+Successful login clears all state. Tracked in-memory (singleton guard).
 
 ## Deployment
 

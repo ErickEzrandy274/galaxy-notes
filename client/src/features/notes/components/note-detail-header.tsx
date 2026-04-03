@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Pencil, Share2, History, Archive, RotateCcw, Trash2, MoreVertical } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, Pencil, Share2, History, Archive, RotateCcw, Trash2, Loader2, MoreHorizontal } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { DetailPageHeader, Button } from '@/components/primitives';
 import { updateNote, deleteNote } from '../api/notes-api';
 import { useArchiveNote } from '../hooks/use-archive-mutations';
 import { RevertAsDraftDialog } from './revert-as-draft-dialog';
-import { ShareModal } from './share-modal';
+import dynamic from 'next/dynamic';
+const ShareModal = dynamic(() => import('./share-modal').then(m => m.ShareModal));
 import { TrashConfirmDialog } from '@/features/trash/components/trash-confirm-dialog';
 import { ArchiveConfirmDialog } from './archive-confirm-dialog';
 
@@ -70,113 +71,91 @@ export function NoteDetailHeader({ noteId, title, status, version, isOwner, shar
   };
 
   return (
-    <>
-      <DetailPageHeader
-        backHref="/notes"
-        backLabel="My Notes"
-        title={title || 'Untitled'}
-        actions={
-          <>
-            {/* Desktop: all buttons visible */}
-            <span className="hidden items-center gap-2 md:flex">
-              <Button variant="primary" size="sm" onClick={() => router.push(`/notes/${noteId}`)}>
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </Button>
-              {isOwner && (
-                <Button variant="outline-muted" size="sm" onClick={() => setShowShareModal(true)}>
-                  <Share2 className="h-3.5 w-3.5" />
-                  Share
-                </Button>
-              )}
-              <Button variant="outline-muted" size="sm" onClick={onOpenHistory}>
-                <History className="h-3.5 w-3.5" />
-                History
-              </Button>
-              {isOwner && status !== 'draft' && (
-                <Button variant="outline-muted" size="sm" onClick={() => setShowArchiveDialog(true)}>
-                  <Archive className="h-3.5 w-3.5" />
-                  Archive
-                </Button>
-              )}
-              <Button variant="outline-muted" size="sm" loading={isReverting} onClick={handleRevert}>
-                {!isReverting && <RotateCcw className="h-3.5 w-3.5" />}
-                Revert to Draft
-              </Button>
-              <Button variant="destructive-outline" size="sm" onClick={() => setShowTrashDialog(true)}>
-                <Trash2 className="h-3.5 w-3.5" />
-                Move to Trash
-              </Button>
-            </span>
+    <header className="flex items-center justify-between border-b border-border px-6 py-3">
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm">
+        <Link
+          href="/notes"
+          className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          My Notes
+        </Link>
+        <span className="text-muted-foreground">/</span>
+        <span className="font-medium text-foreground">
+          {title || 'Untitled'}
+        </span>
+      </nav>
 
-            {/* Mobile: Edit + three-dot menu */}
-            <span className="flex w-full items-center justify-between md:hidden">
-              <Button variant="primary" size="sm" onClick={() => router.push(`/notes/${noteId}`)}>
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </Button>
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild>
-                  <button className="flex cursor-pointer items-center rounded-lg border border-border p-2 text-muted-foreground hover:bg-muted" aria-label="More actions">
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Portal>
-                  <DropdownMenu.Content
-                    align="end"
-                    sideOffset={4}
-                    className="z-50 min-w-48 overflow-hidden rounded-xl border border-border bg-card shadow-lg"
-                  >
-                    <menu className="p-1">
-                      {isOwner && (
-                        <DropdownMenu.Item
-                          onSelect={() => setShowShareModal(true)}
-                          className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground outline-none hover:bg-muted"
-                        >
-                          <Share2 className="h-4 w-4" />
-                          Share
-                        </DropdownMenu.Item>
-                      )}
-                      <DropdownMenu.Item
-                        onSelect={onOpenHistory}
-                        className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground outline-none hover:bg-muted"
-                      >
-                        <History className="h-4 w-4" />
-                        History
-                      </DropdownMenu.Item>
-                      {isOwner && status !== 'draft' && (
-                        <DropdownMenu.Item
-                          onSelect={() => setShowArchiveDialog(true)}
-                          className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground outline-none hover:bg-muted"
-                        >
-                          <Archive className="h-4 w-4" />
-                          Archive
-                        </DropdownMenu.Item>
-                      )}
-                      <DropdownMenu.Item
-                        onSelect={handleRevert}
-                        disabled={isReverting}
-                        className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-foreground outline-none hover:bg-muted disabled:cursor-default disabled:opacity-50"
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                        Revert to Draft
-                      </DropdownMenu.Item>
-                      <DropdownMenu.Separator className="mx-1 my-1 h-px bg-border" />
-                      <DropdownMenu.Item
-                        onSelect={() => setShowTrashDialog(true)}
-                        className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-destructive outline-none hover:bg-muted"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Move to Trash
-                      </DropdownMenu.Item>
-                    </menu>
-                  </DropdownMenu.Content>
-                </DropdownMenu.Portal>
-              </DropdownMenu.Root>
-            </span>
-          </>
-        }
-      />
+      <div className="flex items-center gap-2" role="toolbar" aria-label="Note actions">
+        <button
+          type="button"
+          onClick={() => router.push(`/notes/${noteId}`)}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 cursor-pointer"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+          Edit
+        </button>
+
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+              aria-label="More actions"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              align="end"
+              className="z-50 min-w-[180px] rounded-lg border border-border bg-card p-1 shadow-lg"
+            >
+              {isOwner && (
+                <DropdownMenu.Item
+                  onClick={() => setShowShareModal(true)}
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted"
+                >
+                  <Share2 size={14} />
+                  Share
+                </DropdownMenu.Item>
+              )}
+              <DropdownMenu.Item
+                onClick={onOpenHistory}
+                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted"
+              >
+                <History size={14} />
+                History
+              </DropdownMenu.Item>
+              {isOwner && status !== 'draft' && (
+                <DropdownMenu.Item
+                  onClick={() => setShowArchiveDialog(true)}
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted"
+                >
+                  <Archive size={14} />
+                  Archive
+                </DropdownMenu.Item>
+              )}
+              <DropdownMenu.Item
+                onClick={handleRevert}
+                disabled={isReverting}
+                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted disabled:opacity-40"
+              >
+                {isReverting ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                Revert to Draft
+              </DropdownMenu.Item>
+              <DropdownMenu.Separator className="my-1 h-px bg-border" />
+              <DropdownMenu.Item
+                onClick={() => setShowTrashDialog(true)}
+                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive outline-none hover:bg-destructive/10"
+              >
+                <Trash2 size={14} />
+                Move to Trash
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
+      </div>
       <RevertAsDraftDialog
         open={showRevertDialog}
         onConfirm={confirmRevert}
@@ -218,6 +197,6 @@ export function NoteDetailHeader({ noteId, title, status, version, isOwner, shar
         onCancel={() => setShowArchiveDialog(false)}
         isLoading={archiveMutation.isPending}
       />
-    </>
+    </header>
   );
 }

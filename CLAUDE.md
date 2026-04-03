@@ -67,14 +67,16 @@ client/src/
 │   ├── trash/          # Trash management (list, detail, restore, permanent delete)
 │   └── profile/        # Profile settings, avatar upload, password change
 ├── components/         # Shared UI components
-├── lib/                # axios (with JWT interceptor), auth (NextAuth config), prisma, query-client
+├── stores/             # Zustand stores (sidebar-store.ts, column-visibility-store.ts)
+├── lib/                # axios (with JWT interceptor + AbortController support), auth (NextAuth config), prisma, query-client
 ├── schemas/            # Zod validation schemas
 └── types/              # TypeScript types (next-auth augmentation)
 ```
 
 **Key patterns**:
 - Features barrel-exported via `index.ts`
-- Data fetching via TanStack React Query v5 (`useQuery`/`useMutation`)
+- Data fetching via TanStack React Query v5 (`useQuery`/`useMutation`) with AbortController signal forwarding for automatic request cancellation
+- State management via Zustand (`stores/`) with `persist` middleware for UI preferences (sidebar collapsed, column visibility)
 - Forms via React Hook Form + Zod resolver
 - Path alias: `@/*` maps to `./src/*`
 
@@ -95,12 +97,16 @@ server/src/
 │   └── templates/      # Email template functions (password-reset, share-invite)
 ├── prisma/             # Global PrismaService module
 ├── health/             # Health check endpoint
-└── common/             # Middleware (RequestId, CSRF), interceptors (Logging)
+└── common/             # Middleware (RequestId, CSRF), interceptors (Logging), logger (AppLogger), context (AsyncLocalStorage)
 ```
 
 **Key patterns**:
 - Each module: controller → service → DTOs
-- Global middleware: `RequestIdMiddleware` (UUID per request), `CsrfMiddleware` (origin validation), `LoggingInterceptor` (request/response logging)
+- Global middleware: `RequestIdMiddleware` (UUID per request + AsyncLocalStorage context), `CsrfMiddleware` (origin validation), `LoggingInterceptor` (request/response logging via AppLogger)
+- Custom logger: `AppLogger` extends `ConsoleLogger`, auto-prefixes all logs with `[requestId]` via `AsyncLocalStorage` — works across async boundaries without manual passing
+- Notifications use `@nestjs/event-emitter` (fire-and-forget): services emit `notification.send` events, `NotificationListener` handles DB write + SSE push asynchronously
+- Login rate limiting: `LoginThrottleGuard` with escalating cooldowns (15s → 30s → 60s → 2m) after every 5 failed attempts
+- Swagger docs available at `/api/docs` (dev environment only, `NODE_ENV !== 'production'`)
 - Validation: `ValidationPipe` with whitelist & transform enabled
 - API prefix: `/api/` (set in `main.ts`)
 
@@ -108,7 +114,7 @@ server/src/
 
 1. **OAuth** (Google/GitHub/Facebook): NextAuth handles browser auth → `linkAccount` callback sets `userType` → JWT callback calls `POST /api/auth/oauth-login` with `X-Internal-Secret` header → backend issues JWT
 2. **Credentials**: `POST /api/auth/login` → bcrypt compare → JWT issued
-3. **Token lifecycle**: 1-hour JWT, httpOnly cookie refresh tokens with rotation and stolen token detection. Proactive refresh when within 10 min of expiry via axios interceptor + periodic background check (`useTokenRefresh` hook with 5-min interval), 401 retry with refreshed token
+3. **Token lifecycle**: 1-hour JWT, httpOnly cookie refresh tokens with rotation and stolen token detection (30s grace period for multi-tab). Proactive refresh when within 10 min of expiry via axios interceptor + periodic background check (`useTokenRefresh` hook with 5-min interval), 401 retry with refreshed token. Session hydration capped at 3 retry attempts. Absolute max session lifetime: 72 hours (via `loginAt` in NextAuth JWT)
 4. **Password reset**: 32-byte random token, 15-min expiry, sent via Nodemailer (Gmail SMTP)
 
 ### File Uploads (Signed URL Pattern)
@@ -121,6 +127,8 @@ Client requests signed URL from backend → backend generates Supabase Storage s
 ### Note Sharing
 
 Notes can be shared with other users (READ or WRITE permission). The share lifecycle generates notifications:
+All notifications below are emitted as fire-and-forget events via `EventEmitter2` and processed asynchronously by `NotificationListener`. They never block the HTTP response.
+
 - **Share:** Owner shares → recipient gets `share` notification (debounced 15 min, rate-limited 4/hr)
 - **Permission change:** Owner updates permission → recipient gets `permission_change` notification
 - **Leave:** Recipient leaves → owner gets `leave` notification
@@ -179,22 +187,3 @@ Detailed feature docs with component trees, API specs, user flows, and design sp
 **Database** (`.env`): `DATABASE_URL`, `DIRECT_URL`.
 
 Template files: `.env.example` in each workspace. Actual values: `.env.local` (gitignored).
-
-## Deployment
-
-| Service | Platform | URL |
-|---------|----------|-----|
-| Frontend | Vercel | `https://galaxy-notes-v2.vercel.app` |
-| Backend | Back4app Containers | `https://galaxynotesapi-c4eaia6u.b4a.run` |
-| Database | Supabase PostgreSQL | `ap-southeast-1` (Singapore) |
-
-- **Frontend (Vercel):** Auto-deploys on push to `main`. Root directory: `client/`. Build command: `prisma generate && next build`. Framework: Next.js (auto-detected). `NEXT_PUBLIC_*` vars must be set in Vercel dashboard (build-time).
-- **Backend (Back4app):** Docker-based deployment from `server/` directory. Uses multi-stage Dockerfile with `node-linker=hoisted` for pnpm compatibility. Port: `8080`. Health check: `GET /api/ping`. Manual redeploy via dashboard Action → "Deploy the latest commit".
-- **Database (Supabase):** Connection pooling via PgBouncer (`DATABASE_URL`). Direct connection for migrations (`DIRECT_URL`).
-- **CI/CD:** GitHub Actions workflow at `.github/workflows/deploy-production-manual.yml` for manual backend redeploy.
-- **Docker:** `docker-compose.yml` for local development. Both `client/` and `server/` have Dockerfiles and `.dockerignore` files.
-
-## Reference Documents
-
-- **PRD:** [Galaxy Notes PRD v2](https://docs.google.com/document/d/1OZDMLZK_VGEyjleiLLGCh3PEed3AAmufZCp72eeQZ4Q)
-- **Figma:** [Note Management Design](https://www.figma.com/design/sy3qiDaLaCL4jDtkVRnWze/Note-Management)

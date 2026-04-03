@@ -84,11 +84,11 @@ export function VersionDiffView({
 
   if (!hasDifferences) {
     return (
-      <div className="rounded-lg border border-border bg-muted/30 px-4 py-8 text-center">
+      <section className="rounded-lg border border-border bg-muted/30 px-4 py-8 text-center">
         <p className="text-md font-semibold text-muted-foreground">
           No differences between this version and the current note
         </p>
-      </div>
+      </section>
     );
   }
 
@@ -98,11 +98,11 @@ export function VersionDiffView({
   const unchangedTags = oldTags.filter((t) => newTags.includes(t));
 
   return (
-    <div className="space-y-4">
+    <section className="space-y-4">
       <h3 className="text-sm font-semibold text-foreground">Changes</h3>
 
       {titleDiff && (
-        <div className="rounded-lg border border-border p-4">
+        <section className="rounded-lg border border-border p-4">
           <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
             Title
           </p>
@@ -131,11 +131,11 @@ export function VersionDiffView({
               return <span key={i}>{part.value}</span>;
             })}
           </p>
-        </div>
+        </section>
       )}
 
       {contentDiff && (
-        <div className="rounded-lg border border-border p-4">
+        <section className="rounded-lg border border-border p-4">
           <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">
             Content
           </p>
@@ -164,11 +164,11 @@ export function VersionDiffView({
               return <span key={i}>{part.value}</span>;
             })}
           </div>
-        </div>
+        </section>
       )}
 
       {documentChanged && (
-        <div className="rounded-lg border border-border p-4">
+        <section className="rounded-lg border border-border p-4">
           <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase text-muted-foreground">
             <Paperclip className="h-3.5 w-3.5" />
             Attachment
@@ -187,11 +187,11 @@ export function VersionDiffView({
               </ins>
             )}
           </div>
-        </div>
+        </section>
       )}
 
       {videoChanged && (
-        <div className="rounded-lg border border-border p-4">
+        <section className="rounded-lg border border-border p-4">
           <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase text-muted-foreground">
             <Video className="h-3.5 w-3.5" />
             Video URL
@@ -208,11 +208,11 @@ export function VersionDiffView({
               </ins>
             )}
           </div>
-        </div>
+        </section>
       )}
 
       {tagsChanged && (
-        <div className="rounded-lg border border-border p-4">
+        <section className="rounded-lg border border-border p-4">
           <p className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase text-muted-foreground">
             <Tag className="h-3.5 w-3.5" />
             Tags
@@ -243,8 +243,8 @@ export function VersionDiffView({
               </span>
             ))}
           </div>
-        </div>
+        </section>
       )}
-    </div>
+    </section>
   );
 }

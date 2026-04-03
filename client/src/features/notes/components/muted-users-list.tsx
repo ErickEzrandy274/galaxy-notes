@@ -1,7 +1,6 @@
 'use client';
 
-import { BellOff, Volume2 } from 'lucide-react';
-import { Spinner, Button } from '@/components/primitives';
+import { BellOff, Loader2, Volume2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useMutedUsers, useUnmuteUser } from '../hooks/use-notifications';
 
@@ -29,7 +28,7 @@ export function MutedUsersList() {
         className="flex flex-1 items-center justify-center"
         aria-busy="true"
       >
-        <Spinner size="xl" />
+        <Loader2 size={32} className="animate-spin text-muted-foreground" />
       </output>
     );
   }
@@ -78,7 +77,7 @@ export function MutedUsersList() {
             )}
 
             {/* Info */}
-            <span className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-foreground">
                 {displayName}
               </p>
@@ -89,12 +88,16 @@ export function MutedUsersList() {
                 <BellOff size={12} />
                 {formatMuteExpiry(mute.expiresAt)}
               </p>
-            </span>
+            </div>
 
             {/* Unmute button */}
-            <Button variant="outline" size="sm" onClick={() => handleUnmute(user.id, displayName)} disabled={unmuteMutation.isPending}>
+            <button
+              onClick={() => handleUnmute(user.id, displayName)}
+              disabled={unmuteMutation.isPending}
+              className="cursor-pointer rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+            >
               Unmute
-            </Button>
+            </button>
           </li>
         );
       })}

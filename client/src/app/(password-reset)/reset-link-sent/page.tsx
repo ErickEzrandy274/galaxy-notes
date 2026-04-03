@@ -47,7 +47,7 @@ function ResetLinkSentContent() {
           <>
             We&apos;ve sent a password reset link to
             <br />
-            <span className="font-semibold text-white">{email}</span>
+            <strong className="font-semibold text-white">{email}</strong>
           </>
         }
       />

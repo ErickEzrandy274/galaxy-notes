@@ -9,7 +9,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Galaxy Notes',
+  title: {
+    default: 'Galaxy Notes',
+    template: '%s - Galaxy Notes',
+  },
   description: 'Capture, organize, and share your ideas with ease.',
 };
 

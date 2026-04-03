@@ -6,15 +6,14 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
+import { LoginThrottleGuard } from './guards/login-throttle.guard';
 import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
-import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     UsersModule,
     MailModule,
-    NotificationsModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -26,7 +25,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RefreshTokenGuard],
+  providers: [AuthService, JwtStrategy, RefreshTokenGuard, LoginThrottleGuard],
   exports: [AuthService],
 })
 export class AuthModule {}

@@ -82,6 +82,11 @@ Certain notification types render as non-clickable rows with reduced opacity (`c
 - `access_declined` — requester informed of decline
 - Any notification where `isNoteAvailable === false`
 
+## Loading States
+
+- **NotificationFilterTabs** — shows `animate-pulse` rounded pill skeletons matching chip widths while data loads
+- **Mark all Read** button includes a `CheckCheck` icon prefix
+
 ## Filter Tabs
 
 | Filter | Behavior |

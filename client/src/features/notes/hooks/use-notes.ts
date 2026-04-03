@@ -5,6 +5,6 @@ import type { NotesFilters } from '../types';
 export function useNotes(filters: NotesFilters) {
   return useQuery({
     queryKey: ['notes', filters],
-    queryFn: () => fetchNotes(filters),
+    queryFn: ({ signal }) => fetchNotes(filters, signal),
   });
 }

@@ -14,7 +14,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
         <span className="block text-sm font-medium text-zinc-300">
           {label}
         </span>
-        <span className="relative block">
+        <div className="relative block">
           {LeftIcon && (
             <LeftIcon
               size={16}
@@ -27,7 +27,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
             className={`mt-1.5 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-white placeholder-zinc-500 focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500 ${LeftIcon ? 'pl-10' : ''} ${props.readOnly ? 'cursor-default opacity-70' : ''} ${className ?? ''}`}
             {...props}
           />
-        </span>
+        </div>
         {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
       </label>
     );

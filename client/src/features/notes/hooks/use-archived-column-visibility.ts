@@ -1,6 +1,6 @@
 'use client';
 
-import { useColumnVisibility } from '@/hooks/use-column-visibility';
+import { useState, useCallback } from 'react';
 import type { ArchivedNoteColumnKey } from '../types';
 
 const DEFAULT_COLUMNS: Record<ArchivedNoteColumnKey, boolean> = {
@@ -10,9 +10,12 @@ const DEFAULT_COLUMNS: Record<ArchivedNoteColumnKey, boolean> = {
 };
 
 export function useArchivedColumnVisibility() {
-  const { columns, toggleColumn } = useColumnVisibility<ArchivedNoteColumnKey>({
-    defaults: DEFAULT_COLUMNS,
-  });
+  const [columns, setColumns] =
+    useState<Record<ArchivedNoteColumnKey, boolean>>(DEFAULT_COLUMNS);
 
-  return { columns, toggle: toggleColumn };
+  const toggle = useCallback((key: ArchivedNoteColumnKey) => {
+    setColumns((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
+
+  return { columns, toggle };
 }

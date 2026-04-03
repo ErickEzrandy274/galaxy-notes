@@ -1,7 +1,6 @@
 'use client';
 
 import { Archive, RotateCcw } from 'lucide-react';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 
 type Variant = 'archive' | 'unarchive';
 
@@ -52,6 +51,8 @@ export function ArchiveConfirmDialog({
   onCancel,
   isLoading,
 }: ArchiveConfirmDialogProps) {
+  if (!open) return null;
+
   const { title, description, confirmLabel, loadingLabel, icon } =
     config[variant];
 
@@ -63,26 +64,54 @@ export function ArchiveConfirmDialog({
     );
 
   return (
-    <ConfirmDialog
-      open={open}
-      icon={iconElement}
-      iconBgClass="bg-purple-500/10"
-      title={title}
-      description={description(noteTitle)}
-      confirmLabel={confirmLabel}
-      loadingLabel={loadingLabel}
-      confirmClassName="bg-purple-600 text-white hover:bg-purple-700"
-      isLoading={isLoading}
-      onConfirm={onConfirm}
-      onCancel={onCancel}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
     >
-      {variant === 'archive' && !!shareCount && shareCount > 0 && (
-        <p className="mt-2 text-left text-sm font-medium text-amber-500">
-          This note is shared with {shareCount}{' '}
-          {shareCount === 1 ? 'collaborator' : 'collaborators'}. They will lose
-          access once it is archived.
-        </p>
-      )}
-    </ConfirmDialog>
+      <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
+      <article className="relative z-10 w-100 rounded-lg border border-border bg-card p-6 shadow-xl">
+        <div className="flex flex-col items-start gap-3">
+          <header className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-500/10">
+              {iconElement}
+            </span>
+            <h2 className="text-left text-lg font-semibold text-foreground">
+              {title}
+            </h2>
+          </header>
+          <div>
+            <p className="mt-1 text-left text-sm text-muted-foreground">
+              {description(noteTitle)}
+            </p>
+            {variant === 'archive' && !!shareCount && shareCount > 0 && (
+              <p className="mt-2 text-left text-sm font-medium text-amber-500">
+                This note is shared with {shareCount}{' '}
+                {shareCount === 1 ? 'collaborator' : 'collaborators'}. They will
+                lose access once it is archived.
+              </p>
+            )}
+          </div>
+        </div>
+        <footer className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isLoading}
+            className="cursor-pointer rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isLoading}
+            className="cursor-pointer rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
+          >
+            {isLoading ? loadingLabel : confirmLabel}
+          </button>
+        </footer>
+      </article>
+    </div>
   );
 }
