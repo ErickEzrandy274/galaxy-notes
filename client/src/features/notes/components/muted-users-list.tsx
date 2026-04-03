@@ -77,7 +77,7 @@ export function MutedUsersList() {
             )}
 
             {/* Info */}
-            <span className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-foreground">
                 {displayName}
               </p>
@@ -88,7 +88,7 @@ export function MutedUsersList() {
                 <BellOff size={12} />
                 {formatMuteExpiry(mute.expiresAt)}
               </p>
-            </span>
+            </div>
 
             {/* Unmute button */}
             <button

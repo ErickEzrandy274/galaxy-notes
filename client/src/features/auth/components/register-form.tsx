@@ -165,11 +165,11 @@ export function RegisterForm({ defaultEmail, inviteToken }: RegisterFormProps) {
       </form>
 
       {/* Divider */}
-      <span className="my-6 flex items-center gap-3" role="separator">
+      <div className="my-6 flex items-center gap-3" role="separator">
         <hr className="flex-1 border-zinc-700" />
         <span className="text-sm text-zinc-500">OR</span>
         <hr className="flex-1 border-zinc-700" />
-      </span>
+      </div>
 
       <OAuthButtons />
 

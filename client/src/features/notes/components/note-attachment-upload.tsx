@@ -95,13 +95,13 @@ export function NoteAttachmentUpload({
           </output>
         ) : (
           <>
-            <section className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
               {isDragOver ? (
                 <FileText className="h-5 w-5 text-primary" />
               ) : (
                 <Paperclip className="h-5 w-5 text-muted-foreground" />
               )}
-            </section>
+            </span>
             <p className="text-sm text-muted-foreground">
               {document ? 'Replace attachment' : 'Drop files or click to upload'}
             </p>
@@ -161,9 +161,9 @@ export function NoteAttachmentUpload({
           <article className="relative z-10 w-full max-w-[420px] rounded-xl border border-border bg-card p-6 shadow-xl">
             <header className="flex items-center gap-3">
               <AlertTriangle className="h-6 w-6 shrink-0 text-foreground" />
-              <h4 className="text-lg font-semibold text-foreground">
+              <h2 className="text-lg font-semibold text-foreground">
                 Remove attachment?
-              </h4>
+              </h2>
             </header>
             <p className="mt-3 text-sm text-muted-foreground">
               This will remove the file from this note.

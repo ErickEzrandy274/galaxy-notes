@@ -15,12 +15,12 @@ const variantStyles: Record<AuthIconVariant, string> = {
 
 export function AuthIcon({ icon: Icon, variant }: AuthIconProps) {
   return (
-    <figure className="flex justify-center" aria-hidden="true">
+    <div className="flex justify-center" aria-hidden="true">
       <span
         className={`flex h-14 w-14 items-center justify-center rounded-full ${variantStyles[variant]}`}
       >
         <Icon size={24} />
       </span>
-    </figure>
+    </div>
   );
 }

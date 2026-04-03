@@ -6,9 +6,10 @@ import { useEffect, useState } from 'react';
 interface NotesSearchProps {
   onSearchChange: (search: string) => void;
   onTagsChange: (tags: string) => void;
+  isLoading?: boolean;
 }
 
-export function NotesSearch({ onSearchChange, onTagsChange }: NotesSearchProps) {
+export function NotesSearch({ onSearchChange, onTagsChange, isLoading }: NotesSearchProps) {
   const [searchValue, setSearchValue] = useState('');
   const [tagsValue, setTagsValue] = useState('');
 
@@ -21,6 +22,21 @@ export function NotesSearch({ onSearchChange, onTagsChange }: NotesSearchProps) 
     const timer = setTimeout(() => onTagsChange(tagsValue), 300);
     return () => clearTimeout(timer);
   }, [tagsValue, onTagsChange]);
+
+  if (isLoading) {
+    return (
+      <fieldset className="flex items-end gap-3">
+        <div className="flex-1">
+          <span className="mb-1 block h-4 w-10 animate-pulse rounded bg-muted" />
+          <span className="mt-1 block h-[38px] animate-pulse rounded-lg bg-muted" />
+        </div>
+        <div className="flex-1">
+          <span className="mb-1 block h-4 w-10 animate-pulse rounded bg-muted" />
+          <span className="mt-1 block h-[38px] animate-pulse rounded-lg bg-muted" />
+        </div>
+      </fieldset>
+    );
+  }
 
   return (
     <fieldset className="flex items-end gap-3">

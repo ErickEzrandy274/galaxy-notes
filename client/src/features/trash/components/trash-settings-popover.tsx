@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Settings } from 'lucide-react';
 import * as Popover from '@radix-ui/react-popover';
 import { usePreferences, useUpdatePreferences } from '../hooks/use-preferences';
@@ -21,12 +21,13 @@ export function TrashSettingsPopover() {
   const [behavior, setBehavior] = useState<AutoDeleteBehavior>('delete_versions_only');
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    if (prefs) {
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen && prefs) {
       setRetentionDays(prefs.trashRetentionDays);
       setBehavior(prefs.autoDeleteBehavior);
     }
-  }, [prefs]);
+    setOpen(isOpen);
+  };
 
   const handleSave = () => {
     updateMutation.mutate(
@@ -36,7 +37,7 @@ export function TrashSettingsPopover() {
   };
 
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
+    <Popover.Root open={open} onOpenChange={handleOpenChange}>
       <Popover.Trigger asChild>
         <button
           className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:text-foreground"

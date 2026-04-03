@@ -9,10 +9,10 @@ const statusStyles: Record<NoteStatus, string> = {
 
 export function StatusBadge({ status }: { status: NoteStatus }) {
   return (
-    <span
+    <mark
       className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusStyles[status]}`}
     >
       {status}
-    </span>
+    </mark>
   );
 }

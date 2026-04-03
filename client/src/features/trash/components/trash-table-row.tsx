@@ -15,12 +15,12 @@ export function TrashTableRow({ note, columns, retentionDays }: TrashTableRowPro
   return (
     <tr className="border-b border-border transition-colors hover:bg-muted/50">
       <td className="max-w-64 px-4 py-3">
-        <span
+        <p
           className="block truncate text-sm font-medium text-foreground"
           title={note.title}
         >
           {note.title}
-        </span>
+        </p>
       </td>
       {columns.originalStatus && (
         <td className="px-4 py-3">

@@ -15,12 +15,20 @@ const columnLabels: Record<SharedNoteColumnKey, string> = {
 interface SharedNotesColumnsDropdownProps {
   columns: Record<SharedNoteColumnKey, boolean>;
   onToggle: (key: SharedNoteColumnKey) => void;
+  isLoading?: boolean;
 }
 
 export function SharedNotesColumnsDropdown({
   columns,
   onToggle,
+  isLoading,
 }: SharedNotesColumnsDropdownProps) {
+  if (isLoading) {
+    return (
+      <span className="inline-block h-[38px] w-[100px] animate-pulse rounded-lg bg-muted" />
+    );
+  }
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>

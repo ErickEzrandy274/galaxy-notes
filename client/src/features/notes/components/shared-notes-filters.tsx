@@ -3,6 +3,7 @@
 interface SharedNotesFiltersProps {
   activePermission?: 'READ' | 'WRITE';
   onPermissionChange: (permission?: 'READ' | 'WRITE') => void;
+  isLoading?: boolean;
 }
 
 const tabs: Array<{ label: string; value?: 'READ' | 'WRITE' }> = [
@@ -14,7 +15,20 @@ const tabs: Array<{ label: string; value?: 'READ' | 'WRITE' }> = [
 export function SharedNotesFilters({
   activePermission,
   onPermissionChange,
+  isLoading,
 }: SharedNotesFiltersProps) {
+  if (isLoading) {
+    return (
+      <menu className="flex gap-1">
+        {tabs.map(({ label }) => (
+          <li key={label}>
+            <span className="inline-block h-8 animate-pulse rounded-full bg-muted" style={{ width: `${label.length * 10 + 24}px` }} />
+          </li>
+        ))}
+      </menu>
+    );
+  }
+
   return (
     <menu className="flex gap-1">
       {tabs.map(({ label, value }) => {

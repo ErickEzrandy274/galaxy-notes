@@ -41,7 +41,7 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
   // Check read-only access: user has READ permission but not WRITE, and is not owner
   const { data: noteDetail } = useQuery({
     queryKey: ['note', noteId],
-    queryFn: () => fetchNote(noteId!),
+    queryFn: ({ signal }) => fetchNote(noteId!, signal),
     enabled: !!noteId,
   });
 
@@ -155,10 +155,10 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
   return (
     <article className="flex h-full flex-col">
       {isReadOnly && (
-        <div className="flex items-center gap-2 border-b border-amber-500/20 bg-amber-500/5 px-6 py-2 text-sm text-amber-400">
+        <aside className="flex items-center gap-2 border-b border-amber-500/20 bg-amber-500/5 px-6 py-2 text-sm text-amber-400">
           <Eye className="h-4 w-4" />
           View-only access — you can read this note but cannot make changes
-        </div>
+        </aside>
       )}
       {!isReadOnly && (
         <NoteEditorHeader
@@ -175,9 +175,9 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
         />
       )}
 
-      <section className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden">
         <section className="flex flex-1 flex-col overflow-hidden p-6">
-          <NoteEditorContent data={data} updateField={isReadOnly ? (() => {}) as any : updateField} noteId={noteId ?? savedNoteId} blobToPathMap={blobToPathMap} />
+          <NoteEditorContent data={data} updateField={isReadOnly ? () => {} : updateField} noteId={noteId ?? savedNoteId} blobToPathMap={blobToPathMap} />
         </section>
 
         {!isReadOnly && (
@@ -191,7 +191,7 @@ export function NoteEditorPage({ noteId }: NoteEditorPageProps) {
             isOwner={isOwner ?? true}
           />
         )}
-      </section>
+      </div>
       <UnsavedChangesDialog
         open={showLeaveDialog}
         onLeave={confirmLeave}

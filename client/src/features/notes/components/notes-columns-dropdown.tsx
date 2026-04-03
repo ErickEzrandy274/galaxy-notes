@@ -15,12 +15,20 @@ const columnLabels: Record<ColumnKey, string> = {
 interface NotesColumnsDropdownProps {
   columns: Record<ColumnKey, boolean>;
   onToggle: (key: ColumnKey) => void;
+  isLoading?: boolean;
 }
 
 export function NotesColumnsDropdown({
   columns,
   onToggle,
+  isLoading,
 }: NotesColumnsDropdownProps) {
+  if (isLoading) {
+    return (
+      <span className="inline-block h-[38px] w-[100px] animate-pulse rounded-lg bg-muted" />
+    );
+  }
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>

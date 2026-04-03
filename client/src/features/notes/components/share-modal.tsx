@@ -110,7 +110,7 @@ export function ShareModal({ open, onClose, noteId, noteTitle }: ShareModalProps
                       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-500/10 text-xs font-medium text-orange-500">
                         {(r.user?.firstName?.[0] ?? r.email[0]).toUpperCase()}
                       </span>
-                      <span>
+                      <div>
                         <span className="flex items-center gap-1 text-sm text-foreground">
                           {r.user ? [r.user.firstName, r.user.lastName].filter(Boolean).join(' ') || r.email : r.email}
                           {!r.user && (
@@ -133,10 +133,10 @@ export function ShareModal({ open, onClose, noteId, noteTitle }: ShareModalProps
                             </Tooltip.Provider>
                           )}
                         </span>
-                        {r.user && <span className="block text-xs text-muted-foreground">{r.email}</span>}
-                      </span>
+                        {r.user && <small className="block text-xs text-muted-foreground">{r.email}</small>}
+                      </div>
                     </div>
-                    <span className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                       <SharePermissionSelect
                         value={r.permission}
                         onChange={(p) => handleUpdatePermission(r.email, p)}
@@ -148,7 +148,7 @@ export function ShareModal({ open, onClose, noteId, noteTitle }: ShareModalProps
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
-                    </span>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -174,14 +174,14 @@ export function ShareModal({ open, onClose, noteId, noteTitle }: ShareModalProps
                           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/10 text-xs font-medium text-emerald-500">
                             {(share.user.firstName?.[0] ?? share.user.email[0]).toUpperCase()}
                           </span>
-                          <span>
+                          <div>
                             <span className="block text-sm text-foreground">
                               {[share.user.firstName, share.user.lastName].filter(Boolean).join(' ') || share.user.email}
                             </span>
-                            <span className="block text-xs text-muted-foreground">{share.user.email}</span>
-                          </span>
+                            <small className="block text-xs text-muted-foreground">{share.user.email}</small>
+                          </div>
                         </div>
-                        <span className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                           <SharePermissionSelect
                             value={share.permission}
                             onChange={(p) =>
@@ -195,7 +195,7 @@ export function ShareModal({ open, onClose, noteId, noteTitle }: ShareModalProps
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
-                        </span>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -214,10 +214,10 @@ export function ShareModal({ open, onClose, noteId, noteTitle }: ShareModalProps
                           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500/10 text-xs text-amber-500">
                             <Mail className="h-3.5 w-3.5" />
                           </span>
-                          <span>
+                          <div>
                             <span className="block text-sm text-foreground">{invite.email}</span>
-                            <span className="block text-xs text-muted-foreground">Invite sent</span>
-                          </span>
+                            <small className="block text-xs text-muted-foreground">Invite sent</small>
+                          </div>
                         </div>
                         <button
                           type="button"

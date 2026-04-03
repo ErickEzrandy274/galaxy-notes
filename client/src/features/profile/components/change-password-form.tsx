@@ -47,7 +47,7 @@ export function ChangePasswordForm() {
           <p className="block text-sm font-medium text-foreground">
             Current Password
           </p>
-          <section className="relative mt-1.5 block">
+          <div className="relative mt-1.5 block">
             <input
               type={showCurrent ? 'text' : 'password'}
               className="w-full rounded-lg border border-border bg-card px-4 py-2.5 pr-10 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -62,7 +62,7 @@ export function ChangePasswordForm() {
             >
               {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
-          </section>
+          </div>
           {errors.currentPassword && (
             <p className="mt-1 text-sm text-destructive">{errors.currentPassword.message}</p>
           )}
@@ -72,7 +72,7 @@ export function ChangePasswordForm() {
           <p className="block text-sm font-medium text-foreground">
             New Password
           </p>
-          <section className="relative mt-1.5 block">
+          <div className="relative mt-1.5 block">
             <input
               type={showNew ? 'text' : 'password'}
               className="w-full rounded-lg border border-border bg-card px-4 py-2.5 pr-10 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -87,7 +87,7 @@ export function ChangePasswordForm() {
             >
               {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
-          </section>
+          </div>
           {errors.newPassword && (
             <p className="mt-1 text-sm text-destructive">{errors.newPassword.message}</p>
           )}
@@ -97,7 +97,7 @@ export function ChangePasswordForm() {
           <p className="block text-sm font-medium text-foreground">
             Confirm New Password
           </p>
-          <section className="relative mt-1.5 block">
+          <div className="relative mt-1.5 block">
             <input
               type={showConfirm ? 'text' : 'password'}
               className="w-full rounded-lg border border-border bg-card px-4 py-2.5 pr-10 text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -112,16 +112,16 @@ export function ChangePasswordForm() {
             >
               {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
-          </section>
+          </div>
           {errors.confirmNewPassword && (
             <p className="mt-1 text-sm text-destructive">{errors.confirmNewPassword.message}</p>
           )}
         </label>
 
-        <section className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
+        <div className="flex items-center justify-between">
+          <small className="text-xs text-muted-foreground">
             Min 12 characters, mixed case, numbers &amp; special characters
-          </p>
+          </small>
           <button
             type="button"
             onClick={handleGenerate}
@@ -129,7 +129,7 @@ export function ChangePasswordForm() {
           >
             Generate password!
           </button>
-        </section>
+        </div>
 
         <button
           type="submit"

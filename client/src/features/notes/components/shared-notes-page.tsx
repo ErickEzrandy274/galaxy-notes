@@ -61,18 +61,20 @@ export function SharedNotesPage() {
         <SharedNotesFilters
           activePermission={filters.permission}
           onPermissionChange={setPermission}
+          isLoading={isLoading}
         />
       </nav>
 
       <search className="mb-4 flex items-end gap-4">
-        <span className="flex-1">
+        <div className="flex-1">
           <SharedNotesSearch
             onSearchChange={handleSearchChange}
             onOwnerSearchChange={handleOwnerSearchChange}
             onTagsChange={handleTagsChange}
+            isLoading={isLoading}
           />
-        </span>
-        <SharedNotesColumnsDropdown columns={columns} onToggle={toggleColumn} />
+        </div>
+        <SharedNotesColumnsDropdown columns={columns} onToggle={toggleColumn} isLoading={isLoading} />
       </search>
 
       {isLoading ? (

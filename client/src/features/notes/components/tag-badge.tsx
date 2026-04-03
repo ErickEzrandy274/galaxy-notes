@@ -27,9 +27,9 @@ export function TagList({ tags, max = 3 }: { tags: string[]; max?: number }) {
           <Tooltip.Provider delayDuration={200}>
             <Tooltip.Root>
               <Tooltip.Trigger asChild>
-                <section className="flex aspect-square items-center justify-center p-1 rounded-full bg-muted text-[10px] font-bold text-muted-foreground cursor-pointer">
+                <span className="flex aspect-square items-center justify-center p-1 rounded-full bg-muted text-[10px] font-bold text-muted-foreground cursor-pointer">
                   +{remaining.length}
-                </section>
+                </span>
               </Tooltip.Trigger>
               <Tooltip.Portal>
                 <Tooltip.Content

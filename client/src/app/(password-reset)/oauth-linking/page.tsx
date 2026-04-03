@@ -36,11 +36,11 @@ const providerLetters: Record<string, string> = {
 
 function ProviderIcon({ provider }: { provider: string }) {
   return (
-    <figure className="flex justify-center" aria-hidden="true">
+    <div className="flex justify-center" aria-hidden="true">
       <span className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-700 text-lg font-bold text-white">
         {providerLetters[provider] ?? provider.charAt(0).toUpperCase()}
       </span>
-    </figure>
+    </div>
   );
 }
 

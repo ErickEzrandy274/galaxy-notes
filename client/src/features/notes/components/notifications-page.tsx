@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, Loader2 } from 'lucide-react';
+import { Bell, CheckCheck, Loader2 } from 'lucide-react';
 import { NotificationFilterTabs } from './notification-filter-tabs';
 import { NotificationList } from './notification-list';
 import { NotificationEmptyState } from './notification-empty-state';
@@ -44,15 +44,16 @@ export function NotificationsPage() {
           <button
             onClick={() => markAllRead.mutate()}
             disabled={markAllRead.isPending}
-            className="cursor-pointer rounded-lg px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
+            className="flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
           >
+            <CheckCheck size={16} />
             {markAllRead.isPending ? 'Marking...' : 'Mark all Read'}
           </button>
         )}
       </header>
 
       <nav className="mb-4" aria-label="Notification filters">
-        <NotificationFilterTabs active={filter} onChange={setFilter} />
+        <NotificationFilterTabs active={filter} onChange={setFilter} isLoading={isLoading} />
       </nav>
 
       {isMutedTab ? (

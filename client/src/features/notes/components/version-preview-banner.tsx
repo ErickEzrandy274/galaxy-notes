@@ -93,20 +93,20 @@ export function VersionPreviewBanner({
         >
           <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
           <article className="relative z-10 w-96 rounded-lg border border-border bg-card p-6 shadow-xl">
-            <div className="flex items-start gap-3">
+            <header className="flex items-start gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-500/10">
                 <RotateCcw className="h-5 w-5 text-purple-600" />
               </span>
               <div>
-                <h4 className="text-sm font-semibold text-foreground">
+                <h2 className="text-sm font-semibold text-foreground">
                   Restore this version?
-                </h4>
+                </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   The current note content will be saved as a new version before
                   restoring. You won&apos;t lose any data.
                 </p>
               </div>
-            </div>
+            </header>
             <footer className="mt-5 flex justify-end gap-2">
               <button
                 type="button"

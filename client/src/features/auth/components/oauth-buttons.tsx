@@ -38,7 +38,7 @@ export function OAuthButtons() {
   };
 
   return (
-    <section className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-3 gap-3">
       {providers.map(({ id, label, Icon }) => (
         <button
           key={id}
@@ -51,6 +51,6 @@ export function OAuthButtons() {
           <span>{label}</span>
         </button>
       ))}
-    </section>
+    </div>
   );
 }

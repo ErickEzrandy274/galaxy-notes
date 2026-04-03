@@ -51,25 +51,27 @@ export function NotesPage() {
         </Link>
       </header>
 
-      <div className="mb-4">
+      <section className="mb-4" aria-label="Notes statistics">
         <NotesStats activeFilter={filters.status} onFilterChange={setStatus} />
-      </div>
+      </section>
 
       <nav className="mb-4" aria-label="Note status filters">
         <NotesFilters
           activeStatus={filters.status}
           onStatusChange={setStatus}
+          isLoading={isLoading}
         />
       </nav>
 
       <search className="mb-4 flex items-end gap-4">
-        <span className="flex-1">
+        <div className="flex-1">
           <NotesSearch
             onSearchChange={handleSearchChange}
             onTagsChange={handleTagsChange}
+            isLoading={isLoading}
           />
-        </span>
-        <NotesColumnsDropdown columns={columns} onToggle={toggleColumn} />
+        </div>
+        <NotesColumnsDropdown columns={columns} onToggle={toggleColumn} isLoading={isLoading} />
       </search>
 
       {isLoading ? (

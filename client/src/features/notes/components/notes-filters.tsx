@@ -12,12 +12,26 @@ const tabs: { label: string; value?: NoteStatus }[] = [
 interface NotesFiltersProps {
   activeStatus?: string;
   onStatusChange: (status?: string) => void;
+  isLoading?: boolean;
 }
 
 export function NotesFilters({
   activeStatus,
   onStatusChange,
+  isLoading,
 }: NotesFiltersProps) {
+  if (isLoading) {
+    return (
+      <menu className="flex items-center gap-1">
+        {tabs.map(({ label }) => (
+          <li key={label}>
+            <span className="inline-block h-8 animate-pulse rounded-full bg-muted" style={{ width: `${label.length * 10 + 32}px` }} />
+          </li>
+        ))}
+      </menu>
+    );
+  }
+
   return (
     <menu className="flex items-center gap-1">
       {tabs.map(({ label, value }) => {

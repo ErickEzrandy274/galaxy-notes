@@ -31,29 +31,29 @@ export function ArchivedNotesPage() {
         </div>
       </header>
 
-      <div className="mb-4">
+      <section className="mb-4" aria-label="Archive statistics">
         {statsLoading ? (
           <div className="h-[72px] w-48 animate-pulse rounded-lg border border-border/50 bg-card" />
         ) : (
           <div className="flex w-48 items-center gap-3 rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-4 py-3">
             <Archive size={30} className="text-indigo-400" />
             <span className="flex flex-col">
-              <span className="text-lg font-semibold leading-tight text-foreground">
+              <strong className="text-lg font-semibold leading-tight text-foreground">
                 {stats?.archived ?? '—'}
-              </span>
-              <span className="text-xs text-muted-foreground">Archived</span>
+              </strong>
+              <small className="text-xs text-muted-foreground">Archived</small>
             </span>
           </div>
         )}
-      </div>
+      </section>
 
       <search className="mb-4 flex items-end gap-4">
-        <span className="flex-1">
+        <div className="flex-1">
           <ArchivedNotesSearch
             onSearchChange={setSearch}
             onTagsChange={setTags}
           />
-        </span>
+        </div>
         <ArchivedNotesColumnsDropdown columns={columns} onToggle={toggle} />
       </search>
 

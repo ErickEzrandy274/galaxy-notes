@@ -37,7 +37,7 @@ export function SharedNoteDetailHeader({
         <PermissionBadge permission={permission} />
       </nav>
 
-      <span className="flex items-center gap-2">
+      <div className="flex items-center gap-2" role="toolbar" aria-label="Note actions">
         {permission === 'WRITE' && (
           <button
             type="button"
@@ -56,7 +56,7 @@ export function SharedNoteDetailHeader({
           <History className="h-3.5 w-3.5" />
           History
         </button>
-      </span>
+      </div>
     </header>
   );
 }

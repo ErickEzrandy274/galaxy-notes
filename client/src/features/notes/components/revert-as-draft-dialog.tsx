@@ -26,14 +26,14 @@ export function RevertAsDraftDialog({
       <div className="fixed inset-0 bg-black/50" aria-hidden="true" />
       <article className="relative z-10 w-100 rounded-lg border border-border bg-card p-6 shadow-xl">
         <div className="flex flex-col items-start gap-3">
-          <div className="flex items-center gap-3">
+          <header className="flex items-center gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
               <FileText className="h-5 w-5 text-amber-500" />
             </span>
-            <h4 className="text-left text-lg font-semibold text-foreground">
+            <h2 className="text-left text-lg font-semibold text-foreground">
               Revert to draft?
-            </h4>
-          </div>
+            </h2>
+          </header>
           <p className="mt-1 text-left text-sm text-muted-foreground">
             This note is currently published. Changing it to a draft will
             unpublish it.

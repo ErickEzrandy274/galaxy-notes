@@ -12,27 +12,46 @@ const tabs: { value: NotificationFilter; label: string }[] = [
 interface NotificationFilterTabsProps {
   active: NotificationFilter;
   onChange: (filter: NotificationFilter) => void;
+  isLoading?: boolean;
 }
 
 export function NotificationFilterTabs({
   active,
   onChange,
+  isLoading,
 }: NotificationFilterTabsProps) {
+  if (isLoading) {
+    return (
+      <nav aria-label="Notification filters">
+        <menu className="flex gap-2">
+          {tabs.map(({ value, label }) => (
+            <li key={value}>
+              <span className="inline-block h-8 animate-pulse rounded-full bg-muted" style={{ width: `${label.length * 10 + 32}px` }} />
+            </li>
+          ))}
+        </menu>
+      </nav>
+    );
+  }
+
   return (
-    <nav className="flex gap-2" aria-label="Notification filters">
-      {tabs.map(({ value, label }) => (
-        <button
-          key={value}
-          onClick={() => onChange(value)}
-          className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-            active === value
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
-          }`}
-        >
-          {label}
-        </button>
-      ))}
+    <nav aria-label="Notification filters">
+      <menu className="flex gap-2">
+        {tabs.map(({ value, label }) => (
+          <li key={value}>
+            <button
+              onClick={() => onChange(value)}
+              className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                active === value
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
+              }`}
+            >
+              {label}
+            </button>
+          </li>
+        ))}
+      </menu>
     </nav>
   );
 }

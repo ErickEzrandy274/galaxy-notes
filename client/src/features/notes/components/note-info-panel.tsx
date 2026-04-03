@@ -28,26 +28,26 @@ export function NoteInfoPanel({
     <section aria-label="Note information">
       <h3 className="mb-3 text-sm font-semibold text-foreground">Info</h3>
       <dl className="space-y-2 text-sm">
-        <span className="flex justify-between">
+        <div className="flex justify-between">
           <dt className="text-muted-foreground">Words</dt>
           <dd className="font-medium text-foreground">{words}</dd>
-        </span>
-        <span className="flex justify-between">
+        </div>
+        <div className="flex justify-between">
           <dt className="text-muted-foreground">Characters</dt>
           <dd className="font-medium text-foreground">{characters}</dd>
-        </span>
-        <span className="flex justify-between">
+        </div>
+        <div className="flex justify-between">
           <dt className="text-muted-foreground">Created</dt>
           <dd className="font-medium text-foreground">
-            {createdAt ? formatInfoDate(createdAt) : 'Just now'}
+            {createdAt ? <time dateTime={createdAt}>{formatInfoDate(createdAt)}</time> : 'Just now'}
           </dd>
-        </span>
-        <span className="flex justify-between">
+        </div>
+        <div className="flex justify-between">
           <dt className="text-muted-foreground">Version</dt>
           <dd className="font-medium text-foreground">
             {version === 1 ? 'v1 (new)' : `v${version}`}
           </dd>
-        </span>
+        </div>
       </dl>
     </section>
   );

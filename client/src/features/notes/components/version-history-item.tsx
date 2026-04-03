@@ -72,14 +72,14 @@ export function VersionHistoryItem({
       }`}
     >
       {/* Timeline dot + line */}
-      <figure className="flex flex-col items-center pt-1.5" aria-hidden="true">
-        <mark className={`block h-3 w-3 shrink-0 rounded-full border-2 ${dotColor}`} />
+      <div className="flex flex-col items-center pt-1.5" aria-hidden="true">
+        <span className={`block h-3 w-3 shrink-0 rounded-full border-2 ${dotColor}`} />
         {!isLast && <hr className="mt-1 w-0.5 flex-1 border-none bg-border" />}
-      </figure>
+      </div>
 
       {/* Content */}
-      <section className="min-w-0 flex-1 pb-2">
-        <header className="flex items-center justify-between">
+      <div className="min-w-0 flex-1 pb-2">
+        <div className="flex items-center justify-between">
           <time
             dateTime={version.createdAt}
             className={`text-sm font-medium ${isViewing ? 'text-orange-500' : 'text-foreground'}`}
@@ -91,7 +91,7 @@ export function VersionHistoryItem({
               Viewing
             </mark>
           )}
-        </header>
+        </div>
         <p className="mt-0.5 text-xs text-muted-foreground">
           {changedByLabel}
           {isCurrent && (
@@ -101,7 +101,7 @@ export function VersionHistoryItem({
             <em className="ml-1 not-italic">&bull; Original</em>
           )}
         </p>
-      </section>
+      </div>
     </button>
   );
 }

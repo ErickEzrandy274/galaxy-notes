@@ -41,12 +41,12 @@ export function NoteDetailContent({ note }: NoteDetailContentProps) {
           {note.title || 'Untitled'}
         </h1>
 
-        <section className="mt-3 flex items-center gap-3">
+        <div className="mt-3 flex items-center gap-3">
           <StatusBadge status={note.status} />
-          <span className="text-sm text-muted-foreground">
+          <time className="text-sm text-muted-foreground" dateTime={note.updatedAt}>
             Last edited: {formatDateTime(note.updatedAt)}
-          </span>
-        </section>
+          </time>
+        </div>
 
         {note.tags.length > 0 && (
           <section className="mt-4">
@@ -85,7 +85,7 @@ export function NoteDetailContent({ note }: NoteDetailContentProps) {
                 <Paperclip className="h-4 w-4" />
                 Attachment
               </h2>
-              <figure className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2.5">
                 <span className="flex min-w-0 items-center gap-2">
                   <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="truncate text-sm text-foreground" title={fileName ?? undefined}>
@@ -122,7 +122,7 @@ export function NoteDetailContent({ note }: NoteDetailContentProps) {
                     </button>
                   </span>
                 )}
-              </figure>
+              </div>
             </section>
           )}
 

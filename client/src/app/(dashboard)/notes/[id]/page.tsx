@@ -1,4 +1,7 @@
+import type { Metadata } from 'next';
 import { NoteEditorPage } from '@/features/notes';
+
+export const metadata: Metadata = { title: 'Edit Note' };
 
 export default async function EditNotePage({
   params,

@@ -29,16 +29,17 @@ export function useCountdown(initialSeconds: number) {
   }, [initialSeconds, timeLeft]);
 
   useEffect(() => {
-    if (!isActive || timeLeft <= 0) {
-      if (timeLeft <= 0) {
-        setIsActive(false);
-        localStorage.removeItem(STORAGE_KEY);
-      }
-      return;
-    }
+    if (!isActive || timeLeft <= 0) return;
 
     const interval = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
+      setTimeLeft((prev) => {
+        const next = prev - 1;
+        if (next <= 0) {
+          setIsActive(false);
+          localStorage.removeItem(STORAGE_KEY);
+        }
+        return next;
+      });
     }, 1000);
 
     return () => clearInterval(interval);
@@ -74,7 +75,7 @@ export function CountdownTimer({ seconds, onResend }: CountdownTimerProps) {
   };
 
   return (
-    <span className="block text-center text-sm text-zinc-400">
+    <p className="block text-center text-sm text-zinc-400">
       Didn&apos;t receive the email?{' '}
       {isActive ? (
         <span className="text-zinc-500">
@@ -89,6 +90,6 @@ export function CountdownTimer({ seconds, onResend }: CountdownTimerProps) {
           Resend
         </button>
       )}
-    </span>
+    </p>
   );
 }

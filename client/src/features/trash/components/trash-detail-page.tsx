@@ -13,7 +13,7 @@ interface TrashDetailPageProps {
 export function TrashDetailPage({ noteId }: TrashDetailPageProps) {
   const { data: note, isLoading } = useQuery({
     queryKey: ['note', 'trash', noteId],
-    queryFn: () => fetchTrashedNote(noteId),
+    queryFn: ({ signal }) => fetchTrashedNote(noteId, signal),
   });
 
   if (isLoading || !note) {

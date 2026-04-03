@@ -105,7 +105,7 @@ export function TrashConfirmDialog({
             {iconElement}
           </span>
           <div>
-            <h4 className="text-left text-sm font-semibold text-foreground">{title}</h4>
+            <h2 className="text-left text-sm font-semibold text-foreground">{title}</h2>
             <p className="mt-1 text-left text-sm text-muted-foreground">
               {description(noteTitle)}
             </p>

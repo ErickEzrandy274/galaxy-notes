@@ -21,7 +21,7 @@ export function SharedNoteDetailPage({ noteId }: SharedNoteDetailPageProps) {
 
   const { data: note, isLoading } = useQuery({
     queryKey: ['note', noteId],
-    queryFn: () => fetchNote(noteId),
+    queryFn: ({ signal }) => fetchNote(noteId, signal),
   });
 
   const handleCloseHistory = () => {

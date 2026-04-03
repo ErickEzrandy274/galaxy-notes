@@ -9,7 +9,7 @@ interface TrashTableProps {
 
 export function TrashTable({ notes, columns, retentionDays }: TrashTableProps) {
   return (
-    <section className="overflow-x-auto rounded-lg border border-border">
+    <div className="overflow-x-auto rounded-lg border border-border">
       <table className="w-full">
         <thead>
           <tr className="border-b border-border bg-muted/30">
@@ -57,6 +57,6 @@ export function TrashTable({ notes, columns, retentionDays }: TrashTableProps) {
           ))}
         </tbody>
       </table>
-    </section>
+    </div>
   );
 }

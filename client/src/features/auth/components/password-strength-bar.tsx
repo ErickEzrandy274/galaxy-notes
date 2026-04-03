@@ -41,15 +41,15 @@ export function PasswordStrengthBar({ password }: PasswordStrengthBarProps) {
   const config = strengthConfigs[strength];
 
   return (
-    <aside className="mt-2" role="status" aria-label={`Password strength: ${config.label}`}>
-      <span className="block h-1.5 w-full overflow-hidden rounded-full bg-zinc-700">
-        <span
+    <div className="mt-2" role="status" aria-label={`Password strength: ${config.label}`}>
+      <div className="block h-1.5 w-full overflow-hidden rounded-full bg-zinc-700">
+        <div
           className={`block h-full rounded-full transition-all duration-300 ${config.color} ${config.width}`}
         />
-      </span>
+      </div>
       <p className={`mt-1 text-right text-xs ${config.color.replace('bg-', 'text-')}`}>
         {config.label}
       </p>
-    </aside>
+    </div>
   );
 }

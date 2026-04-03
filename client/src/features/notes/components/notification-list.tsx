@@ -83,9 +83,13 @@ export function NotificationList({
           <h3 className="sticky top-0 z-10 bg-background/80 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur-sm">
             {label}
           </h3>
-          {items.map((notif) => (
-            <NotificationRow key={notif.id} notification={notif} />
-          ))}
+          <ul>
+            {items.map((notif) => (
+              <li key={notif.id}>
+                <NotificationRow notification={notif} />
+              </li>
+            ))}
+          </ul>
         </section>
       ))}
 

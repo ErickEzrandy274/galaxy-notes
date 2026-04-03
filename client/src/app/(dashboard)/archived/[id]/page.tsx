@@ -1,4 +1,7 @@
+import type { Metadata } from 'next';
 import { ArchivedNoteDetailPage } from '@/features/notes';
+
+export const metadata: Metadata = { title: 'Archived Note' };
 
 export default async function ArchivedNoteViewPage({
   params,

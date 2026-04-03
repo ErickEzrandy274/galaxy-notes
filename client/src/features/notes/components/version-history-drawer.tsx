@@ -68,11 +68,11 @@ export function VersionHistoryDrawer({
   return (
     <aside className="flex h-full w-96 shrink-0 flex-col border-l border-border bg-card">
       <header className="px-4 py-3">
-        <nav className="flex items-center justify-between">
-          <hgroup className="flex items-center gap-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <History className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold text-foreground">Version History</h2>
-          </hgroup>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -81,11 +81,11 @@ export function VersionHistoryDrawer({
           >
             <X className="h-4 w-4" />
           </button>
-        </nav>
+        </div>
         <hr className="mt-3 border-border" />
       </header>
 
-      <nav className="flex-1 overflow-y-auto" aria-label="Version history list">
+      <section className="flex-1 overflow-y-auto" aria-label="Version history list">
         {isLoading ? (
           <output className="flex items-center justify-center py-12" aria-busy="true">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -160,7 +160,7 @@ export function VersionHistoryDrawer({
             )}
           </ol>
         )}
-      </nav>
+      </section>
     </aside>
   );
 }

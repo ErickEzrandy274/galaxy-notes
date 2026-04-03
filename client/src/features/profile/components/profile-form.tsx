@@ -105,7 +105,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         />
       </label>
 
-      <span className="flex gap-3">
+      <div className="flex gap-3">
         <button
           type="submit"
           disabled={isPending || !isDirty}
@@ -121,7 +121,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         >
           Cancel
         </button>
-      </span>
+      </div>
     </form>
   );
 }

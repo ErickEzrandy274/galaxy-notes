@@ -42,12 +42,12 @@ export function TrashPage() {
   return (
     <section className="flex h-full flex-col p-6">
       <header className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <hgroup className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10">
             <Trash2 className="h-5 w-5 text-red-500" />
           </span>
           <h1 className="text-xl font-bold text-foreground">Trash</h1>
-        </div>
+        </hgroup>
         <TrashSettingsPopover />
       </header>
 
@@ -60,12 +60,12 @@ export function TrashPage() {
       )}
 
       <search className="mb-4 flex items-end gap-4">
-        <span className="flex-1">
+        <div className="flex-1">
           <TrashSearch
             onSearchChange={handleSearchChange}
             onTagsChange={handleTagsChange}
           />
-        </span>
+        </div>
         <TrashColumnsDropdown columns={columns} onToggle={toggleColumn} />
       </search>
 

@@ -10,7 +10,7 @@ interface SharedNotesTableProps {
 
 export function SharedNotesTable({ notes, columns }: SharedNotesTableProps) {
   return (
-    <div className="overflow-x-auto">
+    <section className="overflow-x-auto">
       <table className="w-full">
         <thead>
           <tr className="border-b border-border text-left">
@@ -53,6 +53,6 @@ export function SharedNotesTable({ notes, columns }: SharedNotesTableProps) {
           ))}
         </tbody>
       </table>
-    </div>
+    </section>
   );
 }

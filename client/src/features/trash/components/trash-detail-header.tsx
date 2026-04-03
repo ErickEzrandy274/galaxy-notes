@@ -36,7 +36,7 @@ export function TrashDetailHeader({ noteId, noteTitle }: TrashDetailHeaderProps)
           </span>
         </nav>
 
-        <span className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setShowRestoreDialog(true)}
@@ -63,7 +63,7 @@ export function TrashDetailHeader({ noteId, noteTitle }: TrashDetailHeaderProps)
             )}
             Delete Permanently
           </button>
-        </span>
+        </div>
       </header>
 
       <TrashConfirmDialog

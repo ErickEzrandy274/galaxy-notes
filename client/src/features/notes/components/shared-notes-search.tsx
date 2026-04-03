@@ -7,12 +7,14 @@ interface SharedNotesSearchProps {
   onSearchChange: (search: string) => void;
   onOwnerSearchChange: (ownerSearch: string) => void;
   onTagsChange: (tags: string) => void;
+  isLoading?: boolean;
 }
 
 export function SharedNotesSearch({
   onSearchChange,
   onOwnerSearchChange,
   onTagsChange,
+  isLoading,
 }: SharedNotesSearchProps) {
   const [searchValue, setSearchValue] = useState('');
   const [ownerValue, setOwnerValue] = useState('');
@@ -32,6 +34,19 @@ export function SharedNotesSearch({
     const timer = setTimeout(() => onTagsChange(tagsValue), 300);
     return () => clearTimeout(timer);
   }, [tagsValue, onTagsChange]);
+
+  if (isLoading) {
+    return (
+      <fieldset className="flex items-end gap-3">
+        {['Title', 'Owner', 'Tags'].map((label) => (
+          <div key={label} className="flex-1">
+            <span className="mb-1 block h-4 w-10 animate-pulse rounded bg-muted" />
+            <span className="mt-1 block h-[38px] animate-pulse rounded-lg bg-muted" />
+          </div>
+        ))}
+      </fieldset>
+    );
+  }
 
   return (
     <fieldset className="flex items-end gap-3">

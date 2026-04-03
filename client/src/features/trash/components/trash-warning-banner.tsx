@@ -14,11 +14,11 @@ export function TrashWarningBanner({
   isEmptying,
 }: TrashWarningBannerProps) {
   return (
-    <div className="mb-4 flex items-center justify-between rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-      <span className="flex items-center gap-2 text-sm text-amber-400">
+    <aside className="mb-4 flex items-center justify-between rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3" role="alert">
+      <p className="flex items-center gap-2 text-sm text-amber-400">
         <AlertTriangle size={16} className="shrink-0" />
         Notes in Trash are permanently deleted after {retentionDays} days.
-      </span>
+      </p>
       <button
         type="button"
         onClick={onEmptyTrash}
@@ -27,6 +27,6 @@ export function TrashWarningBanner({
       >
         {isEmptying ? 'Emptying...' : 'Empty Trash'}
       </button>
-    </div>
+    </aside>
   );
 }

@@ -36,7 +36,7 @@ export function VersionPreviewPage({
 }: VersionPreviewPageProps) {
   const { data: version, isLoading } = useQuery({
     queryKey: ['note-version', noteId, versionId],
-    queryFn: () => fetchVersionDetail(noteId, versionId),
+    queryFn: ({ signal }) => fetchVersionDetail(noteId, versionId, signal),
   });
 
   if (isLoading || !version) {
@@ -59,7 +59,7 @@ export function VersionPreviewPage({
   const versionVideoId = version.videoUrl ? extractYouTubeId(version.videoUrl) : null;
 
   return (
-    <div className="flex h-full flex-col">
+    <article className="flex h-full flex-col">
       <VersionPreviewBanner
         noteId={noteId}
         versionId={versionId}
@@ -100,9 +100,9 @@ export function VersionPreviewPage({
           </h1>
 
           {version.tags.length > 0 && (
-            <div className="mt-4">
+            <section className="mt-4">
               <TagList tags={version.tags} max={9} />
-            </div>
+            </section>
           )}
 
           {version.content && (
@@ -113,21 +113,21 @@ export function VersionPreviewPage({
           )}
 
           {version.document && (
-            <div className="mt-6">
+            <section className="mt-6">
               <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Paperclip className="h-4 w-4" />
                 Attachment
               </h4>
-              <figure className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2.5">
                 <span className="flex min-w-0 items-center gap-2">
                   <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="truncate text-sm text-foreground" title={versionFileName}>
                     {versionFileName}
                   </span>
                   {versionFileSize && (
-                    <span className="shrink-0 text-xs text-muted-foreground">
+                    <small className="shrink-0 text-xs text-muted-foreground">
                       ({versionFileSize})
-                    </span>
+                    </small>
                   )}
                 </span>
                 {version.documentUrl ? (
@@ -141,17 +141,17 @@ export function VersionPreviewPage({
                     <Eye className="h-4 w-4" />
                   </a>
                 ) : (
-                  <span className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                  <small className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
                     <AlertTriangle className="h-3.5 w-3.5" />
                     File {versionFileName} not available
-                  </span>
+                  </small>
                 )}
-              </figure>
-            </div>
+              </div>
+            </section>
           )}
 
           {versionVideoId && (
-            <div className="mt-6">
+            <section className="mt-6">
               <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Video className="h-4 w-4" />
                 Supporting Video
@@ -165,10 +165,10 @@ export function VersionPreviewPage({
                   className="aspect-video w-full"
                 />
               </figure>
-            </div>
+            </section>
           )}
         </section>
       </div>
-    </div>
+    </article>
   );
 }
