@@ -14,6 +14,7 @@ export class PreferencesService {
   async getPreferences(userId: string) {
     const pref = await this.prisma.userPreference.findUnique({
       where: { userId },
+      select: { trashRetentionDays: true, autoDeleteBehavior: true },
     });
 
     if (!pref) {
