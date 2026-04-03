@@ -71,90 +71,150 @@ export function NoteDetailHeader({ noteId, title, status, version, isOwner, shar
   };
 
   return (
-    <header className="flex items-center justify-between border-b border-border px-6 py-3">
+    <header className="flex flex-col gap-2 border-b border-border px-4 py-3 md:flex-row md:items-center md:justify-between md:px-6">
       <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm">
         <Link
           href="/notes"
-          className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+          className="flex shrink-0 items-center gap-1 whitespace-nowrap text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
           My Notes
         </Link>
         <span className="text-muted-foreground">/</span>
-        <span className="font-medium text-foreground">
+        <span className="truncate font-medium text-foreground">
           {title || 'Untitled'}
         </span>
       </nav>
 
       <div className="flex items-center gap-2" role="toolbar" aria-label="Note actions">
-        <button
-          type="button"
-          onClick={() => router.push(`/notes/${noteId}`)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 cursor-pointer"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-          Edit
-        </button>
-
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger asChild>
+        {/* Desktop: all buttons visible */}
+        <span className="hidden items-center gap-2 md:flex">
+          <button
+            type="button"
+            onClick={() => router.push(`/notes/${noteId}`)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 cursor-pointer"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Edit
+          </button>
+          {isOwner && (
             <button
               type="button"
-              className="inline-flex items-center justify-center rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-              aria-label="More actions"
+              onClick={() => setShowShareModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
             >
-              <MoreHorizontal className="h-4 w-4" />
+              <Share2 className="h-3.5 w-3.5" />
+              Share
             </button>
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Portal>
-            <DropdownMenu.Content
-              align="end"
-              className="z-50 min-w-[180px] rounded-lg border border-border bg-card p-1 shadow-lg"
+          )}
+          <button
+            type="button"
+            onClick={onOpenHistory}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+          >
+            <History className="h-3.5 w-3.5" />
+            History
+          </button>
+          {isOwner && status !== 'draft' && (
+            <button
+              type="button"
+              onClick={() => setShowArchiveDialog(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
             >
-              {isOwner && (
+              <Archive className="h-3.5 w-3.5" />
+              Archive
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={handleRevert}
+            disabled={isReverting}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-40 cursor-pointer"
+          >
+            {isReverting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
+            Revert to Draft
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowTrashDialog(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/30 px-3 py-1.5 text-sm font-medium text-destructive hover:bg-destructive/10 cursor-pointer"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Move to Trash
+          </button>
+        </span>
+
+        {/* Mobile: Edit + three-dot menu */}
+        <span className="flex w-full items-center justify-between md:hidden">
+          <button
+            type="button"
+            onClick={() => router.push(`/notes/${noteId}`)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 cursor-pointer"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Edit
+          </button>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                aria-label="More actions"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                align="end"
+                sideOffset={4}
+                className="z-50 min-w-[180px] rounded-lg border border-border bg-card p-1 shadow-lg"
+              >
+                {isOwner && (
+                  <DropdownMenu.Item
+                    onSelect={() => setShowShareModal(true)}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted"
+                  >
+                    <Share2 size={14} />
+                    Share
+                  </DropdownMenu.Item>
+                )}
                 <DropdownMenu.Item
-                  onClick={() => setShowShareModal(true)}
+                  onSelect={onOpenHistory}
                   className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted"
                 >
-                  <Share2 size={14} />
-                  Share
+                  <History size={14} />
+                  History
                 </DropdownMenu.Item>
-              )}
-              <DropdownMenu.Item
-                onClick={onOpenHistory}
-                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted"
-              >
-                <History size={14} />
-                History
-              </DropdownMenu.Item>
-              {isOwner && status !== 'draft' && (
+                {isOwner && status !== 'draft' && (
+                  <DropdownMenu.Item
+                    onSelect={() => setShowArchiveDialog(true)}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted"
+                  >
+                    <Archive size={14} />
+                    Archive
+                  </DropdownMenu.Item>
+                )}
                 <DropdownMenu.Item
-                  onClick={() => setShowArchiveDialog(true)}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted"
+                  onSelect={handleRevert}
+                  disabled={isReverting}
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted disabled:opacity-40"
                 >
-                  <Archive size={14} />
-                  Archive
+                  {isReverting ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                  Revert to Draft
                 </DropdownMenu.Item>
-              )}
-              <DropdownMenu.Item
-                onClick={handleRevert}
-                disabled={isReverting}
-                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground outline-none hover:bg-muted disabled:opacity-40"
-              >
-                {isReverting ? <Loader2 size={14} className="animate-spin" /> : <RotateCcw size={14} />}
-                Revert to Draft
-              </DropdownMenu.Item>
-              <DropdownMenu.Separator className="my-1 h-px bg-border" />
-              <DropdownMenu.Item
-                onClick={() => setShowTrashDialog(true)}
-                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive outline-none hover:bg-destructive/10"
-              >
-                <Trash2 size={14} />
-                Move to Trash
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Root>
+                <DropdownMenu.Separator className="my-1 h-px bg-border" />
+                <DropdownMenu.Item
+                  onSelect={() => setShowTrashDialog(true)}
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive outline-none hover:bg-destructive/10"
+                >
+                  <Trash2 size={14} />
+                  Move to Trash
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
+        </span>
       </div>
       <RevertAsDraftDialog
         open={showRevertDialog}

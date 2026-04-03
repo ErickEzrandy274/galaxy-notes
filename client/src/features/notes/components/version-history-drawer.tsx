@@ -65,11 +65,13 @@ export function VersionHistoryDrawer({
 
   return (
     <aside
-      className={`flex h-full shrink-0 flex-col border-l border-border bg-card transition-[width,opacity] duration-300 ease-in-out overflow-hidden ${
-        open ? 'w-96 opacity-100' : 'w-0 opacity-0 border-l-0'
+      className={`flex shrink-0 flex-col border-l border-border bg-card transition-[width,opacity] duration-300 ease-in-out overflow-hidden ${
+        open
+          ? 'absolute inset-0 z-30 w-full opacity-100 md:relative md:inset-auto md:z-auto md:h-full md:w-96'
+          : 'w-0 opacity-0 border-l-0'
       }`}
     >
-      <div className="flex h-full w-96 shrink-0 flex-col">
+      <div className="flex h-full w-full shrink-0 flex-col md:w-96">
       <header className="px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

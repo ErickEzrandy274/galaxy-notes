@@ -34,7 +34,7 @@ export function NotesPage() {
   const isFilteredEmpty = data?.notes?.length === 0 && hasFilters;
 
   return (
-    <section className="flex h-full flex-col p-6">
+    <section className="flex h-full flex-col p-4 md:p-6">
       <header className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
@@ -51,7 +51,7 @@ export function NotesPage() {
         </Link>
       </header>
 
-      <section className="mb-4" aria-label="Notes statistics">
+      <section className="mb-4 hidden md:block" aria-label="Notes statistics">
         <NotesStats activeFilter={filters.status} onFilterChange={setStatus} />
       </section>
 
@@ -63,7 +63,7 @@ export function NotesPage() {
         />
       </nav>
 
-      <search className="mb-4 flex items-end gap-4">
+      <search className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:gap-4">
         <div className="flex-1">
           <NotesSearch
             onSearchChange={handleSearchChange}
@@ -71,7 +71,9 @@ export function NotesPage() {
             isLoading={isLoading}
           />
         </div>
-        <NotesColumnsDropdown columns={columns} onToggle={toggleColumn} isLoading={isLoading} />
+        <span className="hidden md:block">
+          <NotesColumnsDropdown columns={columns} onToggle={toggleColumn} isLoading={isLoading} />
+        </span>
       </search>
 
       {isLoading ? (

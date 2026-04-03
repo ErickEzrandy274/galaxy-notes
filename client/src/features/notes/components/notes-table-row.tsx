@@ -27,22 +27,22 @@ export function NotesTableRow({ note, columns }: NotesTableRowProps) {
         </td>
       )}
       {columns.tags && (
-        <td className="px-4 py-3">
+        <td className="hidden px-4 py-3 md:table-cell">
           <TagList tags={note.tags} />
         </td>
       )}
       {columns.createdAt && (
-        <td className="px-4 py-3 text-sm text-muted-foreground">
+        <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
           <time>{formatDate(note.createdAt)}</time>
         </td>
       )}
       {columns.lastModified && (
-        <td className="px-4 py-3 text-sm text-muted-foreground">
+        <td className="hidden px-4 py-3 text-sm text-muted-foreground md:table-cell">
           <time>{formatDate(note.updatedAt)}</time>
         </td>
       )}
       {columns.shared && (
-        <td className="px-4 py-3">
+        <td className="hidden px-4 py-3 md:table-cell">
           {note._count.shares > 0 ? (
             <Link2 size={16} className="text-muted-foreground" />
           ) : (

@@ -53,19 +53,21 @@ export function NotesSearch({ onSearchChange, onTagsChange, isLoading }: NotesSe
           />
         </span>
       </label>
-      <label className="flex-1">
-        <span className="mb-1 block text-sm font-medium text-foreground">Tags</span>
-        <span className="flex items-center gap-2 rounded-lg border border-border bg-input px-3 py-2">
-          <Tag size={16} className="text-muted-foreground" aria-hidden="true" />
-          <input
-            type="text"
-            placeholder="Filter by tags..."
-            value={tagsValue}
-            onChange={(e) => setTagsValue(e.target.value)}
-            className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-          />
-        </span>
-      </label>
+      <span className="hidden flex-1 md:block">
+        <label>
+          <span className="mb-1 block text-sm font-medium text-foreground">Tags</span>
+          <span className="flex items-center gap-2 rounded-lg border border-border bg-input px-3 py-2">
+            <Tag size={16} className="text-muted-foreground" aria-hidden="true" />
+            <input
+              type="text"
+              placeholder="Filter by tags..."
+              value={tagsValue}
+              onChange={(e) => setTagsValue(e.target.value)}
+              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            />
+          </span>
+        </label>
+      </span>
     </fieldset>
   );
 }

@@ -52,9 +52,9 @@ export function VersionPreviewBanner({
 
   return (
     <>
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-amber-500/20 bg-[#F59E0B]/12 px-6 py-3">
-        <p className="flex items-center gap-2 text-sm text-foreground">
-          <Clock className="h-4 w-4 text-[#F59E0B]" />
+      <header className="sticky top-0 z-10 flex flex-col items-center gap-2 border-b border-amber-500/20 bg-[#F59E0B]/12 px-4 py-3 md:flex-row md:justify-between md:px-6">
+        <p className="flex items-center gap-2 text-center text-sm text-foreground md:text-left">
+          <Clock className="h-4 w-4 shrink-0 text-[#F59E0B]" />
           <span>
             You are viewing Version {versionNumber} &mdash; saved on {formattedDate} by {changedByName}
           </span>

@@ -49,8 +49,8 @@ export function SharedNoteDetailPage({ noteId }: SharedNoteDetailPageProps) {
   const permission = myShare?.permission ?? 'READ';
 
   return (
-    <article className="flex h-full">
-      <div className="flex min-w-0 flex-1 flex-col">
+    <article className="relative flex h-full flex-col md:flex-row">
+      <div className={`flex min-w-0 flex-1 flex-col ${viewingVersionId ? 'min-h-0' : ''}`}>
         {!viewingVersionId && (
           <>
             <SharedNoteDetailHeader
@@ -61,7 +61,7 @@ export function SharedNoteDetailPage({ noteId }: SharedNoteDetailPageProps) {
             />
 
             {permission === 'READ' && (
-              <aside className="flex items-center gap-2 border-b border-border bg-blue-500/5 px-6 py-2 text-sm font-semibold text-blue-600">
+              <aside className="flex items-center gap-2 border-b border-border bg-blue-500/5 px-4 py-2 text-sm font-semibold text-blue-600 md:px-6">
                 <ShieldAlert className="h-4 w-4" />
                 You have read-only access to this note.
               </aside>

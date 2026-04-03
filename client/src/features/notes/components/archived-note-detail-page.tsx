@@ -44,8 +44,8 @@ export function ArchivedNoteDetailPage({
   }
 
   return (
-    <article className="flex h-full">
-      <div className="flex min-w-0 flex-1 flex-col">
+    <article className="relative flex h-full flex-col md:flex-row">
+      <div className={`flex min-w-0 flex-1 flex-col ${viewingVersionId ? 'min-h-0' : ''}`}>
         {!viewingVersionId && (
           <>
             <ArchivedNoteDetailHeader
@@ -54,7 +54,7 @@ export function ArchivedNoteDetailPage({
               onOpenHistory={() => setHistoryOpen(true)}
             />
 
-            <aside className="flex items-center gap-2 border-b border-border bg-amber-500/5 px-6 py-2 text-sm font-semibold text-amber-600">
+            <aside className="flex items-center gap-2 border-b border-border bg-amber-500/5 px-4 py-2 text-sm font-semibold text-amber-600 md:px-6">
               <Archive className="h-4 w-4" />
               This note is archived and read-only. Unarchive to make edits.
             </aside>

@@ -32,7 +32,7 @@ export function NotificationsPage() {
   const hasUnread = (unreadData?.count ?? 0) > 0;
 
   return (
-    <section className="flex h-full flex-col p-6">
+    <section className="flex h-full flex-col p-4 md:p-6">
       <header className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/10">
