@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { AppLogger } from '../common/logger/app.logger';
 import { ConfigService } from '@nestjs/config';
 import { createTransport, type Transporter } from 'nodemailer';
 import { passwordResetTemplate } from './templates/password-reset.template';
@@ -11,7 +12,7 @@ import {
 export class MailService {
   private readonly transporter: Transporter;
   private readonly fromAddress: string;
-  private readonly logger = new Logger(MailService.name);
+  private readonly logger = new AppLogger(MailService.name);
 
   constructor(private readonly configService: ConfigService) {
     this.fromAddress =
