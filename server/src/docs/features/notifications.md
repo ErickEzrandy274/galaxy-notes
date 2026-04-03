@@ -4,6 +4,44 @@
 
 The Notifications API provides real-time notifications via SSE (Server-Sent Events), CRUD operations for notification management, user muting, and supports multiple notification types across the sharing and note lifecycle.
 
+## Architecture
+
+Notifications use a **fire-and-forget event-driven pattern** powered by `@nestjs/event-emitter`:
+
+```
+Producer Service                    EventEmitter2                  NotificationListener
+(Shares, Notes, Auth, Cleanup)                                    (@OnEvent, async: true)
+        │                                │                                │
+        │  eventEmitter.emit(            │                                │
+        │    'notification.send',        │                                │
+        │    payload)                    │                                │
+        │───────────────────────────────>│                                │
+        │  (returns immediately)         │  async dispatch ──────────────>│
+        │                                │                                │ notificationsService.create()
+        │                                │                                │   → DB write
+        │                                │                                │   → SSE push (if connected)
+```
+
+**Key benefits:**
+- Notification creation never blocks the HTTP response
+- Sharing a note with 30+ users returns instantly — all notifications are processed in the background
+- Failed notifications are logged but don't affect the caller
+
+### Event Contract
+
+**Event name:** `notification.send`
+
+**Payload (`NotificationPayload`):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `userId` | string | Yes | Notification recipient |
+| `title` | string | Yes | Notification title |
+| `message` | string | Yes | Notification body |
+| `type` | string | No | Notification type (e.g., `share`, `trash`) |
+| `noteId` | string | No | Related note ID |
+| `actorId` | string | No | User who triggered the action |
+
 ## API Endpoints
 
 All endpoints except the SSE stream are JWT-protected (`@UseGuards(AuthGuard('jwt'))`), under the `/api/notifications` prefix.
@@ -113,5 +151,7 @@ model Notification {
 |------|---------|
 | `server/src/notifications/notifications.controller.ts` | Route definitions, SSE stream |
 | `server/src/notifications/notifications.service.ts` | CRUD, muting, SSE stream management |
-| `server/src/notifications/notifications.module.ts` | Module registration (exports service) |
+| `server/src/notifications/notifications.module.ts` | Module registration (exports service + listener) |
 | `server/src/notifications/dto/mute-user.dto.ts` | Mute duration validation |
+| `server/src/notifications/events/notification.events.ts` | `NOTIFICATION_SEND` constant + `NotificationPayload` class |
+| `server/src/notifications/listeners/notification.listener.ts` | `@OnEvent` handler — calls `notificationsService.create()` async |

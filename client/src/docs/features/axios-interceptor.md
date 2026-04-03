@@ -63,13 +63,17 @@ Send request
 ### Response Interceptor Flow
 
 ```
-Response received
+Error received
+  ↓
+Is request cancelled (AbortController)?
+  ├─ Yes → Silently reject (no toast)
+  └─ No → Continue
   ↓
 Is status 401 AND not already retried?
   ├─ Yes → Call POST /auth/refresh (deduplicated)
   │         ├─ Success → Retry original request with new token
   │         └─ Failure → Clear token, redirect to /login
-  └─ No → Return response / reject error
+  └─ No → Show error toast with request ID, reject error
 ```
 
 ## Concurrent Request Handling
@@ -85,6 +89,30 @@ if (!refreshPromise) {
 await refreshPromise;
 ```
 
+## Request Cancellation (AbortController)
+
+All GET API functions accept an optional `signal?: AbortSignal` parameter, forwarded from TanStack Query's `queryFn` context:
+
+```typescript
+// API layer
+export async function fetchNotes(filters, signal?: AbortSignal) {
+  const response = await api.get('/notes', { signal });
+  return response.data;
+}
+
+// Hook layer
+queryFn: ({ signal }) => fetchNotes(filters, signal),
+```
+
+TanStack Query automatically creates an `AbortSignal` and aborts in-flight requests when:
+- The component unmounts (e.g., navigating away)
+- The query key changes (e.g., changing filters rapidly)
+- The query is manually invalidated
+
+The response interceptor checks `isCancel(error)` and silently rejects cancelled requests without showing error toasts.
+
+Mutations (`useMutation`) intentionally do **not** use AbortController — they are user-initiated write operations that should always complete.
+
 ## Exported Functions
 
 | Function | Purpose |
@@ -94,6 +122,7 @@ await refreshPromise;
 | `resetAuthState()` | Clear cached token and refresh promise |
 | `logout()` | POST to `/auth/logout` to revoke refresh token, then reset auth state |
 | `isTokenExpiringSoon()` | Returns `true` if token expires within 10 minutes (used by periodic refresh hook) |
+| `getAccessToken()` | Return the current in-memory access token (for EventSource, etc.) |
 | `default` (api) | The configured axios instance |
 
 ## NextAuth Integration

@@ -67,14 +67,16 @@ client/src/
 │   ├── trash/          # Trash management (list, detail, restore, permanent delete)
 │   └── profile/        # Profile settings, avatar upload, password change
 ├── components/         # Shared UI components
-├── lib/                # axios (with JWT interceptor), auth (NextAuth config), prisma, query-client
+├── stores/             # Zustand stores (sidebar-store.ts, column-visibility-store.ts)
+├── lib/                # axios (with JWT interceptor + AbortController support), auth (NextAuth config), prisma, query-client
 ├── schemas/            # Zod validation schemas
 └── types/              # TypeScript types (next-auth augmentation)
 ```
 
 **Key patterns**:
 - Features barrel-exported via `index.ts`
-- Data fetching via TanStack React Query v5 (`useQuery`/`useMutation`)
+- Data fetching via TanStack React Query v5 (`useQuery`/`useMutation`) with AbortController signal forwarding for automatic request cancellation
+- State management via Zustand (`stores/`) with `persist` middleware for UI preferences (sidebar collapsed, column visibility)
 - Forms via React Hook Form + Zod resolver
 - Path alias: `@/*` maps to `./src/*`
 
@@ -95,12 +97,16 @@ server/src/
 │   └── templates/      # Email template functions (password-reset, share-invite)
 ├── prisma/             # Global PrismaService module
 ├── health/             # Health check endpoint
-└── common/             # Middleware (RequestId, CSRF), interceptors (Logging)
+└── common/             # Middleware (RequestId, CSRF), interceptors (Logging), logger (AppLogger), context (AsyncLocalStorage)
 ```
 
 **Key patterns**:
 - Each module: controller → service → DTOs
-- Global middleware: `RequestIdMiddleware` (UUID per request), `CsrfMiddleware` (origin validation), `LoggingInterceptor` (request/response logging)
+- Global middleware: `RequestIdMiddleware` (UUID per request + AsyncLocalStorage context), `CsrfMiddleware` (origin validation), `LoggingInterceptor` (request/response logging via AppLogger)
+- Custom logger: `AppLogger` extends `ConsoleLogger`, auto-prefixes all logs with `[requestId]` via `AsyncLocalStorage` — works across async boundaries without manual passing
+- Notifications use `@nestjs/event-emitter` (fire-and-forget): services emit `notification.send` events, `NotificationListener` handles DB write + SSE push asynchronously
+- Login rate limiting: `LoginThrottleGuard` with escalating cooldowns (15s → 30s → 60s → 2m) after every 5 failed attempts
+- Swagger docs available at `/api/docs` (dev environment only, `NODE_ENV !== 'production'`)
 - Validation: `ValidationPipe` with whitelist & transform enabled
 - API prefix: `/api/` (set in `main.ts`)
 
@@ -121,6 +127,8 @@ Client requests signed URL from backend → backend generates Supabase Storage s
 ### Note Sharing
 
 Notes can be shared with other users (READ or WRITE permission). The share lifecycle generates notifications:
+All notifications below are emitted as fire-and-forget events via `EventEmitter2` and processed asynchronously by `NotificationListener`. They never block the HTTP response.
+
 - **Share:** Owner shares → recipient gets `share` notification (debounced 15 min, rate-limited 4/hr)
 - **Permission change:** Owner updates permission → recipient gets `permission_change` notification
 - **Leave:** Recipient leaves → owner gets `leave` notification

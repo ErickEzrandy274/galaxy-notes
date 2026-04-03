@@ -14,7 +14,8 @@ server/src/auth/
 ├── strategies/
 │   └── jwt.strategy.ts     # Passport JWT extraction & validation
 ├── guards/
-│   └── refresh-token.guard.ts  # Refresh token validation from httpOnly cookie
+│   ├── refresh-token.guard.ts  # Refresh token validation from httpOnly cookie
+│   └── login-throttle.guard.ts # Escalating rate limit on failed login attempts
 └── dto/
     ├── forgot-password.dto.ts  # Forgot password validation
     └── reset-password.dto.ts   # Reset password validation
@@ -84,6 +85,36 @@ Also sets `refresh_token` httpOnly cookie.
 
 **Error Responses:**
 - `401 Unauthorized` — Invalid credentials (wrong email/password or OAuth-only user without password)
+- `429 Too Many Requests` — Login rate limit exceeded (see Login Rate Limiting below)
+
+### Login Rate Limiting
+
+The `POST /api/auth/login` endpoint is protected by `LoginThrottleGuard`, which enforces escalating cooldowns after repeated failed login attempts per email address.
+
+**Escalation tiers:**
+
+| Batch | Trigger | Cooldown |
+|-------|---------|----------|
+| 1st | 5 failed attempts | 15 seconds |
+| 2nd | 5 more failed attempts | 30 seconds |
+| 3rd | 5 more failed attempts | 60 seconds |
+| 4th+ | 5 more failed attempts | 2 minutes (cap) |
+
+**Behavior:**
+- Tracked in-memory per email address (case-insensitive)
+- After 5 consecutive failures, the user is locked out for the current tier's duration
+- Once the lockout expires, the user gets 5 fresh attempts; failing again escalates to the next tier
+- A successful login clears all tracked attempts and resets the escalation
+- The `429` response includes `retryAfter` (seconds until retry is allowed)
+
+**429 Response:**
+```json
+{
+  "statusCode": 429,
+  "message": "Too many login attempts. Try again in 15s.",
+  "retryAfter": 15
+}
+```
 
 ### POST /api/auth/oauth-login
 
@@ -196,9 +227,9 @@ enum UserType {
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, RefreshTokenGuard, LoginThrottleGuard],
   exports: [AuthService],
 })
 ```
 
-The module exports `AuthService` so other modules can use it for auth-related operations.
+The module exports `AuthService` so other modules can use it for auth-related operations. `LoginThrottleGuard` is registered as a provider (singleton) to maintain in-memory state across requests.
