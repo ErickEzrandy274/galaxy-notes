@@ -26,7 +26,6 @@ import { useTheme } from "next-themes";
 import packageJson from "../../../package.json";
 import { useProfile } from "@/features/profile/hooks/use-profile";
 import { useUnreadNotificationCount } from "@/features/notes/hooks/use-notifications";
-import { useNotificationStream } from "@/features/notes/hooks/use-notification-stream";
 import { useSidebarStore } from "@/stores/sidebar-store";
 
 const navItems = [
@@ -60,13 +59,12 @@ export function Sidebar() {
 	const { data: unreadData } = useUnreadNotificationCount();
 	const notificationCount = unreadData?.count ?? 0;
 
-	// SSE: push-based real-time notification updates
-	useNotificationStream();
+	// SSE moved to NotificationStreamProvider in dashboard layout
 
 	return (
 		<Tooltip.Provider delayDuration={200}>
 		<aside
-			className={`relative flex h-screen flex-col border-r border-border bg-card transition-[width] duration-300 ease-in-out ${
+			className={`relative hidden h-screen flex-col border-r border-border bg-card transition-[width] duration-300 ease-in-out md:flex ${
 				collapsed ? "w-16" : "w-60"
 			}`}
 		>
