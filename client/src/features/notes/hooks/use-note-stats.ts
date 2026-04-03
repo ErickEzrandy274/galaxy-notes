@@ -4,6 +4,6 @@ import { fetchNoteStats } from '../api/notes-api';
 export function useNoteStats() {
   return useQuery({
     queryKey: ['notes', 'stats'],
-    queryFn: fetchNoteStats,
+    queryFn: ({ signal }) => fetchNoteStats(signal),
   });
 }

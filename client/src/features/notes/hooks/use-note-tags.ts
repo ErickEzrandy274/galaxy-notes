@@ -4,7 +4,7 @@ import { fetchUserTags } from '../api/notes-api';
 export function useNoteTags() {
   return useQuery({
     queryKey: ['note-tags'],
-    queryFn: fetchUserTags,
+    queryFn: ({ signal }) => fetchUserTags(signal),
     select: (data) => data.tags,
   });
 }

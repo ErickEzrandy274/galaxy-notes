@@ -8,7 +8,7 @@ import type { SharedNotesFilters } from '../types';
 export function useSharedNotes(filters: SharedNotesFilters) {
   return useQuery({
     queryKey: ['shared-notes', filters],
-    queryFn: () => fetchSharedNotes(filters),
+    queryFn: ({ signal }) => fetchSharedNotes(filters, signal),
   });
 }
 

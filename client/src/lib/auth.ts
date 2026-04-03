@@ -87,7 +87,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Use updateMany to avoid throwing when no record matches
         await prisma.user.updateMany({
           where: { id: user.id, userType: 'general_user' },
-          data: { userType: userType as any },
+          data: { userType: userType as string },
         });
       }
     },

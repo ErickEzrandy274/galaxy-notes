@@ -1,8 +1,8 @@
 import api from '@/lib/axios';
 import type { UserPreferences, AutoDeleteBehavior } from '../types';
 
-export async function fetchPreferences(): Promise<UserPreferences> {
-  const response = await api.get<UserPreferences>('/preferences');
+export async function fetchPreferences(signal?: AbortSignal): Promise<UserPreferences> {
+  const response = await api.get<UserPreferences>('/preferences', { signal });
   return response.data;
 }
 

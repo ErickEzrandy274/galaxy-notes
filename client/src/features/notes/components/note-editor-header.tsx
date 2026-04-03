@@ -46,7 +46,7 @@ export function NoteEditorHeader({
         </span>
       </nav>
 
-      <span className="flex items-center gap-3">
+      <div className="flex items-center gap-3" role="toolbar" aria-label="Editor actions">
         <NoteAutosaveIndicator status={status} lastSavedAt={lastSavedAt} />
 
         {isSharedEditor ? (
@@ -102,7 +102,7 @@ export function NoteEditorHeader({
             </button>
           </>
         )}
-      </span>
+      </div>
     </header>
   );
 }

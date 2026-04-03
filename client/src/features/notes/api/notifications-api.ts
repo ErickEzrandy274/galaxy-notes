@@ -5,6 +5,7 @@ export async function fetchNotifications(
   page = 1,
   limit = 10,
   filter?: NotificationFilter,
+  signal?: AbortSignal,
 ): Promise<NotificationsResponse> {
   const params = new URLSearchParams();
   params.set('page', String(page));
@@ -14,12 +15,13 @@ export async function fetchNotifications(
   }
   const response = await api.get<NotificationsResponse>(
     `/notifications?${params.toString()}`,
+    { signal },
   );
   return response.data;
 }
 
-export async function fetchUnreadCount(): Promise<{ count: number }> {
-  const response = await api.get<{ count: number }>('/notifications/unread-count');
+export async function fetchUnreadCount(signal?: AbortSignal): Promise<{ count: number }> {
+  const response = await api.get<{ count: number }>('/notifications/unread-count', { signal });
   return response.data;
 }
 
@@ -46,7 +48,7 @@ export async function unmuteUser(userId: string): Promise<void> {
   await api.delete(`/notifications/mute/${userId}`);
 }
 
-export async function fetchMutedUsers(): Promise<MutedUser[]> {
-  const response = await api.get<MutedUser[]>('/notifications/muted-users');
+export async function fetchMutedUsers(signal?: AbortSignal): Promise<MutedUser[]> {
+  const response = await api.get<MutedUser[]>('/notifications/muted-users', { signal });
   return response.data;
 }

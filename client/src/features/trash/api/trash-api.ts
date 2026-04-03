@@ -4,6 +4,7 @@ import type { TrashedNotesResponse, TrashFilters } from '../types';
 
 export async function fetchTrashedNotes(
   filters: TrashFilters,
+  signal?: AbortSignal,
 ): Promise<TrashedNotesResponse> {
   const params = new URLSearchParams();
   params.set('page', String(filters.page));
@@ -13,12 +14,13 @@ export async function fetchTrashedNotes(
 
   const response = await api.get<TrashedNotesResponse>(
     `/notes/trash?${params.toString()}`,
+    { signal },
   );
   return response.data;
 }
 
-export async function fetchTrashedNote(noteId: string): Promise<NoteDetail> {
-  const response = await api.get<NoteDetail>(`/notes/trash/${noteId}`);
+export async function fetchTrashedNote(noteId: string, signal?: AbortSignal): Promise<NoteDetail> {
+  const response = await api.get<NoteDetail>(`/notes/trash/${noteId}`, { signal });
   return response.data;
 }
 

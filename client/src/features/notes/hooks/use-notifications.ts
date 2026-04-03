@@ -21,7 +21,7 @@ import type { NotificationFilter, NotificationsResponse, MuteDuration } from '..
 export function useNotifications(page = 1, filter: NotificationFilter = 'all') {
   return useQuery({
     queryKey: ['notifications', page, filter],
-    queryFn: () => fetchNotifications(page, 10, filter),
+    queryFn: ({ signal }) => fetchNotifications(page, 10, filter, signal),
   });
 }
 
@@ -32,8 +32,8 @@ export function useInfiniteNotifications(
 ) {
   return useInfiniteQuery<NotificationsResponse>({
     queryKey: ['notifications', 'infinite', filter],
-    queryFn: ({ pageParam }) =>
-      fetchNotifications(pageParam as number, limit, filter),
+    queryFn: ({ pageParam, signal }) =>
+      fetchNotifications(pageParam as number, limit, filter, signal),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       const totalPages = Math.ceil(lastPage.total / lastPage.limit);
@@ -46,7 +46,7 @@ export function useInfiniteNotifications(
 export function useUnreadNotificationCount() {
   return useQuery({
     queryKey: ['notifications', 'unread-count'],
-    queryFn: fetchUnreadCount,
+    queryFn: ({ signal }) => fetchUnreadCount(signal),
     refetchInterval: 60_000,
   });
 }
@@ -115,6 +115,6 @@ export function useUnmuteUser() {
 export function useMutedUsers() {
   return useQuery({
     queryKey: ['notifications', 'muted-users'],
-    queryFn: fetchMutedUsers,
+    queryFn: ({ signal }) => fetchMutedUsers(signal),
   });
 }

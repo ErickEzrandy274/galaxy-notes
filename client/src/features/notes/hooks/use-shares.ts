@@ -18,7 +18,7 @@ import {
 export function useShares(noteId: string) {
   return useQuery({
     queryKey: ['shares', noteId],
-    queryFn: () => fetchSharesForNote(noteId),
+    queryFn: ({ signal }) => fetchSharesForNote(noteId, signal),
     enabled: !!noteId,
   });
 }
@@ -91,9 +91,9 @@ export function useRequestNoteAccess() {
     onSuccess: () => {
       toast.success('Access request sent to the note owner');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       const message =
-        error?.response?.data?.message || 'Failed to request access';
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to request access';
       toast.error(message);
     },
   });
@@ -111,9 +111,9 @@ export function useGrantNoteAccess() {
       queryClient.invalidateQueries({ queryKey: ['shares'] });
       toast.success('Access granted');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       const message =
-        error?.response?.data?.message || 'Failed to grant access';
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to grant access';
       toast.error(message);
     },
   });
@@ -129,9 +129,9 @@ export function useDeclineNoteAccess() {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Access request declined');
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       const message =
-        error?.response?.data?.message || 'Failed to decline request';
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to decline request';
       toast.error(message);
     },
   });
@@ -147,7 +147,7 @@ export function useSearchUsers(query: string) {
 
   return useQuery({
     queryKey: ['userSearch', debouncedQuery],
-    queryFn: () => searchUsers(debouncedQuery),
+    queryFn: ({ signal }) => searchUsers(debouncedQuery, signal),
     enabled: debouncedQuery.length >= 2,
   });
 }

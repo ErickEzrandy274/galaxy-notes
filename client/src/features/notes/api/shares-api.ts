@@ -6,8 +6,8 @@ import type {
   UserSearchResult,
 } from '../types';
 
-export async function fetchSharesForNote(noteId: string): Promise<SharesResponse> {
-  const response = await api.get<SharesResponse>(`/shares/note/${noteId}`);
+export async function fetchSharesForNote(noteId: string, signal?: AbortSignal): Promise<SharesResponse> {
+  const response = await api.get<SharesResponse>(`/shares/note/${noteId}`, { signal });
   return response.data;
 }
 
@@ -47,9 +47,10 @@ export async function declineNoteAccess(noteId: string, userId: string): Promise
   await api.post(`/shares/decline-access/${noteId}/${userId}`);
 }
 
-export async function searchUsers(email: string): Promise<UserSearchResult[]> {
+export async function searchUsers(email: string, signal?: AbortSignal): Promise<UserSearchResult[]> {
   const response = await api.get<UserSearchResult[]>(
     `/users/search?email=${encodeURIComponent(email)}`,
+    { signal },
   );
   return response.data;
 }

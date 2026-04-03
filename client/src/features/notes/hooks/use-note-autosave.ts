@@ -99,9 +99,10 @@ export function useNoteAutosave({
       setStatus('saved');
       setLastSavedAt(new Date());
       queryClient.invalidateQueries({ queryKey: ['notes'] });
-    } catch (error: any) {
-      if (error?.response?.status === 409 && onConflict) {
-        const conflictData = error.response?.data;
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: { currentVersion?: number } } };
+      if (err?.response?.status === 409 && onConflict) {
+        const conflictData = err.response?.data;
         onConflict({ currentVersion: conflictData?.currentVersion ?? version });
       }
       setStatus('error');

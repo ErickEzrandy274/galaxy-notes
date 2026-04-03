@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { isCancel } from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 import { getSession, signOut } from 'next-auth/react';
 import toast from 'react-hot-toast';
@@ -151,6 +151,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Silently reject cancelled requests (AbortController)
+    if (isCancel(error)) {
+      return Promise.reject(error);
+    }
+
     // Skip processing once auth has permanently failed
     if (error._authFailed || authFailed) {
       return Promise.reject(error);

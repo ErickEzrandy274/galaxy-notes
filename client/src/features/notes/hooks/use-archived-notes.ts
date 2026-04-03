@@ -8,7 +8,7 @@ import type { ArchivedNotesFilters } from '../types';
 export function useArchivedNotes(filters: ArchivedNotesFilters) {
   return useQuery({
     queryKey: ['notes', 'archived', filters],
-    queryFn: () => fetchArchivedNotes(filters),
+    queryFn: ({ signal }) => fetchArchivedNotes(filters, signal),
   });
 }
 

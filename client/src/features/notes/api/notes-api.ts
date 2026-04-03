@@ -15,6 +15,7 @@ import type {
 
 export async function fetchNotes(
   filters: NotesFilters,
+  signal?: AbortSignal,
 ): Promise<NotesResponse> {
   const params = new URLSearchParams();
   params.set('page', String(filters.page));
@@ -23,12 +24,13 @@ export async function fetchNotes(
   if (filters.search) params.set('search', filters.search);
   if (filters.tags) params.set('tags', filters.tags);
 
-  const response = await api.get<NotesResponse>(`/notes?${params.toString()}`);
+  const response = await api.get<NotesResponse>(`/notes?${params.toString()}`, { signal });
   return response.data;
 }
 
 export async function fetchSharedNotes(
   filters: SharedNotesFilters,
+  signal?: AbortSignal,
 ): Promise<SharedNotesResponse> {
   const params = new URLSearchParams();
   params.set('page', String(filters.page));
@@ -41,6 +43,7 @@ export async function fetchSharedNotes(
 
   const response = await api.get<SharedNotesResponse>(
     `/notes?${params.toString()}`,
+    { signal },
   );
   return response.data;
 }
@@ -49,8 +52,8 @@ export async function deleteNote(noteId: string): Promise<void> {
   await api.delete(`/notes/${noteId}`);
 }
 
-export async function fetchNote(noteId: string): Promise<NoteDetail> {
-  const response = await api.get<NoteDetail>(`/notes/${noteId}`);
+export async function fetchNote(noteId: string, signal?: AbortSignal): Promise<NoteDetail> {
+  const response = await api.get<NoteDetail>(`/notes/${noteId}`, { signal });
   return response.data;
 }
 
@@ -84,13 +87,13 @@ export async function updateNote(
   return response.data;
 }
 
-export async function fetchNoteStats(): Promise<NoteStats> {
-  const response = await api.get<NoteStats>('/notes/stats');
+export async function fetchNoteStats(signal?: AbortSignal): Promise<NoteStats> {
+  const response = await api.get<NoteStats>('/notes/stats', { signal });
   return response.data;
 }
 
-export async function fetchUserTags(): Promise<{ tags: TagOption[] }> {
-  const response = await api.get<{ tags: TagOption[] }>('/notes/tags');
+export async function fetchUserTags(signal?: AbortSignal): Promise<{ tags: TagOption[] }> {
+  const response = await api.get<{ tags: TagOption[] }>('/notes/tags', { signal });
   return response.data;
 }
 
@@ -111,12 +114,14 @@ export async function createSignedUploadUrl(
 export async function fetchVersionHistory(
   noteId: string,
   cursor?: string,
+  signal?: AbortSignal,
 ): Promise<VersionHistoryResponse> {
   const params = new URLSearchParams();
   if (cursor) params.set('cursor', cursor);
   params.set('limit', '10');
   const response = await api.get<VersionHistoryResponse>(
     `/notes/${noteId}/versions?${params.toString()}`,
+    { signal },
   );
   return response.data;
 }
@@ -124,9 +129,11 @@ export async function fetchVersionHistory(
 export async function fetchVersionDetail(
   noteId: string,
   versionId: string,
+  signal?: AbortSignal,
 ): Promise<NoteVersionDetail> {
   const response = await api.get<NoteVersionDetail>(
     `/notes/${noteId}/versions/${versionId}`,
+    { signal },
   );
   return response.data;
 }
@@ -140,6 +147,7 @@ export async function restoreVersion(
 
 export async function fetchArchivedNotes(
   filters: ArchivedNotesFilters,
+  signal?: AbortSignal,
 ): Promise<NotesResponse> {
   const params = new URLSearchParams();
   params.set('page', String(filters.page));
@@ -148,7 +156,7 @@ export async function fetchArchivedNotes(
   if (filters.search) params.set('search', filters.search);
   if (filters.tags) params.set('tags', filters.tags);
 
-  const response = await api.get<NotesResponse>(`/notes?${params.toString()}`);
+  const response = await api.get<NotesResponse>(`/notes?${params.toString()}`, { signal });
   return response.data;
 }
 

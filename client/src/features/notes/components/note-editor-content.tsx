@@ -44,6 +44,7 @@ export function NoteEditorContent({
   const { upload } = useNoteUpload(noteId ?? '', 'rich-text-editor');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef(data.content);
+  // eslint-disable-next-line react-hooks/refs -- intentional: keep ref in sync for stable callbacks without re-renders
   contentRef.current = data.content;
 
   // Revoke all blob URLs on unmount
